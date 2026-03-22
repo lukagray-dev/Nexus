@@ -117,6 +117,7 @@ Open `landing/index.html` in a browser, or deploy the directory as a static site
 
 ## Configuration Notes
 
+- Release history and transparency are tracked in `CHANGELOG.md`.
 - `google-services.json` is required in Android modules.
 - Email service credentials must be supplied via environment variables.
 - Never commit secrets, private keys, or service-account files.
