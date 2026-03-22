@@ -1,0 +1,15 @@
+# Editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.log
+
+# Optional: Uncomment if you add these later
+# node_modules/
+# package-lock.json

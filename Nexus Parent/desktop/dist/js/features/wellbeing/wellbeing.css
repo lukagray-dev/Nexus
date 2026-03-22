@@ -1,0 +1,304 @@
+/* Wellbeing (Usage Monitoring) Feature Styles */
+
+.wellbeing-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #000;
+}
+
+.wellbeing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+    background: rgba(24, 24, 27, 0.5);
+}
+
+.wellbeing-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.wellbeing-controls {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(63, 63, 70, 0.3);
+    background: rgba(24, 24, 27, 0.5);
+}
+
+.request-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(251, 191, 36, 0.9);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.request-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.request-btn:hover {
+    background: rgba(251, 191, 36, 1);
+    transform: translateY(-1px);
+}
+
+.request-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.wellbeing-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Summary Cards */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.summary-card {
+    background: rgba(39, 39, 42, 0.5);
+    border: 1px solid rgba(151, 151, 151, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summary-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(251, 191, 36, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.summary-icon svg {
+    width: 20px;
+    height: 20px;
+    color: rgba(251, 191, 36, 0.9);
+}
+
+.summary-info {
+    flex: 1;
+}
+
+.summary-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Section */
+.section {
+    background: rgba(39, 39, 42, 0.5);
+    border: 1px solid rgba(151, 151, 151, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.2);
+}
+
+.section-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+/* Categories List */
+.categories-list {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background: rgba(66, 66, 66, 0.2);
+    border-radius: 6px;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(251, 191, 36, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.category-info {
+    flex: 1;
+}
+
+.category-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2px;
+}
+
+.category-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.category-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(66, 66, 66, 0.5);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.category-bar-fill {
+    height: 100%;
+    background: rgba(251, 191, 36, 0.8);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* Apps List */
+.apps-list {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.app-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background: rgba(66, 66, 66, 0.2);
+    border-radius: 6px;
+}
+
+.app-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(66, 66, 66, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.app-icon-placeholder {
+    font-size: 18px;
+}
+
+.app-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.app-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-package {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-time {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(251, 191, 36, 0.9);
+    white-space: nowrap;
+}
+
+/* Placeholder */
+.list-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    padding: 32px 16px;
+}
+
+.list-placeholder svg {
+    width: 48px;
+    height: 48px;
+}
+
+.list-placeholder p {
+    font-size: 12px;
+    margin: 0;
+}
+
+/* Status Message */
+.status-message {
+    text-align: center;
+    font-size: 12px;
+    padding: 8px 16px;
+    min-height: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    border-top: 1px solid rgba(63, 63, 70, 0.2);
+    background: rgba(24, 24, 27, 0.3);
+}

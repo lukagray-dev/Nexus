@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nexus logo placeholder -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/accent_primary"
+        android:pathData="M24,4L4,14v20l20,10 20,-10V14L24,4zM24,8.5l16,8v15l-16,8 -16,-8v-15l16,-8z" />
+    <path
+        android:fillColor="@color/accent_primary"
+        android:pathData="M24,16c-4.42,0 -8,3.58 -8,8s3.58,8 8,8 8,-3.58 8,-8 -3.58,-8 -8,-8zM24,28c-2.21,0 -4,-1.79 -4,-4s1.79,-4 4,-4 4,1.79 4,4 -1.79,4 -4,4z" />
+</vector>

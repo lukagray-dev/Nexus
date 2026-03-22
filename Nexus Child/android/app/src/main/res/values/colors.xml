@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nexus Gold Theme (matching Nexus Parent) -->
+    <color name="gold_primary">#FFD700</color>
+    <color name="gold_light">#FFE44D</color>
+    <color name="gold_dark">#C7A600</color>
+    <color name="gold_muted">#B8960F</color>
+    <color name="gold_accent">#FFBF00</color>
+
+    <!-- Backgrounds -->
+    <color name="black">#000000</color>
+    <color name="background_primary">#000000</color>
+    <color name="background_surface">#0D0D0D</color>
+    <color name="background_card">#1A1A1A</color>
+    <color name="background_elevated">#242424</color>
+
+    <!-- Text -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_tertiary">#707070</color>
+
+    <!-- Status Colors -->
+    <color name="status_active">#FFD700</color>
+    <color name="status_connecting">#FFE44D</color>
+    <color name="status_error">#FF4444</color>
+    <color name="status_standby">#707070</color>
+    <color name="status_connected">#00C853</color>
+    <color name="status_disconnected">#707070</color>
+
+    <!-- Sidebar -->
+    <color name="sidebar_background">#0A0A0A</color>
+    <color name="sidebar_divider">#2A2A2A</color>
+    <color name="sidebar_item_ripple">#33FFD700</color>
+
+    <!-- Cards & Borders -->
+    <color name="card_stroke">#2C2C2C</color>
+    <color name="card_fill">#951E1E1E</color>
+    <color name="card_fill_solid">#1E1E1E</color>
+
+    <!-- Permissions (updated to gold) -->
+    <color name="permissions_icon_tint">#FFD700</color>
+    <color name="permissions_text_primary">#FFFFFFFF</color>
+    <color name="permissions_text_secondary">#A6A6A6</color>
+    <color name="permissions_card_stroke">#FF2C2C2C</color>
+    <color name="permissions_card_fill">#951E1E1E</color>
+    <color name="permissions_dialog_background">#A2121212</color>
+    <color name="permissions_info_background">#D51F1F1F</color>
+
+    <!-- Gmail Status -->
+    <color name="gmail_status_connected">#00C853</color>
+    <color name="gmail_status_disconnected">#707070</color>
+
+    <!-- Legacy (kept for backward compat) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#4D00FF</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+
+</resources>

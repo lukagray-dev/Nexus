@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base Application Theme -->
+    <style name="Theme.NexusParent" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/accent_primary</item>
+        <item name="colorPrimaryVariant">@color/accent_secondary</item>
+        <item name="colorOnPrimary">@color/text_primary</item>
+        
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/accent_primary</item>
+        <item name="colorSecondaryVariant">@color/accent_secondary</item>
+        <item name="colorOnSecondary">@color/text_primary</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/background_primary</item>
+        <item name="colorSurface">@color/background_secondary</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/background_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/background_primary</item>
+        
+        <!-- Window background -->
+        <item name="android:windowBackground">@color/background_primary</item>
+        
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+    
+    <!-- Sidebar Item Style -->
+    <style name="SidebarItemStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/sidebar_item_height</item>
+        <item name="android:paddingStart">@dimen/spacing_medium</item>
+        <item name="android:paddingEnd">@dimen/spacing_medium</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_size_normal</item>
+    </style>
+    
+    <!-- Panel Header Style -->
+    <style name="PanelHeaderStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/panel_header_height</item>
+        <item name="android:background">@color/panel_header</item>
+        <item name="android:paddingStart">@dimen/spacing_medium</item>
+        <item name="android:paddingEnd">@dimen/spacing_medium</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:elevation">@dimen/elevation_low</item>
+    </style>
+    
+    <!-- Panel Title Style -->
+    <style name="PanelTitleStyle">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_size_large</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- Panel Subtitle Style -->
+    <style name="PanelSubtitleStyle">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_size_small</item>
+    </style>
+    
+    <!-- Dark Dialog Theme -->
+    <style name="DarkDialogTheme" parent="Theme.MaterialComponents.Dialog">
+        <item name="android:windowBackground">@color/dialog_overlay</item>
+        <item name="android:colorBackground">@color/background_secondary</item>
+        <item name="colorSurface">@color/background_secondary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:backgroundDimAmount">0.8</item>
+    </style>
+</resources>

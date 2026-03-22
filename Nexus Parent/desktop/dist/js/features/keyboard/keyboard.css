@@ -1,0 +1,274 @@
+/* Production-Grade Keyboard Monitoring Styles */
+
+.keyboard-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #000;
+    position: relative;
+}
+
+.keyboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+    background: rgba(24, 24, 27, 0.5);
+    gap: 12px;
+}
+
+.keyboard-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+}
+
+.keyboard-controls {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+}
+
+.keyboard-search {
+    flex: 1;
+    padding: 6px 12px;
+    background: rgba(66, 66, 66, 0.3);
+    border: 1px solid rgba(151, 151, 151, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.keyboard-search::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.keyboard-search:focus {
+    outline: none;
+    background: rgba(66, 66, 66, 0.5);
+    border-color: rgba(151, 151, 151, 0.5);
+}
+
+.keyboard-clear-btn {
+    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    color: rgba(239, 68, 68, 0.9);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keyboard-clear-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.keyboard-clear-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.keyboard-entries-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.list-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    flex: 1;
+}
+
+.list-placeholder svg {
+    width: 48px;
+    height: 48px;
+}
+
+.list-placeholder p {
+    font-size: 12px;
+    margin: 0;
+}
+
+.list-placeholder .hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Keyboard Entry Item */
+.keyboard-entry {
+    padding: 12px;
+    background: rgba(24, 24, 27, 0.5);
+    border: 1px solid rgba(63, 63, 70, 0.3);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.keyboard-entry:hover {
+    background: rgba(24, 24, 27, 0.7);
+    border-color: rgba(63, 63, 70, 0.5);
+}
+
+.keyboard-entry.keyboard_input {
+    border-left: 3px solid rgba(59, 130, 246, 0.6);
+}
+
+.keyboard-entry.clipboard_copy {
+    border-left: 3px solid rgba(168, 85, 247, 0.6);
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.entry-type {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(251, 191, 36, 0.9);
+}
+
+.entry-time {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.entry-app {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 4px;
+}
+
+.entry-field {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    margin-bottom: 6px;
+}
+
+.entry-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(66, 66, 66, 0.3);
+    padding: 8px;
+    border-radius: 4px;
+    word-wrap: break-word;
+    margin-bottom: 6px;
+    font-family: 'Courier New', monospace;
+}
+
+.entry-text.password {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: rgba(239, 68, 68, 0.9);
+}
+
+.entry-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.entry-input-type {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+    color: rgba(59, 130, 246, 0.9);
+}
+
+.password-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 4px;
+    color: rgba(239, 68, 68, 0.9);
+}
+
+/* Play/Pause Button */
+.play-pause-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    background: rgba(251, 191, 36, 0.9);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.play-pause-btn:hover {
+    background: rgba(251, 191, 36, 1);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.play-pause-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: scale(1);
+}
+
+.play-pause-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #000;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Scrollbar Styling */
+.keyboard-entries-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.keyboard-entries-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.keyboard-entries-list::-webkit-scrollbar-thumb {
+    background: rgba(151, 151, 151, 0.3);
+    border-radius: 3px;
+}
+
+.keyboard-entries-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(151, 151, 151, 0.5);
+}

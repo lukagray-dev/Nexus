@@ -1,0 +1,32 @@
+{
+  "name": "nexus-email-service",
+  "version": "1.0.0",
+  "description": "Email service for Nexus OTP verification and password reset",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "firebase-admin": "^12.7.0",
+    "@getbrevo/brevo": "^2.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "email",
+    "otp",
+    "brevo",
+    "nexus",
+    "render"
+  ],
+  "author": "Nexus Team",
+  "license": "MIT"
+}

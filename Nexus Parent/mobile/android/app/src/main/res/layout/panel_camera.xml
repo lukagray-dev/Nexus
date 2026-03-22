@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Camera Feature Panel -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/panel_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/spacing_medium"
+    app:cardBackgroundColor="@color/panel_background"
+    app:cardCornerRadius="@dimen/corner_radius_large"
+    app:cardElevation="@dimen/elevation_medium"
+    app:strokeColor="@color/border_primary"
+    app:strokeWidth="@dimen/border_width">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Panel Header -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            style="@style/PanelHeaderStyle">
+
+            <!-- Feature Icon -->
+            <ImageView
+                android:id="@+id/panel_icon"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:src="@drawable/ic_camera"
+                android:contentDescription="@string/feature_camera"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/accent_primary" />
+
+            <!-- Feature Title -->
+            <TextView
+                android:id="@+id/panel_title"
+                style="@style/PanelTitleStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_medium"
+                android:layout_marginEnd="@dimen/spacing_medium"
+                android:text="@string/feature_camera"
+                app:layout_constraintStart_toEndOf="@id/panel_icon"
+                app:layout_constraintEnd_toStartOf="@id/camera_status_indicator"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <!-- Status Indicator (Pulsing Dot) -->
+            <View
+                android:id="@+id/camera_status_indicator"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/status_indicator"
+                android:layout_marginEnd="12dp"
+                app:layout_constraintEnd_toStartOf="@id/panel_close"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <!-- Close Button -->
+            <ImageView
+                android:id="@+id/panel_close"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:contentDescription="@string/close"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/text_secondary" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/border_width"
+            android:background="@color/border_primary" />
+
+        <!-- Panel Content Container -->
+        <FrameLayout
+            android:id="@+id/panel_content"
+            android:layout_width="match_parent"
+            android:layout_height="400dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:background="#000000">
+                
+                <!-- Camera Stream Container -->
+                <FrameLayout
+                    android:id="@+id/camera_stream_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:background="#000000">
+                    
+                    <!-- Placeholder -->
+                    <LinearLayout
+                        android:id="@+id/camera_placeholder"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp">
+                        
+                        <ImageView
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@drawable/ic_camera"
+                            android:alpha="0.3"
+                            app:tint="#e4e4e7" />
+                        
+                        <TextView
+                            android:id="@+id/camera_placeholder_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Click play button to start camera"
+                            android:textSize="12sp"
+                            android:textColor="#a1a1aa"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center" />
+                        
+                    </LinearLayout>
+                    
+                    <!-- Video Surface (will be added programmatically) -->
+                    
+                    <!-- Stream Controls (Bottom Right) -->
+                    <LinearLayout
+                        android:id="@+id/camera_controls"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="16dp"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        
+                        <!-- Play/Pause Button -->
+                        <ImageView
+                            android:id="@+id/camera_play_pause_btn"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_play"
+                            android:padding="12dp"
+                            android:background="@drawable/stream_control_btn_background"
+                            android:layout_marginEnd="12dp"
+                            app:tint="#000000" />
+                        
+                        <!-- Switch Camera Button -->
+                        <ImageView
+                            android:id="@+id/camera_switch_btn"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_camera"
+                            android:padding="12dp"
+                            android:background="@drawable/stream_control_btn_background"
+                            android:layout_marginEnd="12dp"
+                            app:tint="#000000" />
+                        
+                        <!-- Fullscreen Button -->
+                        <ImageView
+                            android:id="@+id/camera_fullscreen_btn"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_fullscreen"
+                            android:padding="12dp"
+                            android:background="@drawable/stream_control_btn_background"
+                            app:tint="#000000" />
+                        
+                    </LinearLayout>
+                    
+                </FrameLayout>
+                
+                <!-- Camera Info Footer -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:background="#18181B">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Resolution:"
+                        android:textSize="12sp"
+                        android:textColor="#a1a1aa"
+                        android:layout_marginEnd="8dp" />
+                    
+                    <TextView
+                        android:id="@+id/camera_resolution"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="640x480"
+                        android:textSize="12sp"
+                        android:textColor="#e4e4e7"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="16dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FPS:"
+                        android:textSize="12sp"
+                        android:textColor="#a1a1aa"
+                        android:layout_marginEnd="8dp" />
+                    
+                    <TextView
+                        android:id="@+id/camera_fps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="30"
+                        android:textSize="12sp"
+                        android:textColor="#e4e4e7"
+                        android:textStyle="bold" />
+                    
+                </LinearLayout>
+                
+            </LinearLayout>
+            
+        </FrameLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

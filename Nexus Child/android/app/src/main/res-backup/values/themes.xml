@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Main App Theme - Nexus Gold -->
+    <style name="Theme.Child" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/gold_primary</item>
+        <item name="colorPrimaryVariant">@color/gold_dark</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSecondary">@color/gold_accent</item>
+        <item name="colorSecondaryVariant">@color/gold_dark</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:colorBackground">@color/background_primary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:statusBarColor">@color/background_primary</item>
+        <item name="android:navigationBarColor">@color/background_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Fullscreen theme for FakeUIActivity -->
+    <style name="Theme.Child.Fullscreen" parent="Theme.Child">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
+    </style>
+
+    <!-- Keypad button style for App Lock - Gold themed -->
+    <style name="Widget.App.Button.Keypad" parent="Widget.MaterialComponents.Button">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="backgroundTint">@color/card_fill_solid</item>
+        <item name="cornerRadius">36dp</item>
+        <item name="rippleColor">@color/gold_primary</item>
+        <item name="strokeColor">@color/card_stroke</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <!-- Secondary keypad button (backspace, clear) -->
+    <style name="Widget.App.Button.Keypad.Secondary" parent="Widget.App.Button.Keypad">
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="iconTint">@color/text_primary</item>
+    </style>
+
+    <!-- Base Widget.App style (required for dot-notation inheritance) -->
+    <style name="Widget.App" parent="" />
+
+    <!-- Sidebar Menu Item Style -->
+    <style name="Widget.App.SidebarItem">
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+
+    <!-- Sidebar Menu Icon Style -->
+    <style name="Widget.App.SidebarIcon">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:layout_marginEnd">16dp</item>
+        <item name="tint">@color/gold_primary</item>
+    </style>
+
+    <!-- Sidebar Menu Text Style -->
+    <style name="Widget.App.SidebarText">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Gold Outlined Button -->
+    <style name="Widget.App.Button.Gold" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/gold_primary</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- Gold Outlined Button -->
+    <style name="Widget.App.Button.GoldOutlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/gold_primary</item>
+        <item name="android:textColor">@color/gold_primary</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="rippleColor">@color/sidebar_item_ripple</item>
+    </style>
+
+    <!-- Page Title Style -->
+    <style name="Widget.App.PageTitle">
+        <item name="android:textColor">@color/gold_primary</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Gold Filled Button (rounded) for guided flows -->
+    <style name="Widget.App.GoldButton" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/gold_primary</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="cornerRadius">26dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="rippleColor">@color/gold_dark</item>
+    </style>
+
+</resources>

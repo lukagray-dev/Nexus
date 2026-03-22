@@ -1,0 +1,57 @@
+OPUS AUDIO DECODER INTEGRATION GUIDE
+=====================================
+
+CURRENT STATUS:
+- Child side: Complete (AudioPlaybackCapture → Opus encode → DataChannel)
+- Parent side: Infrastructure ready, decoder needs integration
+
+PRODUCTION DECODER OPTIONS:
+
+1. opus-decoder (Recommended)
+   - WebAssembly-based Opus decoder
+   - npm: @wasm-audio-decoders/opus
+   - Usage:
+     ```javascript
+     import { OpusDecoder } from '@wasm-audio-decoders/opus';
+     const decoder = new OpusDecoder();
+     await decoder.ready;
+     const pcmData = decoder.decode(opusPacket);
+     ```
+
+2. libopus.js
+   - JavaScript port of libopus
+   - GitHub: kazuki/opus.js-sample
+   - Larger bundle size but no WASM dependency
+
+3. MediaSource API (Fallback)
+   - Wrap Opus in WebM container
+   - Use MediaSource for playback
+   - Higher latency but native browser support
+
+INTEGRATION STEPS:
+
+1. Install decoder library:
+   npm install @wasm-audio-decoders/opus
+
+2. Update opus-audio-player.js:
+   - Import OpusDecoder
+   - Initialize in init() method
+   - Decode packets in decodeAndPlayOpusPacket()
+   - Schedule PCM buffers via scheduleAudioBuffer()
+
+3. Test with child device:
+   - Start screen recording
+   - Verify audio packets arrive
+   - Confirm audio playback
+
+CURRENT IMPLEMENTATION:
+- Packets are received and logged
+- Audio infrastructure is ready
+- Only decoder integration is pending
+
+AUDIO FORMAT:
+- Sample rate: 48000 Hz
+- Channels: 1 (Mono)
+- Frame size: 20ms (960 samples)
+- Bitrate: 32 kbps
+- Encoding: Opus

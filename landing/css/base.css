@@ -1,0 +1,85 @@
+/* Base Styles */
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    color: var(--color-white);
+    background-color: var(--color-black);
+    overflow-x: hidden;
+    zoom: 0.8;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+h1 { font-size: var(--font-size-6xl); }
+h2 { font-size: var(--font-size-4xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+
+.gradient-text {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+    animation: shimmerGold 3s ease-in-out infinite;
+}
+
+@keyframes shimmerGold {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5)) brightness(1); }
+    50% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)) brightness(1.2); }
+}
+
+.dim-text {
+    color: var(--color-gray);
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 0.875rem 2rem;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+    cursor: pointer;
+    text-align: center;
+}
+
+.btn-primary {
+    background: var(--gradient-gold);
+    color: var(--color-black);
+    box-shadow: var(--shadow-gold);
+    animation: pulseGold 2s ease-in-out infinite;
+}
+
+@keyframes pulseGold {
+    0%, 100% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 60px rgba(255, 215, 0, 0.8); }
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 80px rgba(255, 215, 0, 0.9);
+    filter: brightness(1.2);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--color-white);
+    border: 2px solid var(--color-gold);
+}
+
+.btn-secondary:hover {
+    background: var(--color-gold);
+    color: var(--color-black);
+}

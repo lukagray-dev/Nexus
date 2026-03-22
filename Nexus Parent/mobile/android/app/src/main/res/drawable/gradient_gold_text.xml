@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Golden gradient for text (matching desktop: white to gold) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="135"
+        android:startColor="#ffffff"
+        android:endColor="#fbbf24"
+        android:type="linear" />
+</shape>

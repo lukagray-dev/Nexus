@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Connection Screen Layout - Matching Desktop UI Exactly -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Particles Background (black background) -->
+    <View
+        android:id="@+id/particles_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000" />
+
+    <!-- Connection Card Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="24dp">
+
+        <!-- Centered wrapper with max width -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
+            <!-- Glass Card with exact desktop styling (max-width: 480dp) -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:cardBackgroundColor="#D90F0F0F"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="60dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Golden border overlay -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:background="@drawable/glass_card_border"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="40dp"
+                        android:gravity="center"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintWidth_max="480dp">
+
+                        <!-- Nexus Brand with gradient -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Nexus"
+                            android:textSize="32sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06"
+                            android:textColor="#FFFFFF"
+                            android:shadowColor="#4DFBBF24"
+                            android:shadowDx="0"
+                            android:shadowDy="2"
+                            android:shadowRadius="20"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- Separator with gradient -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@drawable/separator_gradient"
+                            android:layout_marginBottom="24dp" />
+
+                        <!-- Instruction Text -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Enter the 12-digit Child ID provided by the Child app."
+                            android:textSize="13sp"
+                            android:textColor="#BFFFFFFF"
+                            android:gravity="center"
+                            android:lineSpacingMultiplier="1.2"
+                            android:layout_marginBottom="6dp" />
+
+                        <!-- Child ID Input with exact desktop styling -->
+                        <EditText
+                            android:id="@+id/child_id_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/input_background"
+                            android:hint="●●●● ●●●● ●●●●"
+                            android:textColorHint="#80FFFFFF"
+                            android:textColor="#F2FFFFFF"
+                            android:textSize="14sp"
+                            android:padding="14dp"
+                            android:inputType="number"
+                            android:maxLength="14"
+                            android:letterSpacing="0.31"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium"
+                            android:elevation="2dp" />
+
+                        <!-- Feedback Text -->
+                        <TextView
+                            android:id="@+id/connect_feedback"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="18dp"
+                            android:textSize="12sp"
+                            android:textColor="#F2FFC8C8"
+                            android:gravity="center"
+                            android:layout_marginTop="6dp" />
+
+                        <!-- Connect Button with exact desktop styling -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/connect_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Connect"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#FFFFFF"
+                            android:padding="14dp"
+                            android:layout_marginTop="8dp"
+                            app:cornerRadius="12dp"
+                            app:strokeWidth="1dp"
+                            app:strokeColor="#66FBBF24"
+                            app:backgroundTint="#33FBBF24"
+                            app:elevation="16dp"
+                            app:rippleColor="#4DFBBF24" />
+
+                        <!-- Hint Text -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Hint: ask child to share the 12-digit ID"
+                            android:textSize="12sp"
+                            android:textColor="#99FFFFFF"
+                            android:gravity="center"
+                            android:lineSpacingMultiplier="1.2"
+                            android:layout_marginTop="12dp" />
+
+                    </LinearLayout>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loading_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp">
+
+            <ProgressBar
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:indeterminateTint="#FBBF24" />
+
+            <TextView
+                android:id="@+id/loading_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connecting..."
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginTop="16dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</FrameLayout>

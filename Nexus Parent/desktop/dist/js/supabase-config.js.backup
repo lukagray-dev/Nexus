@@ -1,0 +1,26 @@
+/**
+ * Supabase Configuration
+ * Shared configuration for Nexus Parent Desktop
+ */
+
+const supabaseConfig = {
+  url: "https://kyckdgadhmzkklgjsxsk.supabase.co",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5Y2tkZ2FkaG16a2tsZ2pzeHNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDYwNzUsImV4cCI6MjA4NjcyMjA3NX0.6Ug2dZ1KD9PLTXZ-Pa0p3pDfYs0pLi6NYAkW5uU5Pa8",
+  projectId: "kyckdgadhmzkklgjsxsk"
+};
+
+// Export config to window
+window.supabaseConfig = supabaseConfig;
+
+// Initialize Supabase client
+if (window.supabase && window.supabase.createClient) {
+  window.supabaseClient = window.supabase.createClient(
+    supabaseConfig.url,
+    supabaseConfig.anonKey
+  );
+  console.log('✅ Supabase client initialized');
+} else {
+  console.error('❌ Supabase SDK not loaded');
+}
+
+console.log('✅ Supabase config loaded');

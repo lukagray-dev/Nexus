@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Lock Feature Panel -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/panel_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/spacing_medium"
+    app:cardBackgroundColor="@color/panel_background"
+    app:cardCornerRadius="@dimen/corner_radius_large"
+    app:cardElevation="@dimen/elevation_medium"
+    app:strokeColor="@color/border_primary"
+    app:strokeWidth="@dimen/border_width">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            style="@style/PanelHeaderStyle">
+
+            <ImageView
+                android:id="@+id/panel_icon"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:src="@drawable/ic_applock"
+                android:contentDescription="@string/feature_applock"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/accent_primary" />
+
+            <TextView
+                android:id="@+id/panel_title"
+                style="@style/PanelTitleStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_medium"
+                android:layout_marginEnd="@dimen/spacing_medium"
+                android:text="@string/feature_applock"
+                app:layout_constraintStart_toEndOf="@id/panel_icon"
+                app:layout_constraintEnd_toStartOf="@id/panel_close"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageView
+                android:id="@+id/panel_close"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:contentDescription="@string/close"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/text_secondary" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/border_width"
+            android:background="@color/border_primary" />
+
+        <FrameLayout
+            android:id="@+id/panel_content"
+            android:layout_width="match_parent"
+            android:layout_height="400dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                
+                <!-- Header with controls -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:background="#18181B">
+                    
+                    <!-- Controls -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        
+                        <Button
+                            android:id="@+id/applock_toggle_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_weight="1"
+                            android:text="Enabled"
+                            android:textSize="11sp"
+                            android:textColor="@android:color/black"
+                            android:backgroundTint="#4ade80"
+                            android:textAllCaps="false"
+                            android:paddingVertical="4dp" />
+                        
+                        <Button
+                            android:id="@+id/applock_change_pin_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Change PIN"
+                            android:textSize="11sp"
+                            android:textColor="@android:color/white"
+                            android:backgroundTint="#60a5fa"
+                            android:textAllCaps="false"
+                            android:paddingVertical="4dp" />
+                        
+                        <Button
+                            android:id="@+id/applock_clear_btn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="8dp"
+                            android:text="Clear"
+                            android:textSize="11sp"
+                            android:textColor="@android:color/white"
+                            android:backgroundTint="#ef4444"
+                            android:textAllCaps="false"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="4dp" />
+                        
+                    </LinearLayout>
+                    
+                    <!-- Stats -->
+                    <TextView
+                        android:id="@+id/applock_stats"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Total: 0 | Failed: 0 | Locked Out: 0"
+                        android:textSize="11sp"
+                        android:textColor="@color/text_secondary"
+                        android:gravity="center"
+                        android:layout_marginTop="8dp" />
+                    
+                </LinearLayout>
+                
+                <!-- Alerts List -->
+                <ScrollView
+                    android:id="@+id/applock_scroll_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="false">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        
+                        <LinearLayout
+                            android:id="@+id/applock_list_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                        
+                        <!-- Placeholder -->
+                        <LinearLayout
+                            android:id="@+id/applock_placeholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="48dp">
+                            
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/ic_applock"
+                                android:alpha="0.3" />
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No unlock attempts yet"
+                                android:textSize="13sp"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="12dp" />
+                            
+                        </LinearLayout>
+                        
+                    </LinearLayout>
+                    
+                </ScrollView>
+                
+            </LinearLayout>
+            
+        </FrameLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,466 @@
+/* SMS Feature Styles */
+
+.sms-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #000;
+}
+
+.sms-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+    background: rgba(24, 24, 27, 0.5);
+    gap: 12px;
+}
+
+.sms-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+}
+
+.sms-controls {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+}
+
+.sms-search {
+    flex: 1;
+    padding: 6px 12px;
+    background: rgba(66, 66, 66, 0.3);
+    border: 1px solid rgba(151, 151, 151, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.sms-search::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.sms-search:focus {
+    outline: none;
+    background: rgba(66, 66, 66, 0.5);
+    border-color: rgba(151, 151, 151, 0.5);
+}
+
+.sms-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.sms-messages-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.list-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    padding: 2rem;
+}
+
+.list-placeholder svg {
+    width: 48px;
+    height: 48px;
+}
+
+.list-placeholder p {
+    font-size: 12px;
+    margin: 0;
+}
+
+.sms-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sms-item:hover {
+    background: rgba(66, 66, 66, 0.2);
+}
+
+.sms-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.sms-item-sender {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sms-item-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.sms-item-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* Play/Pause Button - Fixed position */
+.play-pause-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    background: rgba(251, 191, 36, 0.9);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.play-pause-btn:hover {
+    background: rgba(251, 191, 36, 1);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.play-pause-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.play-pause-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #000;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Detail Modal */
+.sms-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.sms-detail-content {
+    background: rgba(24, 24, 27, 0.95);
+    border: 1px solid rgba(63, 63, 70, 0.5);
+    border-radius: 12px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.sms-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+}
+
+.sms-detail-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sms-detail-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.sms-detail-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sms-detail-body {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.sms-detail-field {
+    margin-bottom: 12px;
+}
+
+.sms-detail-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.sms-detail-value {
+    color: rgba(255, 255, 255, 0.9);
+    word-wrap: break-word;
+}
+
+
+/* Detail View (In-Panel) */
+.detail-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+    background: rgba(24, 24, 27, 0.5);
+}
+
+.detail-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: rgba(251, 191, 36, 0.9);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.detail-back-btn:hover {
+    background: rgba(251, 191, 36, 0.1);
+    color: rgba(251, 191, 36, 1);
+}
+
+.detail-back-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.detail-header h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+}
+
+/* Detail Section - Icon and Type */
+.detail-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0 20px 0;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.2);
+    margin-bottom: 20px;
+}
+
+.detail-icon {
+    font-size: 48px;
+    line-height: 1;
+}
+
+.detail-icon-svg {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: 50%;
+    padding: 12px;
+}
+
+.detail-icon-svg svg {
+    width: 100%;
+    height: 100%;
+    color: rgba(251, 191, 36, 0.9);
+    stroke: rgba(251, 191, 36, 0.9);
+}
+
+.detail-type {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Floating Badge (Bottom-Right) */
+.detail-floating-badge {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.detail-floating-badge.badge-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.detail-badge-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(251, 191, 36, 0.9);
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.detail-badge-icon svg {
+    width: 100%;
+    height: 100%;
+    color: #000;
+    stroke: #000;
+}
+
+.detail-badge-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Detail Info Grid */
+.detail-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.detail-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.detail-info-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.detail-info-value {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    word-break: break-word;
+}
+
+/* Message Section */
+.detail-message-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: rgba(24, 24, 27, 0.5);
+    border: 1px solid rgba(63, 63, 70, 0.3);
+    border-radius: 8px;
+}
+
+.detail-message-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.detail-message-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+

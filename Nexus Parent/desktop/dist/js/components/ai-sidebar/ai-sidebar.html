@@ -1,0 +1,140 @@
+<!-- AI Assistant Sidebar Container -->
+<div class="ai-sidebar-wrapper">
+    <!-- AI Assistant Sidebar -->
+    <div class="ai-sidebar">
+    <!-- Resize Handle -->
+    <div class="ai-resize-handle"></div>
+    
+    <!-- Header -->
+    <div class="ai-header">
+        <div class="ai-header-left">
+            <div class="ai-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke-linecap="round"/>
+                    <circle cx="9" cy="9" r="1" fill="currentColor"/>
+                    <circle cx="15" cy="9" r="1" fill="currentColor"/>
+                </svg>
+            </div>
+            <span class="ai-session-name">New Chat</span>
+        </div>
+        <div class="ai-header-actions">
+            <button class="ai-header-btn" id="ai-new-chat" title="New Chat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+            <div class="ai-history-container">
+                <button class="ai-header-btn" id="ai-history-btn" title="History">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </button>
+                <div class="ai-history-dropdown hidden">
+                    <div class="ai-dropdown-header">Chat History</div>
+                    <div class="ai-history-list"></div>
+                </div>
+            </div>
+            <button class="ai-header-btn ai-close-btn" id="ai-close" title="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Messages Container -->
+    <div class="ai-messages">
+        <div class="ai-welcome">
+            <div class="ai-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke-linecap="round"/>
+                    <circle cx="9" cy="9" r="1" fill="currentColor"/>
+                    <circle cx="15" cy="9" r="1" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="ai-welcome-content">
+                <h3>Welcome to Nexus Assistant</h3>
+                <p>Ask me anything about Nexus:</p>
+                <ul>
+                    <li>Camera & Screen streaming</li>
+                    <li>Location tracking</li>
+                    <li>Messages & Call logs</li>
+                    <li>Notifications monitoring</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Input Area -->
+    <div class="ai-input-area">
+        <div class="ai-input-container">
+            <textarea class="ai-input" placeholder="Ask anything..." rows="1"></textarea>
+            <div class="ai-input-actions">
+                <div class="ai-context-indicator" title="Context usage">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                    <span class="ai-context-percent">0%</span>
+                </div>
+                <div class="ai-model-container">
+                    <button class="ai-model-btn" id="ai-model-btn" title="Select Model">
+                        <span class="ai-model-name">Select model</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="ai-model-dropdown hidden">
+                        <div class="ai-model-list"></div>
+                        <div class="ai-dropdown-divider"></div>
+                        <button class="ai-dropdown-item ai-configure-btn" id="ai-configure">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                            </svg>
+                            <span>Configure API Key</span>
+                        </button>
+                    </div>
+                </div>
+                <button class="ai-send-btn" id="ai-send" title="Send">
+                    <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End AI Sidebar -->
+
+<!-- Config Modal -->
+<div class="ai-config-modal hidden" id="ai-config-modal">
+    <div class="ai-config-content">
+        <div class="ai-config-header">
+            <h3>Configure Groq API</h3>
+            <button class="ai-config-close" id="ai-config-close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="ai-config-body">
+            <p>Enter your Groq API key to enable AI assistance.</p>
+            <p class="ai-config-link">Get your free API key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a></p>
+            <input type="password" class="ai-config-input" id="ai-api-key-input" placeholder="gsk_..." />
+        </div>
+        <div class="ai-config-footer">
+            <button class="ai-config-btn ai-config-cancel" id="ai-config-cancel">Cancel</button>
+            <button class="ai-config-btn ai-config-save" id="ai-config-save">Save</button>
+        </div>
+    </div>
+</div>
+
+</div>
+<!-- End AI Sidebar Wrapper -->

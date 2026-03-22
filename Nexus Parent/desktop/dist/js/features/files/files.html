@@ -1,0 +1,95 @@
+<!-- Files Feature Window -->
+<div class="files-content">
+    <div class="files-header">
+        <div class="files-title">Monitor Files</div>
+    </div>
+    
+    <!-- Breadcrumb Navigation with Controls -->
+    <div class="files-breadcrumb-container">
+        <button id="files-back-btn" class="nav-btn" style="display: none;" title="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </button>
+        <div id="files-breadcrumb" class="files-breadcrumb">
+            <span class="breadcrumb-item active">Root</span>
+        </div>
+        <button id="files-refresh-btn" class="nav-btn" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- Files Gallery -->
+    <div id="files-gallery" class="files-gallery">
+        <div class="files-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <p>No files yet</p>
+        </div>
+    </div>
+    
+    <!-- Load More Button -->
+    <div id="files-loadmore-wrap" class="loadmore-wrap hidden">
+        <button id="files-loadmore-btn" class="loadmore-btn">Load More</button>
+    </div>
+    
+    <!-- Status Bar -->
+    <div id="files-status" class="files-status"></div>
+</div>
+
+<!-- File Detail View (Hidden by default) -->
+<div id="files-detail" class="files-detail hidden">
+    <div class="detail-header">
+        <button class="detail-back-btn" id="files-detail-back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back
+        </button>
+        <h3>File Details</h3>
+    </div>
+    <div class="detail-body">
+        <!-- Preview Area -->
+        <div id="files-preview" class="files-preview">
+            <div class="preview-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <p>Click Preview to load</p>
+            </div>
+        </div>
+        
+        <!-- File Info -->
+        <div class="files-info-section">
+            <div class="files-info-header">
+                <h4 id="files-detail-filename">Filename</h4>
+                <div class="files-detail-actions">
+                    <button id="files-preview-btn" class="detail-action-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Preview
+                    </button>
+                    <button id="files-download-btn" class="detail-action-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download
+                    </button>
+                </div>
+            </div>
+            
+            <div id="files-meta-grid" class="files-meta-grid"></div>
+            
+            <div id="files-progress" class="files-progress hidden"></div>
+        </div>
+    </div>
+</div>

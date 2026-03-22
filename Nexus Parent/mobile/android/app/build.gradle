@@ -1,0 +1,72 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
+   // id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+}
+
+android {
+    namespace 'nexus.android.parent'
+    compileSdk {
+        version = release(36)
+    }
+
+    defaultConfig {
+        applicationId "nexus.android.parent"
+        minSdk 29
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+}
+
+dependencies {
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.constraintlayout
+    implementation libs.material
+    
+    // Coroutines for async operations
+    implementation libs.kotlinx.coroutines.android
+    implementation libs.kotlinx.coroutines.core
+    implementation libs.kotlinx.coroutines.play.services
+    
+    // WebRTC for data channel communication
+    implementation libs.webrtc
+    
+    // Firebase for signaling only
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.database
+    
+    // Supabase for authentication
+    implementation libs.supabase.postgrest
+    implementation libs.supabase.auth
+    implementation libs.ktor.client.android
+    
+    // Google Sign-In (optional, for OAuth)
+    implementation libs.play.services.auth
+    
+    // OSMDroid for map display
+    implementation libs.osmdroid.android
+    
+    testImplementation libs.junit
+    testImplementation "org.mockito:mockito-core:5.14.2"
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+}

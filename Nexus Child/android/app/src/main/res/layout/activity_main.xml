@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary">
+
+    <!-- ============================================= -->
+    <!-- MAIN CONTENT AREA                             -->
+    <!-- ============================================= -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background_primary">
+
+        <!-- Top Bar: Hamburger + Title -->
+        <LinearLayout
+            android:id="@+id/top_bar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="16dp"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageButton
+                android:id="@+id/hamburger_button"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/open_sidebar"
+                android:padding="10dp"
+                android:src="@drawable/ic_menu_hamburger"
+                app:tint="@color/gold_primary" />
+
+            <TextView
+                android:id="@+id/top_bar_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/app_name"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp" />
+
+        </LinearLayout>
+
+        <!-- Center Content: Child ID + Status — vertically biased to 70% from top -->
+        <LinearLayout
+            android:id="@+id/center_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/top_bar"
+            app:layout_constraintVertical_bias="0.65">
+
+            <!-- Loading State -->
+            <LinearLayout
+                android:id="@+id/loading_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:id="@+id/progress_indicator"
+                    style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Small"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:indeterminate="true"
+                    android:indeterminateTint="@color/gold_primary" />
+
+                <TextView
+                    android:id="@+id/loading_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="@string/waiting_for_child_id"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <!-- Child ID Display -->
+            <TextView
+                android:id="@+id/child_id_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.08"
+                android:text="-- -- -- --"
+                android:textColor="@color/gold_primary"
+                android:textSize="@dimen/child_id_text_size"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- Status Indicator: LED + Text -->
+            <LinearLayout
+                android:id="@+id/status_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <View
+                    android:id="@+id/status_led"
+                    android:layout_width="@dimen/status_led_size"
+                    android:layout_height="@dimen/status_led_size"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/status_led" />
+
+                <TextView
+                    android:id="@+id/status_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="@string/connecting"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/status_text_size" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Helper Hint: Swipe to open sidebar -->
+        <LinearLayout
+            android:id="@+id/helper_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:layout_marginBottom="48dp"
+            android:paddingHorizontal="32dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/helper_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/helper_swipe_hint"
+                android:textColor="@color/text_tertiary"
+                android:textSize="13sp"
+                android:lineSpacingExtra="3dp" />
+
+            <TextView
+                android:id="@+id/helper_arrow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="&#171;&#171;"
+                android:textColor="@color/gold_muted"
+                android:textSize="24sp"
+                android:fontFamily="monospace" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ============================================= -->
+    <!-- SIDEBAR NAVIGATION DRAWER                     -->
+    <!-- ============================================= -->
+    <LinearLayout
+        android:id="@+id/sidebar_drawer"
+        android:layout_width="@dimen/sidebar_width"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@drawable/sidebar_background"
+        android:orientation="vertical">
+
+        <!-- Sidebar Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/sidebar_header_height"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/app_name"
+                android:textColor="@color/gold_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Gold Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:background="@color/gold_dark" />
+
+        <!-- Menu Items -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 1. Permissions -->
+                <LinearLayout
+                    android:id="@+id/sidebar_permissions"
+                    style="@style/Widget.App.SidebarItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.App.SidebarIcon"
+                        android:contentDescription="@string/sidebar_permissions"
+                        android:src="@drawable/ic_sidebar_permissions" />
+
+                    <TextView
+                        style="@style/Widget.App.SidebarText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_permissions" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/sidebar_divider" />
+
+                <!-- 2. Stealth Mode -->
+                <LinearLayout
+                    android:id="@+id/sidebar_stealth"
+                    style="@style/Widget.App.SidebarItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.App.SidebarIcon"
+                        android:contentDescription="@string/sidebar_stealth"
+                        android:src="@drawable/ic_sidebar_stealth" />
+
+                    <TextView
+                        style="@style/Widget.App.SidebarText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_stealth" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/sidebar_divider" />
+
+                <!-- 3. App Lock -->
+                <LinearLayout
+                    android:id="@+id/sidebar_app_lock"
+                    style="@style/Widget.App.SidebarItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.App.SidebarIcon"
+                        android:contentDescription="@string/sidebar_app_lock"
+                        android:src="@drawable/ic_sidebar_lock" />
+
+                    <TextView
+                        style="@style/Widget.App.SidebarText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_app_lock" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/sidebar_divider" />
+
+                <!-- 4. Connect Gmail -->
+                <LinearLayout
+                    android:id="@+id/sidebar_gmail"
+                    style="@style/Widget.App.SidebarItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.App.SidebarIcon"
+                        android:contentDescription="@string/sidebar_gmail"
+                        android:src="@drawable/ic_sidebar_gmail" />
+
+                    <TextView
+                        style="@style/Widget.App.SidebarText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/sidebar_gmail" />
+
+                    <ImageView
+                        android:id="@+id/sidebar_gmail_status_icon"
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/ic_gmail_status_disconnected" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/sidebar_divider" />
+
+                <!-- 5. Change App Icon -->
+                <LinearLayout
+                    android:id="@+id/sidebar_change_icon"
+                    style="@style/Widget.App.SidebarItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.App.SidebarIcon"
+                        android:contentDescription="@string/sidebar_change_icon"
+                        android:src="@drawable/ic_sidebar_palette" />
+
+                    <TextView
+                        style="@style/Widget.App.SidebarText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_change_icon" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/sidebar_divider" />
+
+                <!-- 6. Mod Store -->
+                <LinearLayout
+                    android:id="@+id/sidebar_mod_store"
+                    style="@style/Widget.App.SidebarItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.App.SidebarIcon"
+                        android:contentDescription="@string/sidebar_mod_store"
+                        android:src="@drawable/ic_sidebar_store" />
+
+                    <TextView
+                        style="@style/Widget.App.SidebarText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_mod_store" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>

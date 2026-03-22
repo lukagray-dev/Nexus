@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidebar Header with Nexus Logo (loaded from assets) -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/sidebar_header_height"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/sidebar_background"
+    android:padding="@dimen/spacing_medium"
+    android:paddingTop="@dimen/spacing_xlarge">
+
+    <!-- Nexus Logo (Loaded from assets programmatically) -->
+    <ImageView
+        android:id="@+id/app_logo"
+        android:layout_width="@dimen/icon_size_xlarge"
+        android:layout_height="@dimen/icon_size_xlarge"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/app_name" />
+
+    <!-- App Name -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_small"
+        android:text="@string/app_name"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_size_large"
+        android:textStyle="bold" />
+
+</LinearLayout>

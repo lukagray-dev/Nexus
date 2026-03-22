@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/glass_card_border">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Microphone Permission Required"
+        android:textSize="20sp"
+        android:textColor="#e4e4e7"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Message -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="To speak to the child device, please grant microphone permission."
+        android:textSize="14sp"
+        android:textColor="#a1a1aa"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <!-- Cancel Button -->
+        <Button
+            android:id="@+id/dialog_cancel_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Cancel"
+            android:textColor="#a1a1aa"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/button_secondary"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:layout_marginEnd="12dp"
+            android:textAllCaps="false" />
+
+        <!-- Grant Button -->
+        <Button
+            android:id="@+id/dialog_grant_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Grant"
+            android:textColor="#18181B"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/button_primary"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:textAllCaps="false" />
+
+    </LinearLayout>
+
+</LinearLayout>

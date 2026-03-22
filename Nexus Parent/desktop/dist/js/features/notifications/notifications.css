@@ -1,0 +1,163 @@
+/* Notifications Feature Styles */
+
+.notifications-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #000;
+}
+
+.notifications-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+    background: rgba(24, 24, 27, 0.5);
+    gap: 12px;
+}
+
+.notifications-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+}
+
+.notifications-controls {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+}
+
+.notifications-search {
+    flex: 1;
+    padding: 6px 12px;
+    background: rgba(66, 66, 66, 0.3);
+    border: 1px solid rgba(151, 151, 151, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.notifications-search::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.notifications-search:focus {
+    outline: none;
+    background: rgba(66, 66, 66, 0.5);
+    border-color: rgba(151, 151, 151, 0.5);
+}
+
+.notifications-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.list-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    flex: 1;
+}
+
+.list-placeholder svg {
+    width: 48px;
+    height: 48px;
+}
+
+.list-placeholder p {
+    font-size: 12px;
+    margin: 0;
+}
+
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(63, 63, 70, 0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background: rgba(66, 66, 66, 0.2);
+}
+
+.notification-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.notification-item-app {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.notification-item-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.notification-item-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notification-item-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* Play/Pause Button */
+.play-pause-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    background: rgba(251, 191, 36, 0.9);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.play-pause-btn:hover {
+    background: rgba(251, 191, 36, 1);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.play-pause-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.play-pause-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #000;
+}

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Custom Toolbar with separated capsules matching ChatGPT design -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/toolbar_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent">
+
+    <!-- Menu Icon Capsule (Left) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/menu_capsule"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="@dimen/elevation_low"
+        app:cardBackgroundColor="@color/background_secondary"
+        app:strokeColor="@null"
+        app:strokeWidth="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/menu_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="12dp"
+            android:contentDescription="@string/drawer_open"
+            android:src="@drawable/ic_menu"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/accent_primary" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Title Capsule (Center) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/title_capsule"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="@dimen/spacing_small"
+        android:layout_marginEnd="@dimen/spacing_small"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="@dimen/elevation_low"
+        app:cardBackgroundColor="@color/background_secondary"
+        app:strokeColor="@null"
+        app:strokeWidth="0dp"
+        app:layout_constraintStart_toEndOf="@id/menu_capsule"
+        app:layout_constraintEnd_toStartOf="@id/actions_capsule"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/toolbar_title"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/main_title"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_large"
+            android:textStyle="bold" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Actions Capsule (Right - Two Icons) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/actions_capsule"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="@dimen/elevation_low"
+        app:cardBackgroundColor="@color/background_secondary"
+        app:strokeColor="@null"
+        app:strokeWidth="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <!-- AI Assistant Icon -->
+            <ImageView
+                android:id="@+id/ai_icon"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/action_ai"
+                android:src="@drawable/ic_ai"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/accent_primary" />
+
+            <!-- Profile Icon -->
+            <ImageView
+                android:id="@+id/profile_icon"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/action_profile"
+                android:src="@drawable/ic_profile"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/accent_primary" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

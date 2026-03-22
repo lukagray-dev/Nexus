@@ -1,0 +1,108 @@
+﻿# Operating systems
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Editors / IDE
+.idea/
+*.iml
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+*~
+
+# Keep selected VS Code workspace settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+
+# Logs and diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*firebase-adminsdk*.json
+nexusparentalcontrol-firebase-adminsdk-*.json
+
+# Firebase / Android sensitive local files
+**/google-services.json
+**/local.properties
+
+# Keystores and signing
+*.jks
+*.keystore
+*.keystore.properties
+
+# Node.js
+**/node_modules/
+**/.npm/
+**/.pnpm-store/
+**/.yarn/cache/
+**/.yarn/unplugged/
+**/.parcel-cache/
+
+# Test and coverage outputs
+**/coverage/
+**/.nyc_output/
+
+# Android / Gradle outputs
+**/.gradle/
+**/captures/
+**/.cxx/
+**/.externalNativeBuild/
+Nexus Child/android/build/
+Nexus Child/android/app/build/
+Nexus Parent/mobile/android/build/
+Nexus Parent/mobile/android/app/build/
+
+# Electron packaging outputs
+Nexus Parent/desktop/release/
+Nexus Parent/desktop/build/win-unpacked/
+Nexus Parent/desktop/build/builder-debug.yml
+Nexus Parent/desktop/build/builder-effective-config.yaml
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Local toolchains and caches (workspace-local)
+/.android-sdk/
+/.android-user-home/
+/.gradle-user-home/
+/.jdks/
+/.robolectric/
+/.user-home/
+/.cache/
+
+# Local build reports / diagnostics
+**/build/reports/
+**/build/test-results/
+**/.kotlin/
+**/.DS_Store
+**/hs_err_pid*.log
+**/replay_pid*.log
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Large raw media (keep out of git history)
+assets/*.mp4

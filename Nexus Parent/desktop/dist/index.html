@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- The `<head>` section in HTML is used to provide meta-information about the document and to link
+external resources. In this specific code snippet: -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Parent</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/splash.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo-container">
+                <img src="Nexus_Parent_icon.png" alt="Nexus Parent" class="splash-logo">
+                <div class="splash-glow"></div>
+            </div>
+            <h1 class="splash-title">Nexus Parent</h1>
+            <div class="splash-tagline">Parental Control & Monitoring</div>
+            <div class="splash-loader">
+                <div class="splash-loader-bar"></div>
+            </div>
+        </div>
+        <div class="splash-particles"></div>
+    </div>
+
+    <!-- Custom Title Bar -->
+    <div id="title-bar" class="title-bar">
+        <div class="title-bar-drag-region">
+            <div class="title-bar-title">Nexus Parent</div>
+        </div>
+        <div class="title-bar-controls">
+            <button class="title-bar-btn" id="minimize-btn" title="Minimize">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor">
+                    <line x1="0" y1="5" x2="10" y2="5" stroke-width="1.5" stroke-linecap="round"></line>
+                </svg>
+            </button>
+            <button class="title-bar-btn" id="maximize-btn" title="Maximize">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor">
+                    <rect x="0.5" y="0.5" width="9" height="9" stroke-width="1.5" rx="1"></rect>
+                </svg>
+            </button>
+            <button class="title-bar-btn title-bar-close" id="close-btn" title="Close">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor">
+                    <line x1="1" y1="1" x2="9" y2="9" stroke-width="1.5" stroke-linecap="round"></line>
+                    <line x1="9" y1="1" x2="1" y2="9" stroke-width="1.5" stroke-linecap="round"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Connection Screen -->
+    <!-- The `<div id="connect-screen">` section in the HTML code snippet is creating a screen layout for
+    a connection interface. Here's a breakdown of its components: -->
+    <div id="connect-screen" class="h-screen w-screen flex items-center justify-center relative overflow-hidden">
+        <!-- Particles Background -->
+        <canvas id="particles-canvas" class="particles-background"></canvas>
+        
+        <!-- Connect UI -->
+       <!-- The `<div class="auth-wrap">` section in the HTML code snippet is creating a layout for an
+       authentication interface. It contains a form for users to input a 12-digit Child ID provided
+       by the Child app. Here's a breakdown of its components: -->
+        <div class="auth-wrap">
+            <section class="glass-card fade-in">
+                <h1 class="brand">Nexus</h1>
+                <hr class="sep">
+                <div class="form">
+                    <div style="width: 100%; color: rgba(255, 255, 255, 0.748); font-size: 13px; margin-bottom: 6px; text-align: center;">
+                        Enter the 12-digit Child ID provided by the Child app.
+                    </div>
+                    <input 
+                        type="text" 
+                        id="child-id-input"
+                        class="input" 
+                        placeholder="●●●● ●●●● ●●●●"
+                        maxlength="12"
+                        inputmode="numeric"
+                        style="letter-spacing: 5px; text-align: center;"
+                    />
+                    <div id="connect-feedback" style="width: 100%; min-height: 18px; color: rgba(255,200,200,0.95); font-size: 12px; margin-top: 6px; text-align: center;"></div>
+                    <button id="connect-btn" class="primary-btn" style="margin-top: 8px; width: 100%;">Connect</button>
+                    <button id="connect-back-btn" class="secondary-btn" style="margin-top: 8px; width: 100%;">Back</button>
+                    <div style="width: 100%; color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 12px; text-align: center;">
+                        Hint: ask child to share the 12-digit ID
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard-screen" class="h-screen w-screen flex text-white font-mono hidden" style="position:relative; overflow:hidden;">
+        <!-- Dust Animation Background -->
+        <canvas id="dust-canvas" style="position:absolute; left:0; top:0; width:100%; height:100%; z-index:0; display:block; background:#000;"></canvas>
+        
+        <!-- Sidebar Component (loaded dynamically) -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content Area -->
+        <!-- The main content area contains the top info section (heading, device status, AI and profile buttons)
+        and the feature windows container where draggable/resizable monitoring windows are displayed. -->
+        <div class="main-area flex-1 flex flex-col">
+            <!-- Top Info (positioned absolutely on top of main area) -->
+            <!-- The top info section is positioned absolutely on top of the main area (not a separate bar).
+            It contains the Nexus Dashboard heading, device connection status with green dot, AI Assistant button,
+            and profile button with dropdown menu. The z-index is set high to stay above all panels. -->
+            <div class="top-info">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <!-- Heading with subscription dropdown button -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h1 class="text-xl font-bold tracking-wide">Nexus Dashboard</h1>
+                        <button id="subscription-toggle-btn" class="subscription-toggle-btn" title="Subscription Details">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255, 255, 255, 0.7);">
+                        <span class="status-dot status-connected"></span>
+                        <span id="device-id-display">Device: Loading...</span>
+                    </div>
+                </div>
+                
+                <!-- Subscription Details Dropdown -->
+                <div id="subscription-dropdown" class="subscription-dropdown hidden">
+                    <div class="subscription-dropdown-header">
+                        <h3>Subscription Details</h3>
+                    </div>
+                    <div class="subscription-dropdown-content">
+                        <div class="subscription-item">
+                            <span class="subscription-label">Plan:</span>
+                            <span class="subscription-value">Premium</span>
+                        </div>
+                        <div class="subscription-item">
+                            <span class="subscription-label">Status:</span>
+                            <span class="subscription-value" style="color: #00ff5e;">Active</span>
+                        </div>
+                        <div class="subscription-item">
+                            <span class="subscription-label">Expires:</span>
+                            <span class="subscription-value">2025-12-31</span>
+                        </div>
+                        <div class="subscription-item">
+                            <span class="subscription-label">Devices:</span>
+                            <span class="subscription-value">1 / 5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI and Profile buttons -->
+                <!-- The AI Assistant and Profile buttons are positioned in the top-right corner.
+                Both buttons are styled to match the app's glassmorphism aesthetic. -->
+                <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                    <!-- AI Assistant Button -->
+                    <!-- The AI Assistant button opens a right-sliding sidebar for AI chat functionality.
+                    The button displays a smiley face icon in the accent color (#fbbf24). -->
+                    <button id="ai-btn" class="ai-btn" title="AI Assistant">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="9" cy="9" r="1" fill="currentColor"/>
+                            <circle cx="15" cy="9" r="1" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Profile Icon with Dropdown -->
+                    <!-- The profile button displays a user icon and opens a dropdown menu with the disconnect option.
+                    The dropdown is positioned absolutely below the button. -->
+                    <div class="profile-dropdown-container" style="position: relative; display: flex; align-items: center;">
+                        <button id="profile-btn" class="profile-btn" title="Profile">
+                            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSI4IiBmaWxsPSIjMjMyMzIzIi8+CiAgPHBhdGggZD0iTTI0IDEyQzE3LjM3MjYgMTIgMTIgMTcuMzcyNiAxMiAyNEMxMiAzMC42Mjc0IDE3LjM3MjYgMzYgMjQgMzZDMzAuNjI3NCAzNiAzNiAzMC42Mjc0IDM2IDI0QzM2IDE3LjM3MjYgMzAuNjI3NCAxMiAyNCAxMlpNMjQgMTVDMjUuNjU2OSAxNSAyNyAxNi4zNDMxIDI3IDE4QzI3IDE5LjY1NjkgMjUuNjU2OSAyMSAyNCAyMUMyMi4zNDMxIDIxIDIxIDE5LjY1NjkgMjEgMThDMjEgMTYuMzQzMSAyMi4zNDMxIDE1IDI0IDE1Wk0yNCAzM0MyMC42ODYzIDMzIDE3Ljc4NDMgMzEuMTk2MSAxNi41IDI4LjVDMTYuNTQ5IDI2LjI1NDkgMjAuNzQ1MSAyNSAyNCAyNUMyNy4yNTQ5IDI1IDMxLjQ1MSAyNi4yNTQ5IDMxLjUgMjguNUMzMC4yMTU3IDMxLjE5NjEgMjcuMzEzNyAzMyAyNCAzM1oiIGZpbGw9IiNmYmJmMjQiLz4KPC9zdmc+" alt="Profile" style="width: 40px; height: 40px; border-radius: 8px; display: block;" />
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <!-- The dropdown menu appears below the profile button when clicked.
+                        It contains options for settings, report issue, and disconnect. -->
+                        <div id="profile-dropdown" class="profile-dropdown hidden">
+                            <button id="settings-btn" class="dropdown-item">
+                                <span>Settings</span>
+                            </button>
+                            <button id="report-issue-btn" class="dropdown-item">
+                                <span>Report Issue</span>
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button id="disconnect-btn" class="dropdown-item">
+                                <span>Disconnect</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature Windows Container -->
+            <!-- The feature windows container is where all draggable/resizable monitoring windows are displayed.
+            Windows are created dynamically when sidebar buttons are clicked. -->
+            <div id="feature-windows" class="feature-windows flex-1 relative overflow-y-auto"></div>
+        </div>
+        
+        <!-- AI Assistant Sidebar Component (loaded dynamically) -->
+        <div id="ai-sidebar-container"></div>
+
+        <!-- Settings Sidebar Component (loaded dynamically) -->
+        <div id="settings-sidebar-container"></div>
+
+        <!-- Confirmation Dialogs -->
+        <!-- Disconnect Confirmation Dialog -->
+        <div id="disconnect-dialog" class="modal-overlay hidden">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Disconnect Device</h3>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to disconnect from this device? You can reconnect anytime.</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="disconnect-cancel-btn" class="modal-btn cancel">Cancel</button>
+                    <button id="disconnect-confirm-btn" class="modal-btn confirm">Disconnect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Account Confirmation Dialog (First) -->
+        <div id="delete-account-dialog-1" class="modal-overlay hidden">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Delete Account</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="color: #ef4444; margin-bottom: 1rem;">This action cannot be undone. All your data will be permanently deleted.</p>
+                    <p>To proceed, please enter your account password:</p>
+                    <input type="password" id="delete-password-1" class="form-input" placeholder="Enter your password" style="margin-top: 1rem;" />
+                </div>
+                <div class="modal-footer">
+                    <button id="delete-cancel-btn-1" class="modal-btn cancel">Cancel</button>
+                    <button id="delete-next-btn-1" class="modal-btn confirm">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Account Confirmation Dialog (Second) -->
+        <div id="delete-account-dialog-2" class="modal-overlay hidden">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3>Confirm Account Deletion</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="color: #ef4444; margin-bottom: 1rem;">This is your final confirmation. Your account will be deleted permanently.</p>
+                    <p>Please enter your password again to confirm:</p>
+                    <input type="password" id="delete-password-2" class="form-input" placeholder="Enter your password" style="margin-top: 1rem;" />
+                </div>
+                <div class="modal-footer">
+                    <button id="delete-cancel-btn-2" class="modal-btn cancel">Cancel</button>
+                    <button id="delete-confirm-btn-2" class="modal-btn delete">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Including JavaScript files for animations, managers, components, and main app logic -->
+    
+    <!-- Splash Screen -->
+    <script src="js/splash.js"></script>
+    
+    <!-- Supabase SDK (for Authentication) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    
+    <!-- Firebase SDK (for Signaling) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="js/firebase-config.js"></script>
+    
+    <!-- IPC Bridge (Electron) -->
+    <script src="js/ipc-bridge.js"></script>
+    
+    <!-- WebRTC Manager -->
+    <script src="js/webrtc/webrtc-manager.js"></script>
+    <script src="js/webrtc/parent-audio-controller.js"></script>
+    
+    <!-- Recording Manager -->
+    <script src="js/recording/recording-manager.js"></script>
+    
+    <!-- Animations -->
+    <script src="js/animations/dust-animation.js"></script>
+    <script src="js/animations/particles.js"></script>
+    
+    <!-- Loaders -->
+    <script src="js/loaders/component-loader.js"></script>
+    <script src="js/loaders/feature-loader.js"></script>
+    
+    <!-- Managers -->
+    <script src="js/managers/connection-manager.js"></script>
+    <script src="js/managers/dialog-manager.js"></script>
+    <script src="js/managers/ui-manager.js"></script>
+    <script src="js/managers/window-manager.js"></script>
+    
+    <!-- API Configuration -->
+    <script src="js/config/api-config.js"></script>
+    
+    <!-- Authentication System -->
+    <script src="js/managers/auth/signin-handler.js"></script>
+    <script src="js/managers/auth/signup-handler.js"></script>
+    <script src="js/managers/auth/user-info-handler.js"></script>
+    <script src="js/managers/auth/auth-manager.js"></script>
+    <script src="js/components/auth-ui/auth-ui.js"></script>
+    
+    <!-- Main App -->
+    <script src="js/app.js"></script>
+</body>
+</html>

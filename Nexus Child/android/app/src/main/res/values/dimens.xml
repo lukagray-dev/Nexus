@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="menu_width">150dp</dimen>
+    <dimen name="sidebar_width">280dp</dimen>
+    <dimen name="sidebar_header_height">72dp</dimen>
+    <dimen name="sidebar_icon_size">22dp</dimen>
+    <dimen name="sidebar_item_padding_vertical">14dp</dimen>
+    <dimen name="sidebar_item_padding_horizontal">20dp</dimen>
+    <dimen name="child_id_text_size">32sp</dimen>
+    <dimen name="status_text_size">13sp</dimen>
+    <dimen name="status_led_size">8dp</dimen>
+    <dimen name="page_padding">24dp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
+</resources>

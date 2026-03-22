@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chats Feature Panel -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/panel_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/spacing_medium"
+    app:cardBackgroundColor="@color/panel_background"
+    app:cardCornerRadius="@dimen/corner_radius_large"
+    app:cardElevation="@dimen/elevation_medium"
+    app:strokeColor="@color/border_primary"
+    app:strokeWidth="@dimen/border_width">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            style="@style/PanelHeaderStyle">
+
+            <ImageView
+                android:id="@+id/panel_icon"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:src="@drawable/ic_chats"
+                android:contentDescription="@string/feature_chats"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/accent_primary" />
+
+            <TextView
+                android:id="@+id/panel_title"
+                style="@style/PanelTitleStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_medium"
+                android:text="@string/feature_chats"
+                app:layout_constraintStart_toEndOf="@id/panel_icon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <!-- Search Bar -->
+            <EditText
+                android:id="@+id/chats_search"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:hint="Search chats..."
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:background="@drawable/search_background"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="12sp"
+                android:singleLine="true"
+                app:layout_constraintStart_toEndOf="@id/panel_title"
+                app:layout_constraintEnd_toStartOf="@id/panel_close"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageView
+                android:id="@+id/panel_close"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:contentDescription="@string/close"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/text_secondary" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/border_width"
+            android:background="@color/border_primary" />
+
+        <!-- Panel Content Container -->
+        <FrameLayout
+            android:id="@+id/panel_content"
+            android:layout_width="match_parent"
+            android:layout_height="400dp"
+            android:padding="@dimen/spacing_medium">
+            
+            <!-- ScrollView for chats list -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingBottom="72dp"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:id="@+id/chats_list_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    
+                    <!-- Placeholder -->
+                    <LinearLayout
+                        android:id="@+id/chats_placeholder"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp"
+                        android:visibility="visible">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="💬"
+                            android:textSize="48sp"
+                            android:alpha="0.3"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No chats"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="8dp"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- Play/Pause Button -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/chats_play_pause_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|bottom"
+                android:layout_margin="16dp"
+                android:src="@android:drawable/ic_media_play"
+                app:backgroundTint="#FBBF24"
+                app:tint="@android:color/black"/>
+            
+        </FrameLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

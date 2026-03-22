@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Nexus - Advanced parental control system with comprehensive monitoring. Native performance, minimal detectability, maximum oversight.">
+    <meta name="keywords" content="parental control, child monitoring, device tracking, family safety">
+    <title>Nexus | Advanced Parental Control System</title>
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Custom Scripts -->
+    <script type="module" src="js/main.js" defer></script>
+    <script type="module" src="js/three-scene.js" defer></script>
+    <script type="module" src="js/scroll-animations.js" defer></script>
+    <script type="module" src="js/interactions.js" defer></script>
+    <script type="module" src="js/dust-animation.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <img src="assets/Nexus.png" alt="Nexus Logo" class="logo-image">
+                <span class="logo-text">NEXUS</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#capabilities">Capabilities</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#" id="pricing-btn">Pricing</a></li>
+                <li><a href="#download" class="btn-nav">Download</a></li>
+            </ul>
+            <button class="menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Pricing Modal -->
+    <div id="pricing-modal" class="pricing-modal">
+        <div class="pricing-modal-overlay"></div>
+        <div class="pricing-modal-content">
+            <button class="pricing-close" aria-label="Close pricing">&times;</button>
+            
+            <div class="pricing-header">
+                <span class="section-badge">Pricing</span>
+            </div>
+
+            <div class="pricing-cards">
+                <!-- Free Plan -->
+                <div class="pricing-card-3d">
+                    <div class="pricing-card-inner">
+                        <div class="pricing-badge">Free</div>
+                        <div class="pricing-price">
+                            <span class="price-amount">$0</span>
+                            <span class="price-period">/month</span>
+                        </div>
+                        <h3 class="pricing-title">Community</h3>
+                        <p class="pricing-description">Perfect for trying out Nexus</p>
+                        <ul class="pricing-features">
+                            <li>✓ 1 Device</li>
+                            <li>✓ Basic Monitoring</li>
+                            <li>✓ 7-Day History</li>
+                            <li>✓ Community Support</li>
+                            <li>✗ Real-time Alerts</li>
+                            <li>✗ Advanced Features</li>
+                        </ul>
+                        <button class="pricing-btn">Get Started</button>
+                    </div>
+                </div>
+
+                <!-- Plus Plan -->
+                <div class="pricing-card-3d pricing-card-featured">
+                    <div class="pricing-featured-badge">Most Popular</div>
+                    <div class="pricing-card-inner">
+                        <div class="pricing-badge pricing-badge-plus">Plus</div>
+                        <div class="pricing-price">
+                            <span class="price-amount">$9.99</span>
+                            <span class="price-period">/month</span>
+                        </div>
+                        <h3 class="pricing-title">Family</h3>
+                        <p class="pricing-description">Best for most families</p>
+                        <ul class="pricing-features">
+                            <li>✓ 3 Devices</li>
+                            <li>✓ Full Monitoring</li>
+                            <li>✓ 30-Day History</li>
+                            <li>✓ Priority Support</li>
+                            <li>✓ Real-time Alerts</li>
+                            <li>✓ Stealth Mode</li>
+                        </ul>
+                        <button class="pricing-btn pricing-btn-featured">Get Started</button>
+                    </div>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="pricing-card-3d">
+                    <div class="pricing-card-inner">
+                        <div class="pricing-badge pricing-badge-premium">Premium</div>
+                        <div class="pricing-price">
+                            <span class="price-amount">$19.99</span>
+                            <span class="price-period">/month</span>
+                        </div>
+                        <h3 class="pricing-title">Enterprise</h3>
+                        <p class="pricing-description">For large families</p>
+                        <ul class="pricing-features">
+                            <li>✓ Unlimited Devices</li>
+                            <li>✓ Full Monitoring</li>
+                            <li>✓ Unlimited History</li>
+                            <li>✓ 24/7 Support</li>
+                            <li>✓ All Features</li>
+                            <li>✓ Custom Integration</li>
+                        </ul>
+                        <button class="pricing-btn">Get Started</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pricing-note">
+                <p>All plans include core monitoring features. Upgrade or downgrade anytime.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-video-placeholder">
+            <!-- Video placeholder - will be replaced with actual demo video -->
+        </div>
+        <div class="scroll-indicator">
+            <span>Scroll to explore</span>
+            <svg class="scroll-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="intro-section">
+        <div class="container">
+            <div class="intro-content">
+                <span class="badge">Parental Control Reimagined</span>
+                <h1 class="intro-title">
+                    <span class="gradient-text">Centralized Control.</span><br>
+                    <span class="dim-text">Complete Oversight.</span>
+                </h1>
+                <p class="intro-subtitle">
+                    Advanced monitoring system designed for comprehensive device supervision.<br>
+                    Native performance. Minimal detectability. Maximum peace of mind.
+                </p>
+                <div class="intro-cta">
+                    <a href="#download" class="btn btn-primary">Get Started</a>
+                    <a href="#features" class="btn btn-secondary">Explore Features</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features Section -->
+    <section class="features-section" id="features">
+        <canvas id="dust-canvas" class="dust-canvas"></canvas>
+        <div class="container-full">
+            <div class="section-header">
+                <span class="section-badge">Capabilities</span>
+                <h2 class="section-title">Complete Visibility</h2>
+                <p class="section-subtitle">Every aspect of device activity, monitored in real-time</p>
+            </div>
+
+            <div class="features-horizontal-wrapper">
+                <div class="features-horizontal-scroll">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Live Camera Access</h3>
+                        <p class="feature-description">
+                            Real-time access to front and rear cameras. See what they see, when they see it.
+                            High-quality video streaming with minimal latency using WebRTC technology.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Screen Monitoring</h3>
+                        <p class="feature-description">
+                            Live screen streaming and high-resolution snapshots. Monitor exactly what's displayed
+                            on the device in real-time, including all apps and activities.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Microphone Monitoring</h3>
+                        <p class="feature-description">
+                            Live audio streaming from the device microphone. Monitor conversations and ambient
+                            sounds with crystal-clear audio quality.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">GPS Location Tracking</h3>
+                        <p class="feature-description">
+                            Precise real-time location tracking with history playback. Know where they are,
+                            where they've been, and receive geofencing alerts.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Message Monitoring</h3>
+                        <p class="feature-description">
+                            Complete access to SMS, WhatsApp, Telegram, and Messenger conversations.
+                            View messages, media, and even deleted content through accessibility services.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Notification Interception</h3>
+                        <p class="feature-description">
+                            Capture all system and app notifications as they appear. Nothing slips through—
+                            every alert, message, and update is logged and accessible.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Call Monitoring</h3>
+                        <p class="feature-description">
+                            Complete call history with real-time monitoring of incoming and outgoing calls.
+                            Track duration, contacts, and call patterns.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">App Usage Tracking</h3>
+                        <p class="feature-description">
+                            Detailed metrics on application usage including duration, frequency, and patterns.
+                            Understand how time is spent on the device.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Browser History</h3>
+                        <p class="feature-description">
+                            Complete browsing history across Chrome, Firefox, and other mobile browsers.
+                            Monitor web activity and search queries.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                <polyline points="13 2 13 9 20 9"></polyline>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">File Access</h3>
+                        <p class="feature-description">
+                            Browse and access all files stored on the device. View photos, videos, documents,
+                            and downloads remotely.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Remote App Control</h3>
+                        <p class="feature-description">
+                            Block or allow specific applications remotely. Enforce usage restrictions and
+                            manage app permissions from your dashboard.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Direct Audio Broadcast</h3>
+                        <p class="feature-description">
+                            Send voice messages that play at maximum volume, bypassing silent mode.
+                            Ensure critical alerts are always heard.
+                        </p>
+                    </div>
+                </div>
+            </div>
+    </section>
+
+    <!-- Quick Setup Section -->
+    <section class="setup-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Quick Start</span>
+                <h2 class="section-title">Setup Agent in 2 mins</h2>
+                <p class="section-subtitle">Get started with Nexus in just a few simple steps</p>
+            </div>
+
+            <div class="setup-container">
+                <div class="setup-steps">
+                    <div class="setup-step" data-step="1">
+                        <div class="step-number">01</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Create Firebase Project</h3>
+                            <p class="step-description">
+                                Set up a free Firebase project at console.firebase.google.com. Enable Realtime Database
+                                and configure authentication. Download your configuration file.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="setup-step" data-step="2">
+                        <div class="step-number">02</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Install Agent on Child Device</h3>
+                            <p class="step-description">
+                                Download and install the Nexus Child app on the target device. Grant all required
+                                permissions including accessibility, location, and device admin.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="setup-step" data-step="3">
+                        <div class="step-number">03</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Configure Connection</h3>
+                            <p class="step-description">
+                                Enter your Firebase credentials in the Agent app. The device will automatically
+                                register and begin syncing data to your Firebase database.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="setup-step" data-step="4">
+                        <div class="step-number">04</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Install Dashboard</h3>
+                            <p class="step-description">
+                                Download Nexus Parent on your monitoring device (Windows, macOS, or Linux).
+                                Connect using the same Firebase credentials to start monitoring.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="setup-step" data-step="5">
+                        <div class="step-number">05</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Start Monitoring</h3>
+                            <p class="step-description">
+                                You're all set! Access real-time data, view activity logs, and control the device
+                                remotely from your Dashboard. Enable stealth mode for invisible operation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-phone-container">
+                    <div class="phone-mockup">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <!-- Step 1: Firebase -->
+                            <div class="phone-content active" data-screen="1">
+                                <div class="phone-icon">🔥</div>
+                                <h4>Firebase Console</h4>
+                                <p>console.firebase.google.com</p>
+                                <div class="phone-button">Create Project</div>
+                            </div>
+
+                            <!-- Step 2: Install App -->
+                            <div class="phone-content" data-screen="2">
+                                <div class="phone-icon">📱</div>
+                                <h4>Nexus Child</h4>
+                                <p>Installing...</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Configure -->
+                            <div class="phone-content" data-screen="3">
+                                <div class="phone-icon">⚙️</div>
+                                <h4>Configuration</h4>
+                                <div class="config-input">Firebase URL</div>
+                                <div class="config-input">API Key</div>
+                                <div class="phone-button">Connect</div>
+                            </div>
+
+                            <!-- Step 4: Dashboard -->
+                            <div class="phone-content" data-screen="4">
+                                <div class="phone-icon">💻</div>
+                                <h4>Nexus Parent</h4>
+                                <p>Dashboard Ready</p>
+                                <div class="phone-button">Open Dashboard</div>
+                            </div>
+
+                            <!-- Step 5: Monitoring -->
+                            <div class="phone-content" data-screen="5">
+                                <div class="phone-icon">✓</div>
+                                <h4>Connected</h4>
+                                <p>Nexus protection active</p>
+                                <div class="status-indicator">
+                                    <span class="status-dot"></span>
+                                    <span>Monitoring</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Parent Dashboard Setup Section -->
+    <section class="setup-section setup-section-reverse">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Dashboard Setup</span>
+                <h2 class="section-title">Setup Parent Dashboard</h2>
+                <p class="section-subtitle">Monitor and control from your device in minutes</p>
+            </div>
+
+            <div class="setup-container setup-container-reverse">
+                <div class="setup-phone-container">
+                    <div class="desktop-mockup">
+                        <div class="desktop-bar">
+                            <div class="desktop-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div class="desktop-screen">
+                            <!-- Parent Step 1: Download -->
+                            <div class="desktop-content active" data-screen="p1">
+                                <div class="desktop-icon">📥</div>
+                                <h4>Download Dashboard</h4>
+                                <p>Windows • macOS • Linux</p>
+                                <div class="phone-button">Download</div>
+                            </div>
+
+                            <!-- Parent Step 2: Install -->
+                            <div class="desktop-content" data-screen="p2">
+                                <div class="desktop-icon">⚙️</div>
+                                <h4>Installing...</h4>
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <p>Setting up Nexus Parent</p>
+                            </div>
+
+                            <!-- Parent Step 3: Login -->
+                            <div class="desktop-content" data-screen="p3">
+                                <div class="desktop-icon">🔐</div>
+                                <h4>Connect to Firebase</h4>
+                                <div class="config-input">Firebase Project ID</div>
+                                <div class="config-input">API Key</div>
+                                <div class="phone-button">Sign In</div>
+                            </div>
+
+                            <!-- Parent Step 4: Device List -->
+                            <div class="desktop-content" data-screen="p4">
+                                <div class="desktop-icon">📱</div>
+                                <h4>Connected Devices</h4>
+                                <div class="device-list">
+                                    <div class="device-item">
+                                        <span class="status-dot"></span>
+                                        <span>Child's Phone</span>
+                                    </div>
+                                </div>
+                                <div class="phone-button">View Dashboard</div>
+                            </div>
+
+                            <!-- Parent Step 5: Dashboard -->
+                            <div class="desktop-content" data-screen="p5">
+                                <div class="dashboard-grid">
+                                    <div class="dashboard-card">📊 Activity</div>
+                                    <div class="dashboard-card">📍 Location</div>
+                                    <div class="dashboard-card">💬 Messages</div>
+                                    <div class="dashboard-card">📞 Calls</div>
+                                </div>
+                                <div class="status-indicator">
+                                    <span class="status-dot"></span>
+                                    <span>Live Monitoring</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-steps">
+                    <div class="setup-step setup-step-reverse" data-step="p1">
+                        <div class="step-content">
+                            <h3 class="step-title">Download Parent App</h3>
+                            <p class="step-description">
+                                Download Nexus Parent for your operating system. Available for Windows, macOS, 
+                                and Linux. The installer is lightweight and installs in seconds.
+                            </p>
+                        </div>
+                        <div class="step-number">01</div>
+                    </div>
+
+                    <div class="setup-step setup-step-reverse" data-step="p2">
+                        <div class="step-content">
+                            <h3 class="step-title">Install Dashboard</h3>
+                            <p class="step-description">
+                                Run the installer and follow the setup wizard. The app will automatically 
+                                configure itself and prepare the monitoring interface.
+                            </p>
+                        </div>
+                        <div class="step-number">02</div>
+                    </div>
+
+                    <div class="setup-step setup-step-reverse" data-step="p3">
+                        <div class="step-content">
+                            <h3 class="step-title">Connect to Firebase</h3>
+                            <p class="step-description">
+                                Enter the same Firebase credentials you used for the Agent. The Dashboard 
+                                will connect to your database and sync all device data.
+                            </p>
+                        </div>
+                        <div class="step-number">03</div>
+                    </div>
+
+                    <div class="setup-step setup-step-reverse" data-step="p4">
+                        <div class="step-content">
+                            <h3 class="step-title">Select Device</h3>
+                            <p class="step-description">
+                                View all connected child devices in your account. Select the device you want 
+                                to monitor and access its complete activity dashboard.
+                            </p>
+                        </div>
+                        <div class="step-number">04</div>
+                    </div>
+
+                    <div class="setup-step setup-step-reverse" data-step="p5">
+                        <div class="step-content">
+                            <h3 class="step-title">Start Monitoring</h3>
+                            <p class="step-description">
+                                Access real-time location, messages, calls, app usage, and more. Control 
+                                device settings remotely and receive instant alerts for important events.
+                            </p>
+                        </div>
+                        <div class="step-number">05</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works-section" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Architecture</span>
+                <h2 class="section-title">How Nexus Works</h2>
+                <p class="section-subtitle">A sophisticated two-part system designed for seamless operation</p>
+            </div>
+
+            <div class="architecture-grid">
+                <div class="architecture-card">
+                    <div class="architecture-number">01</div>
+                    <h3 class="architecture-title">Nexus Child (Agent)</h3>
+                    <p class="architecture-description">
+                        The Agent is installed on the child's device. Built with native technologies
+                        (Kotlin for Android, Swift for iOS), it operates at the system level with minimal
+                        resource usage. Features include:
+                    </p>
+                    <ul class="architecture-list">
+                        <li>Background service operation</li>
+                        <li>System-level integration</li>
+                        <li>Stealth mode capability</li>
+                        <li>Auto-recovery from termination</li>
+                        <li>Survives device reboots</li>
+                    </ul>
+                </div>
+
+                <div class="architecture-card">
+                    <div class="architecture-number">02</div>
+                    <h3 class="architecture-title">Nexus Parent (Dashboard)</h3>
+                    <p class="architecture-description">
+                        The Dashboard is your command center, available on desktop (Windows, macOS, Linux)
+                        and mobile (Android, iOS). Built with Electron for desktop and native frameworks
+                        for mobile. Features include:
+                    </p>
+                    <ul class="architecture-list">
+                        <li>Real-time data visualization</li>
+                        <li>Multi-device management</li>
+                        <li>Command dispatch system</li>
+                        <li>Historical data analysis</li>
+                        <li>Secure WebRTC connections</li>
+                    </ul>
+                </div>
+
+                <div class="architecture-card">
+                    <div class="architecture-number">03</div>
+                    <h3 class="architecture-title">Secure Communication</h3>
+                    <p class="architecture-description">
+                        Data flows securely between Agent and Dashboard using Firebase Realtime Database
+                        for signaling and WebRTC for peer-to-peer media streaming. The architecture ensures:
+                    </p>
+                    <ul class="architecture-list">
+                        <li>End-to-end encrypted connections</li>
+                        <li>Low-latency media streaming</li>
+                        <li>Reliable command delivery</li>
+                        <li>Automatic reconnection</li>
+                        <li>Minimal bandwidth usage</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Excellence Section -->
+    <section class="tech-section">
+        <div class="container">
+            <div class="tech-content">
+                <div class="tech-text">
+                    <span class="section-badge">Technology</span>
+                    <h2 class="section-title">Built for Performance</h2>
+                    <p class="tech-description">
+                        Nexus is engineered with native technologies to ensure maximum stability,
+                        performance, and integration with device operating systems. Every component
+                        is optimized for efficiency and reliability.
+                    </p>
+                    <div class="tech-stats">
+                        <div class="tech-stat">
+                            <h4>&lt;100MB</h4>
+                            <p>Total app size</p>
+                        </div>
+                        <div class="tech-stat">
+                            <h4>&lt;50MB</h4>
+                            <p>RAM usage</p>
+                        </div>
+                        <div class="tech-stat">
+                            <h4>&lt;5%</h4>
+                            <p>Battery impact</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <span class="tech-label">Android</span>
+                        <span class="tech-value">Kotlin</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-label">iOS</span>
+                        <span class="tech-value">Swift</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-label">Desktop</span>
+                        <span class="tech-value">Electron</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-label">Streaming</span>
+                        <span class="tech-value">WebRTC</span>
+                    </div>
+                    <div class="tech-item">
+                        <span class="tech-label">Backend</span>
+                        <span class="tech-value">Firebase</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced Capabilities Section -->
+    <section class="capabilities-section" id="capabilities">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Advanced Features</span>
+                <h2 class="section-title">Stealth & Survivability</h2>
+                <p class="section-subtitle">Designed to remain undetected and operational</p>
+            </div>
+
+            <div class="capabilities-grid-3d">
+                <div class="capability-card-3d">
+                    <div class="capability-card-inner">
+                        <div class="capability-icon-3d">🎭</div>
+                        <h3>Stealth Mode</h3>
+                        <p>
+                            Remove the app from the app drawer and recent tasks list. The Agent operates 
+                            invisibly in the background with minimal system footprint.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="capability-card-3d">
+                    <div class="capability-card-inner">
+                        <div class="capability-icon-3d">🔄</div>
+                        <h3>Dynamic Camouflage</h3>
+                        <p>
+                            Change the app icon and name to mimic system apps or popular applications. 
+                            Blend seamlessly with legitimate software.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="capability-card-3d">
+                    <div class="capability-card-inner">
+                        <div class="capability-icon-3d">🛡️</div>
+                        <h3>Auto-Recovery</h3>
+                        <p>
+                            Automatically restarts after forced stops or termination attempts. Survives 
+                            device reboots and system updates.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="capability-card-3d">
+                    <div class="capability-card-inner">
+                        <div class="capability-icon-3d">⚡</div>
+                        <h3>Battery Efficient</h3>
+                        <p>
+                            Optimized background operation with minimal battery drain. Smart resource 
+                            management ensures long-term operation.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="capability-card-3d">
+                    <div class="capability-card-inner">
+                        <div class="capability-icon-3d">�</div>
+                        <h3>Tamper Resistant</h3>
+                        <p>
+                            Protected against uninstallation attempts. Requires parent authentication 
+                            for any configuration changes or removal.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="capability-card-3d">
+                    <div class="capability-card-inner">
+                        <div class="capability-icon-3d">📡</div>
+                        <h3>Offline Capable</h3>
+                        <p>
+                            Continues logging data even without internet connection. Automatically syncs 
+                            when connectivity is restored.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="use-cases-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Use Cases</span>
+                <h2 class="section-title">Designed for Responsible Parenting</h2>
+                <p class="section-subtitle">Legitimate scenarios where Nexus provides peace of mind</p>
+            </div>
+
+            <div class="use-cases-grid">
+                <div class="use-case-card">
+                    <h3>Online Safety</h3>
+                    <p>
+                        Monitor your child's online interactions to protect them from cyberbullying,
+                        inappropriate content, and online predators. Early detection can prevent serious harm.
+                    </p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3>Screen Time Management</h3>
+                    <p>
+                        Track app usage patterns and enforce healthy digital habits. Understand how time
+                        is spent and set appropriate boundaries for device usage.
+                    </p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3>Location Awareness</h3>
+                    <p>
+                        Know where your children are at all times. Receive alerts when they arrive at or
+                        leave designated locations like school, home, or friends' houses.
+                    </p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3>Emergency Response</h3>
+                    <p>
+                        In emergency situations, access real-time camera, microphone, and location data.
+                        Communicate directly through audio broadcast features.
+                    </p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3>Digital Wellbeing</h3>
+                    <p>
+                        Help children develop healthy relationships with technology. Monitor for signs of
+                        addiction, sleep disruption, or excessive social media use.
+                    </p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3>Academic Focus</h3>
+                    <p>
+                        Ensure device usage during school hours is appropriate. Block distracting apps
+                        during study time and monitor educational app engagement.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modded Apps Section -->
+    <section class="mods-section">
+        <div class="container">
+            <div class="mods-content">
+                <div class="mods-text">
+                    <span class="section-badge">Future Enhancement</span>
+                    <h2 class="section-title">Deep App Integration</h2>
+                    <p class="mods-description">
+                        For enhanced visibility beyond accessibility services, Nexus will support optional
+                        modified versions of popular apps. These provide direct database access for complete
+                        message history, including deleted content.
+                    </p>
+                    <div class="mods-features">
+                        <div class="mods-feature">
+                            <h4>No Root Required</h4>
+                            <p>Application-layer modifications only. No system-level access needed.</p>
+                        </div>
+                        <div class="mods-feature">
+                            <h4>Supported Apps</h4>
+                            <p>WhatsApp, Telegram, Instagram, Messenger, and more coming soon.</p>
+                        </div>
+                        <div class="mods-feature">
+                            <h4>Easy Installation</h4>
+                            <p>Built-in app catalog with one-tap installation from the Agent.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mods-visual">
+                    <div class="mods-apps">
+                        <div class="mod-app-item">WhatsApp</div>
+                        <div class="mod-app-item">Telegram</div>
+                        <div class="mod-app-item">Instagram</div>
+                        <div class="mod-app-item">Messenger</div>
+                        <div class="mod-app-item">Snapchat</div>
+                        <div class="mod-app-item">Gmail</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">FAQ</span>
+                <h2 class="section-title">Frequently Asked Questions</h2>
+            </div>
+
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Is Nexus legal to use?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Yes, when used as intended. Nexus is designed exclusively for parental monitoring
+                            of minor children's devices owned or issued by the parent/guardian. This use case
+                            is legally recognized in most jurisdictions as a legitimate exercise of parental
+                            responsibility. Using Nexus to monitor adults or devices without proper authorization
+                            is illegal and strictly prohibited.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Does Nexus require root access?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            No. Nexus operates entirely within standard Android and iOS permissions. The core
+                            Agent functionality works without root access. Optional modded apps also operate at
+                            the application layer without requiring system-level privileges.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>How is data transmitted and stored?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Live media streams (camera, microphone, screen) use WebRTC peer-to-peer connections
+                            with end-to-end encryption. Signaling and command data flow through Firebase Realtime
+                            Database with secure authentication. Historical data is stored in your Firebase project,
+                            which you control.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>What platforms are supported?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            <strong>Agent (Child):</strong> Android 10+ (fully functional), iOS (planned).<br>
+                            <strong>Dashboard (Parent):</strong> Windows, macOS, Linux (Electron desktop app),
+                            Android and iOS mobile apps (in development).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Can the child detect or remove Nexus?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Nexus includes stealth mode (hidden from app drawer), dynamic camouflage (disguised
+                            icon/name), and tamper resistance (requires parent authentication for removal). It
+                            auto-recovers from forced stops and survives reboots. However, a tech-savvy user with
+                            sufficient determination may eventually detect it through system settings or developer
+                            tools.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>What is the battery and performance impact?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Nexus is optimized for minimal resource usage. Typical battery impact is less than 5%
+                            per day with passive monitoring. RAM usage stays under 50MB. Active features like live
+                            camera streaming will increase battery consumption proportionally to usage duration.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>How do I set up Nexus?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            1. Set up a Firebase project and configure Realtime Database<br>
+                            2. Download and install the Agent on the child's device<br>
+                            3. Grant necessary permissions (accessibility, location, etc.)<br>
+                            4. Download and install the Dashboard on your monitoring device<br>
+                            5. Connect both apps using the device ID<br>
+                            Detailed setup guides are included with each download.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Is there a subscription fee?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Nexus is currently open-source and free to use. You only need to provide your own
+                            Firebase project (which has a generous free tier). There are no subscription fees,
+                            though Firebase usage costs may apply if you exceed free tier limits.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>What about privacy and ethics?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Nexus is a powerful tool that must be used responsibly. We recommend transparency
+                            with age-appropriate children about monitoring. The goal is safety and guidance, not
+                            surveillance for its own sake. Consider your child's age, maturity, and the specific
+                            risks you're addressing. Balance oversight with trust and open communication.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Can I monitor multiple devices?</span>
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>
+                            Yes. The Dashboard supports managing multiple child devices simultaneously. Each
+                            device gets a unique ID, and you can switch between them in the Dashboard interface.
+                            All devices connect to the same Firebase project.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download-section" id="download">
+        <div class="container">
+            <div class="download-content">
+                <span class="section-badge">Get Started</span>
+                <h2 class="section-title">Download Nexus</h2>
+                <p class="download-subtitle">
+                    Choose the appropriate version for your needs. Both Agent and Dashboard are required
+                    for full functionality.
+                </p>
+
+                <div class="download-grid">
+                    <div class="download-card">
+                        <div class="download-header">
+                            <h3>Nexus Child</h3>
+                            <span class="download-badge">Agent</span>
+                        </div>
+                        <p class="download-description">
+                            Install on the child's device. Provides comprehensive monitoring capabilities
+                            with minimal detectability.
+                        </p>
+                        <div class="download-platforms">
+                            <div class="platform-item">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M17.523 15.341c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm-11.046 0c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm11.405-6.846c1.151 0 2.083.932 2.083 2.083v4.846c0 1.151-.932 2.083-2.083 2.083h-11.764c-1.151 0-2.083-.932-2.083-2.083v-4.846c0-1.151.932-2.083 2.083-2.083h11.764zm.56-1.5h-12.884c-1.979 0-3.583 1.604-3.583 3.583v4.846c0 1.979 1.604 3.583 3.583 3.583h12.884c1.979 0 3.583-1.604 3.583-3.583v-4.846c0-1.979-1.604-3.583-3.583-3.583z" />
+                                </svg>
+                                <span>Android 10+</span>
+                            </div>
+                            <div class="platform-item platform-disabled">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                                </svg>
+                                <span>iOS (Coming Soon)</span>
+                            </div>
+                        </div>
+                        <a href="https://github.com/YOUR_USERNAME/Nexus/releases" target="_blank"
+                            class="btn btn-primary btn-download">
+                            Download Agent
+                        </a>
+                    </div>
+
+                    <div class="download-card">
+                        <div class="download-header">
+                            <h3>Nexus Parent</h3>
+                            <span class="download-badge">Dashboard</span>
+                        </div>
+                        <p class="download-description">
+                            Install on your monitoring device. Provides real-time oversight and control
+                            over all connected child devices.
+                        </p>
+                        <div class="download-platforms">
+                            <div class="platform-item">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+                                </svg>
+                                <span>Windows</span>
+                            </div>
+                            <div class="platform-item">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                                </svg>
+                                <span>macOS</span>
+                            </div>
+                            <div class="platform-item">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.84-.415 1.917-.415 2.998 0 1.031.125 2.119.45 3.287.325 1.155.816 2.313 1.5 3.287 1.125 1.609 2.865 3.568 5.475 3.568 1.865 0 2.76-.762 4.475-.762 1.705 0 2.465.762 4.475.762 2.61 0 4.35-1.959 5.475-3.568.684-.974 1.175-2.132 1.5-3.287.325-1.168.45-2.256.45-3.287 0-1.081-.137-2.158-.415-2.998-.589-1.771-1.831-3.47-2.716-4.521-.75-1.067-.974-1.928-1.05-3.02-.065-1.491 1.056-5.965-3.17-6.298-.165-.013-.325-.021-.48-.021z" />
+                                </svg>
+                                <span>Linux</span>
+                            </div>
+                            <div class="platform-item">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M17.523 15.341c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm-11.046 0c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm11.405-6.846c1.151 0 2.083.932 2.083 2.083v4.846c0 1.151-.932 2.083-2.083 2.083h-11.764c-1.151 0-2.083-.932-2.083-2.083v-4.846c0-1.151.932-2.083 2.083-2.083h11.764zm.56-1.5h-12.884c-1.979 0-3.583 1.604-3.583 3.583v4.846c0 1.979 1.604 3.583 3.583 3.583h12.884c1.979 0 3.583-1.604 3.583-3.583v-4.846c0-1.979-1.604-3.583-3.583-3.583z" />
+                                </svg>
+                                <span>Android</span>
+                            </div>
+                            <div class="platform-item platform-disabled">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                                </svg>
+                                <span>iOS (Coming Soon)</span>
+                            </div>
+                        </div>
+                        <a href="https://github.com/YOUR_USERNAME/Nexus/releases" target="_blank"
+                            class="btn btn-primary btn-download">
+                            Download Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <div class="download-note">
+                    <p>
+                        <strong>Note:</strong> You'll need to set up a Firebase project before using Nexus.
+                        Detailed setup instructions are included in the documentation. Both apps are open-source
+                        and available on GitHub.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Legal Notice Section -->
+    <section class="legal-section">
+        <div class="container">
+            <div class="legal-content">
+                <h3>Important Legal Notice</h3>
+                <p>
+                    Nexus is designed and intended exclusively for lawful parental monitoring of minor children's
+                    devices that are owned by, issued to, or primarily used by those minors under the parent or
+                    guardian's care. This use case is widely recognized as a legitimate exercise of parental
+                    responsibility in most jurisdictions.
+                </p>
+                <p>
+                    <strong>Prohibited Uses:</strong> Using Nexus to monitor adults, unrelated third parties, or
+                    devices without proper legal authorization is strictly prohibited and may be illegal in your
+                    jurisdiction. Users are solely responsible for ensuring their use of Nexus complies with all
+                    applicable laws and regulations.
+                </p>
+                <p>
+                    <strong>No Warranty:</strong> Nexus is provided "as is" without warranty of any kind. The
+                    developers assume no liability for how the software is used or any consequences arising from
+                    its use.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3 class="logo-text">NEXUS</h3>
+                    <p>Centralized control for modern parenting.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Product</h4>
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#download">Download</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Resources</h4>
+                    <a href="https://github.com/YOUR_USERNAME/Nexus" target="_blank">Documentation</a>
+                    <a href="https://github.com/YOUR_USERNAME/Nexus" target="_blank">GitHub</a>
+                    <a href="#faq">FAQ</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Legal</h4>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Responsible Use</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Nexus. Open-source parental control system.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

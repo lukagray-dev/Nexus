@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Particles Background (placeholder) -->
+    <View
+        android:id="@+id/particles_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000" />
+
+    <!-- Auth Container -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="24dp">
+
+            <!-- Glass Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:cardBackgroundColor="#D9181B1F"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="20dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="40dp"
+                    android:background="@drawable/glass_card_border">
+
+                    <!-- Brand -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Nexus"
+                        android:textSize="32sp"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Separator -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/auth_separator"
+                        android:layout_marginBottom="24dp" />
+
+                    <!-- Email Input -->
+                    <EditText
+                        android:id="@+id/signin_email"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Email"
+                        android:inputType="textEmailAddress"
+                        android:textColor="#e4e4e7"
+                        android:textColorHint="#80FFFFFF"
+                        android:background="@drawable/input_background"
+                        android:padding="14dp"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Password Input -->
+                    <EditText
+                        android:id="@+id/signin_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Password"
+                        android:inputType="textPassword"
+                        android:textColor="#e4e4e7"
+                        android:textColorHint="#80FFFFFF"
+                        android:background="@drawable/input_background"
+                        android:padding="14dp"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Sign In Button -->
+                    <Button
+                        android:id="@+id/signin_submit_btn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Sign In"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:background="@drawable/button_primary"
+                        android:padding="14dp"
+                        android:layout_marginTop="8dp" />
+
+                    <!-- Divider -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp">
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"
+                            android:background="#33FFFFFF" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="or"
+                            android:textColor="#80FFFFFF"
+                            android:textSize="12sp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"
+                            android:background="#33FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- Google Sign In Button -->
+                    <Button
+                        android:id="@+id/google_signin_btn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Sign in with Google"
+                        android:textColor="#e4e4e7"
+                        android:textSize="14sp"
+                        android:background="@drawable/button_secondary"
+                        android:padding="12dp"
+                        android:drawableStart="@drawable/ic_google"
+                        android:drawablePadding="12dp"
+                        android:gravity="center"
+                        android:drawableTint="@null" />
+
+                    <!-- Error Message -->
+                    <TextView
+                        android:id="@+id/signin_error"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:textColor="#f87171"
+                        android:textSize="13sp"
+                        android:padding="12dp"
+                        android:background="#1AEF4444"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center" />
+
+                    <!-- Muted Row -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Don't have an account?"
+                        android:textColor="#80FFFFFF"
+                        android:textSize="13sp"
+                        android:gravity="center"
+                        android:layout_marginTop="20dp" />
+
+                    <!-- Link Row -->
+                    <TextView
+                        android:id="@+id/show_signup_btn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Create account"
+                        android:textColor="#fbbf24"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:padding="8dp"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </FrameLayout>
+    </ScrollView>
+</FrameLayout>

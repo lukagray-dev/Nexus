@@ -1,0 +1,64 @@
+/* CSS Variables - Black & Gold Theme */
+:root {
+    /* Colors */
+    --color-black: #000000;
+    --color-dark: #0a0a0a;
+    --color-darker: #141414;
+    --color-gold: #FFD700;
+    --color-gold-light: #FFF4A3;
+    --color-gold-dark: #DAA520;
+    --color-white: #ffffff;
+    --color-gray: #808080;
+    --color-gray-light: #a0a0a0;
+    --color-gray-dark: #404040;
+    
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFF4A3 50%, #FFD700 100%);
+    --gradient-gold-radial: radial-gradient(circle, #FFF4A3 0%, #FFD700 100%);
+    --gradient-dark: linear-gradient(180deg, #000000 0%, #141414 100%);
+    
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 2rem;
+    --font-size-4xl: 2.5rem;
+    --font-size-5xl: 3rem;
+    --font-size-6xl: 4rem;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    --spacing-2xl: 4rem;
+    --spacing-3xl: 6rem;
+    
+    /* Border Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+    --shadow-gold: 0 0 40px rgba(255, 215, 0, 0.5);
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Z-index */
+    --z-nav: 1000;
+    --z-modal: 2000;
+    --z-tooltip: 3000;
+}

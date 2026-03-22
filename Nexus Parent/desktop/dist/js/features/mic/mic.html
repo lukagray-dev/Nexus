@@ -1,0 +1,67 @@
+<!-- Microphone Monitor Feature Window -->
+<div class="mic-content">
+    <div class="mic-header">
+        <div class="mic-status">
+            <span class="status-indicator"></span>
+            <span class="status-text">Microphone</span>
+        </div>
+        <div class="mic-controls">
+            <div class="record-wrap">
+                <button class="mic-btn record-btn" id="mic-record-btn" title="Record">
+                    <svg class="record-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="8" fill="currentColor" />
+                    </svg>
+                </button>
+                <div class="record-menu" id="mic-record-menu">
+                    <button class="record-menu-btn audio-only-btn" id="mic-audio-only-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        <span>Audio only</span>
+                    </button>
+                    <button class="record-menu-btn both-btn" id="mic-both-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 7l-7 5 7 5V7z"></path>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" transform="translate(0, 8) scale(0.5)"></path>
+                        </svg>
+                        <span>Video & Audio</span>
+                    </button>
+                </div>
+                <div class="record-timer" id="mic-record-timer">00:00</div>
+            </div>
+        </div>
+    </div>
+    <div class="mic-visualizer" id="mic-visualizer">
+        <div class="visualizer-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+            <p>Audio visualizer will appear here</p>
+        </div>
+        <!-- Parent Audio Mute/Unmute Button (Bottom Left) -->
+        <button class="parent-audio-btn" id="parent-audio-mute-btn" title="Speak to child (Muted)">
+            <svg id="parent-audio-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2Z"/>
+                <path d="M19 11C19 14.53 16.39 17.44 13 17.93V21H11V17.93C7.61 17.44 5 14.53 5 11H7C7 13.76 9.24 16 12 16C14.76 16 17 13.76 17 11H19Z"/>
+            </svg>
+            <div class="pulse-ring" id="parent-audio-pulse"></div>
+        </button>
+        <!-- Play/Pause Button (Bottom Right) -->
+        <button class="play-pause-btn" id="mic-play-pause-btn" title="Play/Pause">
+            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+        </button>
+    </div>
+</div>

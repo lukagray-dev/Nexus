@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Profile Dropdown Menu -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/profile_dropdown_background"
+    android:padding="8dp"
+    android:elevation="8dp">
+
+    <!-- Settings Button -->
+    <TextView
+        android:id="@+id/menu_settings"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/menu_settings"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/border_primary"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:alpha="0.3" />
+
+    <!-- Disconnect Button -->
+    <TextView
+        android:id="@+id/menu_disconnect"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/menu_disconnect"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Delete Account Button -->
+    <TextView
+        android:id="@+id/menu_delete_account"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/menu_delete_account"
+        android:textColor="@color/status_error"
+        android:textSize="14sp"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

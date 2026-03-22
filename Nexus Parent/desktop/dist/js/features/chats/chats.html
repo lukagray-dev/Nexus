@@ -1,0 +1,54 @@
+<!-- Production-Grade Chats Monitor Feature -->
+<div class="chats-content">
+    <!-- Conversation List View -->
+    <div id="chats-list-view" class="chats-list-view">
+        <div class="chats-header">
+            <div class="chats-title">Chats</div>
+            <div class="chats-controls">
+                <input type="text" id="chats-search" class="chats-search" placeholder="Search conversations...">
+            </div>
+        </div>
+        <div class="chats-conversation-list" id="chats-conversation-list">
+            <div class="list-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <p>No conversations yet</p>
+                <p class="hint">Start monitoring to see chats</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversation Detail View -->
+    <div id="chats-detail-view" class="chats-detail-view" style="display:none;">
+        <div class="chats-detail-header">
+            <button id="chats-back-btn" class="chats-back-btn" title="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <div class="chats-detail-info">
+                <div id="chats-detail-contact-name" class="chats-detail-contact-name">Contact Name</div>
+                <div id="chats-detail-app-name" class="chats-detail-app-name">App Name</div>
+            </div>
+        </div>
+        <div id="chats-messages-container" class="chats-messages-container">
+            <!-- Messages will be rendered here -->
+        </div>
+        <div id="chats-typing-indicator" class="chats-typing-indicator" style="display:none;">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span class="typing-text">typing...</span>
+        </div>
+    </div>
+
+    <!-- Play/Pause Button -->
+    <button class="play-pause-btn" id="chats-play-pause-btn" title="Start/Stop Monitoring">
+        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+    </button>
+</div>

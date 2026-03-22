@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidebar Footer with Stealth Mode Button -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom">
+
+    <!-- Solid Background -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:background="@color/sidebar_background" />
+
+    <!-- Gradient Overlay (black to transparent, top to bottom) -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@drawable/stealth_footer_gradient"
+        android:rotation="180" />
+
+    <!-- Footer Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="@android:color/transparent">
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border_primary"
+            android:layout_marginBottom="12dp"
+            android:alpha="0.3" />
+
+        <!-- Stealth Mode Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/stealth_mode_btn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="@string/stealth_mode"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textAllCaps="false"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:icon="@drawable/ic_eye"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="start"
+            app:iconPadding="16dp"
+            app:iconSize="24dp"
+            app:backgroundTint="@android:color/transparent"
+            app:rippleColor="@color/accent_primary"
+            app:strokeWidth="0dp"
+            style="@style/Widget.Material3.Button.TextButton" />
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="@dimen/menu_width"
+    android:layout_height="wrap_content"
+    android:background="@drawable/menu_dropdown_bg"
+    android:minWidth="0dp"
+    android:orientation="vertical"
+    android:paddingStart="6dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="6dp">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/menu_request_permissions_btn"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/request_permissions"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_menu_request"
+        app:iconPadding="6dp"
+        app:iconTint="@color/permissions_icon_tint"
+        app:iconGravity="textStart" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/menu_hide_app_btn"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:insetLeft="0dp" 
+        android:insetRight="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/hide_app"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_menu_hide"
+        app:iconPadding="6dp"
+        app:iconTint="@color/permissions_icon_tint"
+        app:iconGravity="textStart" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/menu_connect_gmail_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="@string/connect_gmail"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:icon="@drawable/ic_menu_gmail"
+            app:iconPadding="6dp"
+            app:iconTint="@color/permissions_icon_tint"
+            app:iconGravity="textStart" />
+
+        <ImageView
+            android:id="@+id/menu_gmail_status_icon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_gmail_status_disconnected" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/menu_change_app_icon_btn"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/change_app_icon"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_menu_app_icon"
+        app:iconPadding="6dp"
+        app:iconTint="@color/permissions_icon_tint"
+        app:iconGravity="textStart" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/menu_app_lock_btn"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/app_lock_dropdown"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_lock"
+        app:iconPadding="6dp"
+        app:iconTint="@color/permissions_icon_tint"
+        app:iconGravity="textStart" />
+
+</LinearLayout>

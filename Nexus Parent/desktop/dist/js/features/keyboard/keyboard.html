@@ -1,0 +1,31 @@
+<!-- Production-Grade Keyboard Monitoring Feature -->
+<div class="keyboard-content">
+    <div class="keyboard-header">
+        <div class="keyboard-title">Keylogging</div>
+        <div class="keyboard-controls">
+            <input type="text" id="keyboard-search" class="keyboard-search" placeholder="Search entries...">
+            <button id="keyboard-clear-btn" class="keyboard-clear-btn" title="Clear all entries">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="keyboard-entries-list" id="keyboard-entries-list">
+        <div class="list-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="M6 8h.01M10 8h.01M14 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h.01M10 16h.01M14 16h.01M18 16h.01"></path>
+            </svg>
+            <p>No keyboard activity yet</p>
+            <p class="hint">Start monitoring to see keyboard input</p>
+        </div>
+    </div>
+    
+    <!-- Play/Pause Button -->
+    <button class="play-pause-btn" id="keyboard-play-pause-btn" title="Start/Stop Monitoring">
+        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+    </button>
+</div>

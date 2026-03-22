@@ -1,0 +1,246 @@
+<!-- Authentication UI Component -->
+<div id="auth-screen" class="auth-screen">
+    <!-- Particles Background -->
+    <canvas id="auth-particles-canvas" class="particles-background"></canvas>
+    
+    <!-- Auth Container -->
+    <div class="auth-container">
+        
+        <!-- Sign In Form -->
+        <div id="auth-signin" class="auth-view">
+            <div class="glass-card">
+                <h1 class="brand">Nexus</h1>
+                <hr class="sep">
+                <form id="signin-form" class="form">
+                    <input 
+                        type="email" 
+                        id="signin-email" 
+                        class="input"
+                        placeholder="Email"
+                        required 
+                        autocomplete="email"
+                    />
+                    <input 
+                        type="password" 
+                        id="signin-password" 
+                        class="input"
+                        placeholder="Password"
+                        required 
+                        autocomplete="current-password"
+                    />
+                    <div style="text-align: right; margin-top: -8px; margin-bottom: 12px;">
+                        <button type="button" id="forgot-password-btn" class="link-btn" style="font-size: 12px; opacity: 0.8;">Forgot password?</button>
+                    </div>
+                    <button type="submit" id="signin-submit-btn" class="primary-btn">
+                        Sign In
+                    </button>
+                    
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <button type="button" id="google-signin-btn" class="secondary-btn google-btn">
+                        <svg width="20" height="20" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.2C12.43 13.02 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.14-3.08-.39-4.55H24v9.02h12.94c-.56 2.9-2.26 5.36-4.8 7.01l7.73 6c4.51-4.17 7.11-10.32 7.11-17.48z"/>
+                            <path fill="#FBBC05" d="M10.54 28.98C9.9 27.11 9.56 25.1 9.56 23s.34-4.11.98-5.98l-7.98-6.2C.92 13.59 0 18.17 0 23c0 4.83.92 9.41 2.56 12.18l7.98-6.2z"/>
+                            <path fill="#34A853" d="M24 46c6.48 0 11.93-2.13 15.91-5.82l-7.73-6c-2.15 1.45-4.92 2.32-8.18 2.32-6.26 0-11.57-3.52-13.46-8.48l-7.98 6.2C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                        <span>Sign in with Google</span>
+                    </button>
+                </form>
+                
+                <div id="signin-error" class="error-message"></div>
+                
+                <div class="muted-row">
+                    Don't have an account?
+                </div>
+                <div class="link-row">
+                    <button id="show-signup-btn" class="link-btn">Create account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div id="auth-signup" class="auth-view hidden">
+            <div class="glass-card">
+                <h1 class="brand">Join Nexus</h1>
+                <hr class="sep">
+                <form id="signup-form" class="form">
+                    <input 
+                        type="text" 
+                        id="signup-name" 
+                        class="input"
+                        placeholder="Full Name"
+                        required 
+                        autocomplete="name"
+                    />
+                    <input 
+                        type="email" 
+                        id="signup-email" 
+                        class="input"
+                        placeholder="Email"
+                        required 
+                        autocomplete="email"
+                    />
+                    
+                    <!-- OTP Verification Section -->
+                    <div id="otp-section" class="otp-section hidden">
+                        <div class="otp-container">
+                            <div class="otp-header">
+                                Verify your email
+                            </div>
+                            <div class="otp-subheader">
+                                Enter the 6-digit code sent to your email
+                            </div>
+                            <input 
+                                type="text" 
+                                id="otp-input" 
+                                class="input otp-input"
+                                placeholder="••••••"
+                                maxlength="6"
+                            />
+                            <div class="otp-actions">
+                                <button type="button" id="send-otp-btn" class="secondary-btn">
+                                    Send OTP
+                                </button>
+                                <button type="button" id="verify-otp-btn" class="secondary-btn">
+                                    Verify
+                                </button>
+                            </div>
+                            <div id="otp-timer" class="otp-timer"></div>
+                            <div id="otp-error" class="error-message"></div>
+                        </div>
+                    </div>
+                    
+                    <input 
+                        type="password" 
+                        id="signup-password" 
+                        class="input"
+                        placeholder="Password (min 6 characters)"
+                        required 
+                        autocomplete="new-password"
+                        minlength="6"
+                    />
+                    <input 
+                        type="password" 
+                        id="signup-confirm" 
+                        class="input"
+                        placeholder="Confirm Password"
+                        required 
+                        autocomplete="new-password"
+                        minlength="6"
+                    />
+                    <button type="submit" id="signup-submit-btn" class="primary-btn">
+                        Sign Up
+                    </button>
+                </form>
+                
+                <div id="signup-error" class="error-message"></div>
+                
+                <div class="muted-row">
+                    Already have an account?
+                </div>
+                <div class="link-row">
+                    <button id="show-signin-btn" class="link-btn">Sign in</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Info Screen -->
+        <div id="auth-userinfo" class="auth-view hidden">
+            <div class="glass-card">
+                <h1 class="brand">Welcome Back!</h1>
+                <hr class="sep">
+                <div class="user-info-content">
+                    <div class="info-row">
+                        <div class="info-label">Name</div>
+                        <div id="user-name-display" class="info-value">User</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Email</div>
+                        <div id="user-email-display" class="info-value">—</div>
+                    </div>
+                    <div class="actions-row">
+                        <button id="continue-btn" class="primary-btn">
+                            Continue to Dashboard
+                        </button>
+                        <button id="logout-btn" class="secondary-btn">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Waiting Screen -->
+        <div id="auth-verification" class="auth-view hidden">
+            <div class="glass-card">
+                <h1 class="brand">Verify Your Email</h1>
+                <hr class="sep">
+                <div class="verification-content" style="text-align: center; padding: 20px;">
+                    <div style="margin: 30px 0;">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style="margin: 0 auto;">
+                            <circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="2" opacity="0.3"/>
+                            <path d="M12 2 A10 10 0 0 1 22 12" stroke="#fbbf24" stroke-width="2" stroke-linecap="round">
+                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                            </path>
+                        </svg>
+                    </div>
+                    <h2 style="color: #fbbf24; margin: 20px 0; font-size: 18px;">Waiting for verification...</h2>
+                    <p style="color: rgba(255,255,255,0.7); margin: 15px 0; font-size: 14px; line-height: 1.6;">
+                        We've sent a verification email to<br>
+                        <strong id="verification-email" style="color: #fbbf24;"></strong>
+                    </p>
+                    <p style="color: rgba(255,255,255,0.6); margin: 20px 0; font-size: 13px; line-height: 1.8;">
+                        1. Check your inbox and click the verification link<br>
+                        2. Return to this app<br>
+                        3. Sign in with your email and password
+                    </p>
+                    <button id="cancel-verification-btn" class="secondary-btn" style="margin-top: 30px;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Reset Screen -->
+        <div id="auth-reset-password" class="auth-view hidden">
+            <div class="glass-card">
+                <h1 class="brand">Reset Password</h1>
+                <hr class="sep">
+                <form id="reset-password-form" class="form">
+                    <p style="color: rgba(255,255,255,0.7); margin: 0 0 20px 0; font-size: 14px; text-align: center;">
+                        Enter your new password below
+                    </p>
+                    <input 
+                        type="password" 
+                        id="reset-new-password" 
+                        class="input"
+                        placeholder="New Password (min 6 characters)"
+                        required 
+                        minlength="6"
+                    />
+                    <input 
+                        type="password" 
+                        id="reset-confirm-password" 
+                        class="input"
+                        placeholder="Confirm New Password"
+                        required 
+                        minlength="6"
+                    />
+                    <button type="submit" id="reset-password-submit-btn" class="primary-btn">
+                        Update Password
+                    </button>
+                </form>
+                
+                <div id="reset-password-error" class="error-message"></div>
+                
+                <div class="link-row" style="margin-top: 20px;">
+                    <button id="cancel-reset-btn" class="link-btn">Back to Sign In</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

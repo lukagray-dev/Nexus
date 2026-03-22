@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="40dp"
+    android:viewportWidth="32"
+    android:viewportHeight="40">
+    
+    <!-- Shadow -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M16,38 Q8,38 8,36 Q8,34 16,34 Q24,34 24,36 Q24,38 16,38 Z"/>
+    
+    <!-- Pin body -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M16,2 C10.5,2 6,6.5 6,12 C6,19.5 16,32 16,32 C16,32 26,19.5 26,12 C26,6.5 21.5,2 16,2 Z"/>
+    
+    <!-- Pin border -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M16,2 C10.5,2 6,6.5 6,12 C6,19.5 16,32 16,32 C16,32 26,19.5 26,12 C26,6.5 21.5,2 16,2 Z"/>
+    
+    <!-- Inner circle (using path instead of circle) -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M16,7 A5,5 0 1,1 16,17 A5,5 0 1,1 16,7 Z"/>
+    
+    <!-- Inner circle border (using path instead of circle) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M16,7 A5,5 0 1,1 16,17 A5,5 0 1,1 16,7 Z"/>
+</vector>

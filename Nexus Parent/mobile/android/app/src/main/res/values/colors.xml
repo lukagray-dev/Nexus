@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base Colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Primary Theme Colors (Exact Desktop Match) -->
+    <color name="background_primary">#000000</color>
+    <color name="background_secondary">#18181b</color>
+    <color name="background_tertiary">#3f3f46</color>
+    
+    <!-- Sidebar Colors -->
+    <color name="sidebar_background">#0f0f0f</color>
+    <color name="sidebar_item_hover">#424242</color>
+    <color name="sidebar_item_active">#424242</color>
+    
+    <!-- Text Colors (Exact Desktop Match) -->
+    <color name="text_primary">#ffffff</color>
+    <color name="text_secondary">#d4d4d8</color>
+    <color name="text_tertiary">#979797</color>
+    <color name="text_muted">#666666</color>
+    
+    <!-- Accent Colors (Golden Theme from Desktop) -->
+    <color name="accent_primary">#fbbf24</color>
+    <color name="accent_primary_dark">#f59e0b</color>
+    <color name="accent_secondary">#f59e0b</color>
+    <color name="accent_hover">#fcd34d</color>
+    
+    <!-- Border Colors (Exact Desktop Match) -->
+    <color name="border_primary">#3f3f46</color>
+    <color name="border_secondary">#979797</color>
+    <color name="border_light">#424242</color>
+    
+    <!-- Status Colors -->
+    <color name="status_success">#22c55e</color>
+    <color name="status_warning">#ff9800</color>
+    <color name="status_error">#ef4444</color>
+    <color name="status_info">#2196f3</color>
+    
+    <!-- Overlay Colors -->
+    <color name="overlay_dark">#80000000</color>
+    <color name="overlay_light">#40ffffff</color>
+    <color name="dialog_overlay">#E6000000</color>
+    
+    <!-- Feature Panel Colors (Exact Desktop Match) -->
+    <color name="panel_background">#000000</color>
+    <color name="panel_header">#18181b</color>
+    <color name="panel_header_alpha">#7F18181b</color>
+    
+    <!-- Button Colors (Desktop Match) -->
+    <color name="button_background">#4D424242</color>
+    <color name="button_background_hover">#80424242</color>
+    <color name="button_border">#4D979797</color>
+    
+    <!-- Transparent -->
+    <color name="transparent">#00000000</color>
+</resources>

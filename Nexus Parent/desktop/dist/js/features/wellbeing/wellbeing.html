@@ -1,0 +1,98 @@
+<!-- Wellbeing (Usage Monitoring) Feature Window -->
+<div class="wellbeing-content">
+    <div class="wellbeing-header">
+        <div class="wellbeing-title">Usage Monitor</div>
+    </div>
+    
+    <div class="wellbeing-body">
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-label">Screen Time</div>
+                    <div class="summary-value" id="total-screen-time">--</div>
+                </div>
+            </div>
+            
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                    </svg>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-label">Device Unlocks</div>
+                    <div class="summary-value" id="device-unlocks">--</div>
+                </div>
+            </div>
+            
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-label">Apps Used</div>
+                    <div class="summary-value" id="apps-count">--</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Categories Section -->
+        <div class="section">
+            <div class="section-header">
+                <h3>Usage by Category</h3>
+            </div>
+            <div id="categories-list" class="categories-list">
+                <div class="list-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <p>No data available</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Apps Section -->
+        <div class="section">
+            <div class="section-header">
+                <h3>Top Apps</h3>
+            </div>
+            <div id="apps-list" class="apps-list">
+                <div class="list-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <p>No apps data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Request Button at Bottom -->
+    <div class="wellbeing-controls">
+        <button id="wellbeing-request-btn" class="request-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            <span>Request Usage Data</span>
+        </button>
+    </div>
+    
+    <div id="wellbeing-status" class="status-message"></div>
+</div>

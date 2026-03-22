@@ -1,0 +1,206 @@
+/* Authentication UI Styles */
+
+.auth-screen {
+    position: fixed;
+    top: 32px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.auth-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    padding: 0 1rem;
+}
+
+.auth-view {
+    animation: fadeIn 0.6s cubic-bezier(.77,0,.18,1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 16px 0;
+    gap: 12px;
+    opacity: 0.6;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/* Google Button */
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(66, 66, 66, 0.3) !important;
+    border: 1px solid rgba(151, 151, 151, 0.3) !important;
+}
+
+.google-btn:hover {
+    background: rgba(66, 66, 66, 0.5) !important;
+    border-color: rgba(151, 151, 151, 0.5) !important;
+}
+
+.google-btn svg {
+    flex-shrink: 0;
+}
+
+/* Error Message */
+.error-message {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    line-height: 1.5;
+}
+
+/* Muted Row */
+.muted-row {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Link Row */
+.link-row {
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* OTP Section */
+.otp-section {
+    width: 100%;
+    margin: 16px 0;
+}
+
+.otp-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(151, 151, 151, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.otp-header {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+}
+
+.otp-subheader {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 16px;
+}
+
+.otp-input {
+    letter-spacing: 8px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.otp-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.otp-actions button {
+    flex: 1;
+}
+
+.otp-timer {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(251, 191, 36, 0.9);
+    min-height: 18px;
+}
+
+/* User Info Content */
+.user-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(251, 191, 36, 0.8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.actions-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .auth-container {
+        max-width: 100%;
+    }
+    
+    .glass-card {
+        padding: 32px 24px;
+    }
+}

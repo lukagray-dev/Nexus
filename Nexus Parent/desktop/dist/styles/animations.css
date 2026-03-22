@@ -1,0 +1,107 @@
+/* Custom Animations */
+
+/* Pulsing red glow animation */
+@keyframes glow-red-strong {
+  0% {
+    box-shadow: 0 0 6px #ff0000;
+  }
+  100% {
+    box-shadow: 0 0 20px #ff0000, 0 0 30px #cc0000;
+  }
+}
+
+.animate-pulse-strong {
+  animation: glow-red-strong 1.5s ease-in-out infinite alternate;
+}
+
+/* Green glow animation for inputs */
+@keyframes glow-green {
+  0% {
+    text-shadow: 0 0 4px #22c55e;
+  }
+  100% {
+    text-shadow: 0 0 12px #22c55e;
+  }
+}
+
+.animate-glow-input {
+  animation: glow-green 2s ease-in-out infinite alternate;
+}
+
+/* Pulse animation for live indicators */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Scale up animation */
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleUp {
+  animation: scaleUp 0.2s ease-out;
+}

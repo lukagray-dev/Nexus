@@ -1,0 +1,86 @@
+{
+  "name": "nexus-parent-desktop",
+  "version": "1.0.0",
+  "description": "Nexus Parent - Desktop Dashboard for Child Device Monitoring",
+  "main": "src/main.js",
+  "author": "Nexus Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build:win": "electron-builder --win",
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "firebase": "^10.7.1",
+    "opus-decoder": "^0.7.11"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.0",
+    "jsdom": "^29.0.1",
+    "sharp": "^0.33.0",
+    "vitest": "^4.1.0"
+  },
+  "build": {
+    "appId": "com.nexus.parent",
+    "productName": "Nexus Parent",
+    "copyright": "Copyright © 2026 Nexus Team",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "dist/**/*",
+      "package.json",
+      "!node_modules/**/*",
+      "node_modules/firebase/**/*",
+      "node_modules/@supabase/**/*",
+      "node_modules/opus-decoder/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/Nexus_Parent_icon.png",
+        "to": "app-icon.png"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "publisherName": "Nexus Team",
+      "sign": "./scripts/no-sign.js"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nexus Parent",
+      "include": "build/installer.nsh",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "menuCategory": true,
+      "displayLanguageSelector": false,
+      "installerLanguages": [
+        "en_US"
+      ],
+      "language": "1033",
+      "perMachine": false,
+      "warningsAsErrors": false,
+      "differentialPackage": false
+    }
+  }
+}

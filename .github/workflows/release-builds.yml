@@ -1,0 +1,127 @@
+name: Release Builds
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-builds-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  parent-desktop-release:
+    name: Parent Desktop Release (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Nexus Parent/desktop
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Nexus Parent/desktop/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows installer
+        run: npm run build:win
+
+      - name: Upload Parent Desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: parent-desktop-release
+          path: |
+            Nexus Parent/desktop/release/**
+
+  parent-android-release:
+    name: Parent Android Release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Nexus Parent/mobile/android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build release APK
+        env:
+          ANDROID_USER_HOME: ${{ github.workspace }}/.android-user-home
+          GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Upload Parent Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: parent-android-release
+          path: |
+            Nexus Parent/mobile/android/app/build/outputs/apk/release/*.apk
+            Nexus Parent/mobile/android/app/build/outputs/**/release/*
+
+  child-android-release:
+    name: Child Android Release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Nexus Child/android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build release APK
+        env:
+          ANDROID_USER_HOME: ${{ github.workspace }}/.android-user-home
+          GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Upload Child Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: child-android-release
+          path: |
+            Nexus Child/android/app/build/outputs/apk/release/*.apk
+            Nexus Child/android/app/build/outputs/**/release/*
+

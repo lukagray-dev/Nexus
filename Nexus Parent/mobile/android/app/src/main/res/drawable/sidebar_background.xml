@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidebar background with subtle gradient -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="135"
+        android:startColor="@color/sidebar_background"
+        android:endColor="@color/background_secondary"
+        android:type="linear" />
+</shape>

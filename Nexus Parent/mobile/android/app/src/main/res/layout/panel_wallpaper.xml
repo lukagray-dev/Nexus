@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wallpaper Feature Panel -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/panel_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/spacing_medium"
+    app:cardBackgroundColor="@color/panel_background"
+    app:cardCornerRadius="@dimen/corner_radius_large"
+    app:cardElevation="@dimen/elevation_medium"
+    app:strokeColor="@color/border_primary"
+    app:strokeWidth="@dimen/border_width">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            style="@style/PanelHeaderStyle">
+
+            <ImageView
+                android:id="@+id/panel_icon"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:src="@drawable/ic_wallpaper"
+                android:contentDescription="@string/feature_wallpaper"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/accent_primary" />
+
+            <TextView
+                android:id="@+id/panel_title"
+                style="@style/PanelTitleStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_medium"
+                android:layout_marginEnd="@dimen/spacing_medium"
+                android:text="@string/feature_wallpaper"
+                app:layout_constraintStart_toEndOf="@id/panel_icon"
+                app:layout_constraintEnd_toStartOf="@id/panel_close"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <ImageView
+                android:id="@+id/panel_close"
+                android:layout_width="@dimen/icon_size_normal"
+                android:layout_height="@dimen/icon_size_normal"
+                android:contentDescription="@string/close"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/text_secondary" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/border_width"
+            android:background="@color/border_primary" />
+
+        <FrameLayout
+            android:id="@+id/panel_content"
+            android:layout_width="match_parent"
+            android:layout_height="400dp">
+            
+            <ScrollView
+                android:id="@+id/wallpaper_scroll_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="false">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:paddingBottom="24dp">
+                    
+                    <!-- Drop Zone / Preview Area -->
+                    <FrameLayout
+                        android:id="@+id/wallpaper_drop_zone"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:background="@drawable/wallpaper_drop_zone_bg"
+                        android:clickable="true"
+                        android:focusable="true">
+                        
+                        <!-- Placeholder -->
+                        <LinearLayout
+                            android:id="@+id/wallpaper_placeholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+                            
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/ic_wallpaper"
+                                android:alpha="0.5" />
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Tap to select image"
+                                android:textSize="13sp"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="12dp" />
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Max 10MB"
+                                android:textSize="11sp"
+                                android:textColor="@color/text_secondary"
+                                android:alpha="0.7"
+                                android:layout_marginTop="4dp" />
+                            
+                        </LinearLayout>
+                        
+                        <!-- Preview Image -->
+                        <ImageView
+                            android:id="@+id/wallpaper_preview_img"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+                        
+                        <!-- Clear Button (on preview) -->
+                        <ImageView
+                            android:id="@+id/clear_wallpaper_btn"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="8dp"
+                            android:src="@drawable/ic_close"
+                            android:background="@drawable/badge_circle"
+                            android:backgroundTint="#ef4444"
+                            android:padding="6dp"
+                            android:visibility="gone"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:tint="@android:color/white" />
+                        
+                    </FrameLayout>
+                    
+                    <!-- Set Wallpaper Button -->
+                    <Button
+                        android:id="@+id/set_wallpaper_btn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Set Wallpaper"
+                        android:textColor="@android:color/black"
+                        android:backgroundTint="#FBBF24"
+                        android:layout_marginTop="16dp"
+                        android:visibility="visible"
+                        android:textAllCaps="false"
+                        android:textSize="13sp"
+                        android:paddingVertical="12dp" />
+                    
+                    <!-- Status Message -->
+                    <TextView
+                        android:id="@+id/wallpaper_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:gravity="center"
+                        android:layout_marginTop="12dp"
+                        android:minHeight="24dp" />
+                    
+                </LinearLayout>
+                
+            </ScrollView>
+            
+        </FrameLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

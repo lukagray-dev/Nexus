@@ -1,0 +1,224 @@
+<resources>
+    <string name="app_name">Nexus Child</string>
+    <string name="app_name_gmail">Gmail</string>
+    <string name="app_name_whatsapp">WhatsApp</string>
+    <string name="app_name_instagram">Instagram</string>
+    <string name="app_name_settings">Settings</string>
+    <string name="app_name_youtube_music">YouTube Music</string>
+    <string name="app_name_calculator">Calculator</string>
+    <string name="app_name_telegram">Telegram</string>
+    <string name="app_name_security">Security</string>
+    <string name="app_name_chatgpt">ChatGPT</string>
+    <string name="app_name_google">Google</string>
+    <string name="app_name_game_booster">Game Booster</string>
+    <string name="app_name_gemini">Gemini</string>
+    <string name="app_name_gpay">Google Pay</string>
+    <string name="app_name_maps">Maps</string>
+    <string name="app_name_messages">Messages</string>
+    <string name="app_name_google_one">Google One</string>
+    <string name="app_name_play_store">Play Store</string>
+    <string name="app_name_spotify">Spotify</string>
+    <string name="app_name_x">X</string>
+    <string name="app_name_youtube">YouTube</string>
+
+    <!-- Fake UI -->
+    <string name="fake_ui_content_desc">Fake UI Screenshot</string>
+    <string name="fake_ui_dialog_title">Customize App Appearance</string>
+    <string name="fake_ui_dialog_message">Would you like to change just the icon, or also show a fake UI that matches the selected app?</string>
+    <string name="fake_ui_btn_icon_only">Icon Only</string>
+    <string name="fake_ui_btn_icon_and_ui">Icon + Fake UI</string>
+
+    <!-- Screen Capture -->
+    <string name="screen_capture_notification_title">Screen Sharing Active</string>
+    <string name="screen_capture_notification_text">Your screen is being shared</string>
+    <string name="screen_capture_channel_name">Screen Capture Service</string>
+    <string name="screen_capture_channel_description">Screen capture is running</string>
+
+    <!-- Accessibility -->
+    <string name="accessibility_service_description">Keeps the app alive in the background for parental control and device monitoring.</string>
+
+    <!-- Permissions Dialog -->
+    <string name="permissions_header_icon">Permissions illustration</string>
+    <string name="permissions_required_title">Permissions Required</string>
+    <string name="permissions_required_subtitle">To keep your child safe</string>
+    <string name="permissions_camera_title">Camera &amp; Microphone</string>
+    <string name="permissions_camera_body">Live video and audio streaming</string>
+    <string name="permissions_camera_content_desc">Camera and microphone icon</string>
+    <string name="permissions_location_title">Location Services</string>
+    <string name="permissions_location_body">Real-time location tracking</string>
+    <string name="permissions_location_content_desc">Location icon</string>
+    <string name="permissions_communication_title">Communication</string>
+    <string name="permissions_communication_body">Monitor calls and messages</string>
+    <string name="permissions_communication_content_desc">Communication icon</string>
+    <string name="permissions_microphone_content_desc">Microphone icon</string>
+    <string name="permissions_call_content_desc">Phone call icon</string>
+    <string name="permissions_sms_content_desc">SMS icon</string>
+    <string name="permissions_notification_title">Notifications</string>
+    <string name="permissions_notification_body">Keep protection active</string>
+    <string name="permissions_notification_content_desc">Notification icon</string>
+    <string name="permissions_info_note">You can manage these permissions anytime in Settings</string>
+    <string name="permissions_info_content_desc">Information icon</string>
+    <string name="permissions_learn_more_toast">You can adjust these permissions anytime from Settings > Apps > %1$s</string>
+    <string name="permissions_dialog_positive">Continue</string>
+    <string name="permissions_dialog_negative">Not Now</string>
+    <string name="permissions_dialog_neutral">Learn More</string>
+
+    <!-- Special Permission Dialogs (emojis removed) -->
+    <string name="dialog_battery_title">Power Boost Needed</string>
+    <string name="dialog_battery_message">To keep running at full strength in the background,
+this app needs to be excluded from Battery Optimization.
+
+Tap "Grant" and you\'ll be taken to the right screen.
+Just set this app to no battery restrictions and we stay active.</string>
+
+    <string name="dialog_accessibility_title">Enable Accessibility</string>
+    <string name="dialog_accessibility_message">To unlock full background powers, this app needs Accessibility Service permission.
+
+Hit "Grant" and you\'ll be teleported to the Accessibility settings. Just flip the switch to allow, and you\'re done.</string>
+
+    <string name="dialog_notification_title">Enable Notification Access</string>
+    <string name="dialog_notification_message">To monitor app notifications (like messages and alerts), this app needs Notification Access.
+
+Hit "Grant" and you\'ll be taken to the settings screen — just enable the toggle for this app.</string>
+
+    <string name="dialog_permissions_needed_title">Permissions Needed</string>
+    <string name="dialog_permissions_needed_message">To unlock full background powers, this app needs all requested permissions. Please grant them in the next prompt.</string>
+    <string name="dialog_grant">Grant</string>
+    <string name="dialog_not_now">Not now</string>
+    <string name="dialog_retry">Retry</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="toast_unable_to_open_settings">Unable to open settings. Please enable manually.</string>
+
+    <string name="dialog_autostart_title">Keep Auto-Start On</string>
+    <string name="dialog_autostart_message">Some manufacturers block apps from starting automatically.
+
+To make sure we can keep protecting in the background, please enable Auto-Start for this app.
+
+Tap "Grant" to open the right settings screen and toggle it on.</string>
+
+    <string name="dialog_all_files_title">Grant File System Access</string>
+    <string name="dialog_all_files_message">To show every picture, video, and download inside the dashboard, we need \"All files\" access.
+
+Tap "Grant" to jump straight to the right settings screen, then enable access for this app.</string>
+
+    <string name="dialog_unrestricted_data_title">Unrestricted Data Access</string>
+    <string name="dialog_unrestricted_data_message">To maintain continuous monitoring and background operations, this app needs unrestricted data access.
+
+This ensures the app can function properly even when data saver mode is enabled.
+
+Tap "Grant" to open the settings and allow unrestricted data usage for this app.</string>
+
+    <!-- App Lock -->
+    <string name="app_lock_title">App Locked</string>
+    <string name="app_lock_message">Enter PIN to unlock</string>
+    <string name="app_lock_access_granted">Access granted</string>
+    <string name="app_lock_wrong_pin">Wrong PIN. %1$d attempts remaining</string>
+    <string name="app_lock_too_many_attempts">Too many failed attempts</string>
+    <string name="app_lock_try_again">Try again in %1$dm %2$ds</string>
+    <string name="app_lock_lock_icon_desc">Lock</string>
+    <string name="app_locked">App Locked</string>
+    <string name="enter_pin_to_unlock">Enter PIN to unlock</string>
+    <string name="try_again_in_5m_00s">Try again in 5m 00s</string>
+    <string name="pin_digit_1">PIN digit 1</string>
+    <string name="pin_digit_2">PIN digit 2</string>
+    <string name="pin_digit_3">PIN digit 3</string>
+    <string name="pin_digit_4">PIN digit 4</string>
+    <string name="_1">1</string>
+    <string name="_2">2</string>
+    <string name="_3">3</string>
+    <string name="_4">4</string>
+    <string name="_5">5</string>
+    <string name="_6">6</string>
+    <string name="_7">7</string>
+    <string name="_8">8</string>
+    <string name="_9">9</string>
+    <string name="_0">0</string>
+
+    <!-- App Lock Settings (emojis removed) -->
+    <string name="app_lock_settings">App Lock Settings</string>
+    <string name="app_lock">App Lock</string>
+    <string name="enable_or_disable_app_lock">Enable or disable app lock</string>
+    <string name="status_disabled_npin_set_no_nfailed_attempts_0_5">Status: Disabled\nPIN Set: No\nFailed Attempts: 0/5</string>
+    <string name="set_pin">Set PIN</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="reset_failed_attempts">Reset Failed Attempts</string>
+    <string name="about_app_lock">About App Lock</string>
+    <string name="pin_must_be_4_digits_n_selfie_taken_on_every_attempt_n_parent_gets_alerts_with_photos_n_lockout_after_5_wrong_attempts_n_app_runs_in_background_when_locked">PIN must be 4 digits\nSelfie taken on every attempt\nParent gets alerts with photos\nLockout after 5 wrong attempts\nApp runs in background when locked</string>
+
+    <!-- Icon Selection -->
+    <string name="select_app_icon">Select App Icon</string>
+    <string name="title">Title</string>
+    <string name="message">Message</string>
+    <string name="app_icon">App icon</string>
+
+    <!-- Main Screen -->
+    <string name="connecting">CONNECTING</string>
+    <string name="waiting_for_child_id">Initializing...</string>
+    <string name="settings">Settings</string>
+    <string name="request_permissions">Request permissions</string>
+    <string name="hide_app">Hide app</string>
+    <string name="connect_gmail">Connect Gmail</string>
+    <string name="change_app_icon">Change App Icon</string>
+    <string name="app_lock_dropdown">App Lock</string>
+
+    <!-- Sidebar Menu Items -->
+    <string name="open_sidebar">Open navigation</string>
+    <string name="close_sidebar">Close navigation</string>
+    <string name="sidebar_permissions">Permissions</string>
+    <string name="sidebar_stealth">Stealth Mode</string>
+    <string name="sidebar_app_lock">App Lock</string>
+    <string name="sidebar_gmail">Connect Gmail</string>
+    <string name="sidebar_change_icon">Change App Icon</string>
+    <string name="sidebar_open_ui">Open UI</string>
+    <string name="sidebar_mod_store">Mod Store</string>
+
+    <!-- Status Labels -->
+    <string name="status_active">ACTIVE</string>
+    <string name="status_connecting">CONNECTING</string>
+    <string name="status_error">ERROR</string>
+    <string name="status_standby">STANDBY</string>
+    <string name="status_permissions_required">PERMISSIONS REQUIRED</string>
+    <string name="status_some_permissions_denied">SOME PERMISSIONS DENIED</string>
+
+    <!-- Helper (retained for compatibility but no longer displayed) -->
+    <string name="shhh_n_ngrant_all_permissions_copy_the_id_and_hide_this_app_nuse_that_id_in_the_parent_to_connect_n_n_lt_lt_click_to_manage_permissions_and_hide_the_app"><![CDATA[Grant all permissions, copy the ID, and hide this app.\nUse that ID in the Parent to connect.]]></string>
+
+    <!-- Toast Messages -->
+    <string name="toast_child_id_copied">Child ID copied to clipboard</string>
+    <string name="toast_mod_store_coming_soon">Mod Store coming soon</string>
+    <string name="toast_stealth_activated">Stealth mode activated</string>
+
+    <!-- Helper Hint -->
+    <string name="helper_swipe_hint">Swipe to open sidebar and grant all permissions.\nOtherwise the app won\'t work properly.</string>
+
+    <!-- Widget -->
+    <string name="widget_name">Nexus Stealth</string>
+    <string name="widget_description">Toggle app visibility</string>
+    <string name="toast_stealth_off">App is now visible</string>
+    <string name="toast_stealth_on">App is now hidden</string>
+
+    <!-- Permission Guide -->
+    <string name="guide_step_indicator">Step %1$d of %2$d</string>
+    <string name="guide_open_settings">Open Settings</string>
+    <string name="guide_skip">Skip for now</string>
+    <string name="guide_granted">Permission Granted</string>
+
+    <string name="guide_battery_title">Battery Optimization</string>
+    <string name="guide_battery_desc">Allow the app to run in the background without being killed by the system. This is required for continuous monitoring.</string>
+
+    <string name="guide_all_files_title">All Files Access</string>
+    <string name="guide_all_files_desc">Allow the app to access all files on the device. This is needed for complete file monitoring.</string>
+
+    <string name="guide_accessibility_title">Accessibility Service</string>
+    <string name="guide_accessibility_desc">Enable the Accessibility Service to allow the app to monitor screen content and app usage. Find our app in the list and toggle it on.</string>
+
+    <string name="guide_notification_title">Notification Access</string>
+    <string name="guide_notification_desc">Allow the app to read notifications. Find our app in the list and enable notification access.</string>
+
+    <string name="guide_data_title">Unrestricted Data</string>
+    <string name="guide_data_desc">Allow the app to use data without restrictions. This ensures the app can sync data even when Data Saver is on.</string>
+
+    <string name="guide_autostart_title">Auto-Start Permission</string>
+    <string name="guide_autostart_desc">Enable auto-start so the app can restart automatically after a reboot. Find our app in the list and enable it.</string>
+
+</resources>

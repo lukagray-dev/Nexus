@@ -1,0 +1,37 @@
+<!-- Wallpaper Feature Window -->
+<div class="wallpaper-content">
+    <div class="wallpaper-header">
+        <div class="wallpaper-title">Wallpaper</div>
+    </div>
+    
+    <div class="wallpaper-upload-section">
+        <div id="wallpaper-drop-zone" class="drop-zone">
+            <div id="wallpaper-placeholder" class="placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <p>Click or drag image here</p>
+                <span>Supports: JPG, PNG, GIF (Max 10MB)</span>
+            </div>
+            
+            <div id="wallpaper-preview" class="preview" style="display: none;">
+                <img id="wallpaper-preview-img" alt="Preview" />
+            </div>
+            
+            <input type="file" id="wallpaper-file-input" accept="image/*" style="display: none;" />
+        </div>
+        
+        <div class="wallpaper-actions">
+            <button id="set-wallpaper-btn" class="action-btn primary-btn" style="display: none;">
+                Set Wallpaper
+            </button>
+            <button id="clear-wallpaper-btn" class="action-btn secondary-btn">
+                Clear
+            </button>
+        </div>
+    </div>
+    
+    <div id="wallpaper-status" class="status-message"></div>
+</div>

@@ -1,0 +1,208 @@
+/* Components: authentication UI, cards, inputs, primary/secondary/link buttons */
+
+/* Authentication and example UI shells */
+.auth-wrap { /* Container that centers auth cards */
+  width: 100%; /* Full width container */
+  max-width: 480px; /* Maximum width */
+  padding: 0 1rem; /* Padding for mobile */
+  transition: transform .35s cubic-bezier(.2,.9,.2,1), opacity .80s; /* Subtle entrance */
+}
+
+.glass-card { /* Frosted glass card used for forms */
+  position: relative; 
+  width: 100%; /* Fill container */
+  border-radius: 24px; 
+  padding: 48px 40px; /* Spacious layout */
+  background: rgba(15, 15, 15, 0.85); /* Translucent dark bg */
+  border: 1px solid rgba(251, 191, 36, 0.2); /* Golden border */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(251, 191, 36, 0.1); /* Depth with golden glow */
+  backdrop-filter: blur(20px) saturate(1.2); 
+  -webkit-backdrop-filter: blur(20px) saturate(1.2); /* Glass effect */
+  transform-style: preserve-3d; 
+  transition: transform .36s cubic-bezier(.2,.9,.2,1), box-shadow .36s, border-color .36s; /* Interaction depth */
+  will-change: transform; 
+  overflow: hidden; 
+  color: #ffffff; /* Text legibility */
+}
+
+.glass-card:hover { 
+  transform: translateY(-4px); 
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.9), 0 0 40px rgba(251, 191, 36, 0.15), inset 0 1px 0 rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.glass-card::before { /* Subtle gradient overlay */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, transparent 50%, rgba(251, 191, 36, 0.03) 100%);
+  pointer-events: none;
+  border-radius: 24px;
+}
+
+.glass-card::after { /* Light sweep overlay */
+  content: ''; 
+  position: absolute; 
+  left: -20%; 
+  top: -50%; 
+  width: 140%; 
+  height: 200%; 
+  pointer-events: none;
+  background: linear-gradient(135deg, transparent 0%, rgba(251, 191, 36, 0.08) 50%, transparent 100%);
+  transform: rotate(-15deg); 
+  opacity: 0.6;
+}
+
+.brand { 
+  margin: 0 0 12px 0; 
+  font-size: 32px; 
+  letter-spacing: 2px; 
+  text-align: center; 
+  font-weight: 700; 
+  background: linear-gradient(135deg, #ffffff 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 20px rgba(251, 191, 36, 0.3);
+  position: relative;
+  z-index: 2;
+}
+
+.sep { 
+  border: 0; 
+  height: 1px; 
+  margin: 16px 0 24px; 
+  background: linear-gradient(90deg, transparent 0%, rgba(251, 191, 36, 0.5) 50%, transparent 100%);
+  opacity: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.form { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 12px; 
+  position: relative; 
+  z-index: 2; 
+}
+
+.input { 
+  width: 100%; 
+  padding: 14px 16px; 
+  border-radius: 12px; 
+  border: 1px solid rgba(151, 151, 151, 0.3); 
+  background: rgba(0, 0, 0, 0.6); 
+  color: rgba(255, 255, 255, 0.95); 
+  outline: none; 
+  transition: all 0.2s cubic-bezier(.2,.9,.2,1);
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+
+.input::placeholder { 
+  color: rgba(255, 255, 255, 0.5); 
+}
+
+.input:focus { 
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3), 0 8px 24px rgba(0, 0, 0, 0.6); 
+  transform: translateY(-1px); 
+  border-color: rgba(251, 191, 36, 0.6);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.primary-btn { /* Primary action button across forms */
+  width: 100%; 
+  padding: 14px 16px; 
+  border-radius: 12px; 
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%);
+  color: #ffffff; 
+  font-weight: 700; 
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(.2,.9,.2,1);
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+.primary-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.primary-btn:hover::before {
+  opacity: 1;
+}
+
+.primary-btn:hover { 
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.25) 100%);
+  border-color: rgba(251, 191, 36, 0.6);
+  box-shadow: 0 6px 24px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.primary-btn:active { 
+  transform: translateY(0); 
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+.primary-btn:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed;
+  transform: none;
+}
+
+.secondary-btn { 
+  padding: 12px 16px; 
+  border-radius: 12px; 
+  border: 1px solid rgba(151, 151, 151, 0.3); 
+  background: rgba(0, 0, 0, 0.4); 
+  color: rgba(255, 255, 255, 0.8); 
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+}
+
+.secondary-btn:hover {
+  border-color: rgba(151, 151, 151, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.link-btn { 
+  background: transparent; 
+  border: 0; 
+  color: rgba(251, 191, 36, 0.9); 
+  cursor: pointer; 
+  padding: 8px; 
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.link-btn:hover {
+  color: rgba(251, 191, 36, 1);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.muted-row { 
+  color: rgba(255, 255, 255, 0.5); 
+  font-size: 12px; 
+  margin-top: 6px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Simple animation helpers */
+.flicker-in { animation: flicker-in 0.6s cubic-bezier(.77,0,.18,1) both; }
+.flicker-out { animation: flicker-out 0.35s cubic-bezier(.77,0,.18,1) both; }
+@keyframes flicker-in { 0% { opacity: 0; filter: blur(0.5px);} 10% { opacity: 1; filter: blur(0.2px);} 30% { opacity: .92; filter: blur(0.1px);} 100% { opacity: 1; filter: none;} }
+@keyframes flicker-out { 0% { opacity: 1; filter: none;} 40% { opacity: .8; filter: blur(0.2px);} 100% { opacity: 0; filter: blur(0.5px);} }

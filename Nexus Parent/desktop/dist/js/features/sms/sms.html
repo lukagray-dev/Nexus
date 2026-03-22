@@ -1,0 +1,26 @@
+<!-- SMS Monitor Feature Window -->
+<div class="sms-content">
+    <div class="sms-header">
+        <div class="sms-title">SMS Messages</div>
+        <div class="sms-controls">
+            <input type="text" id="sms-search" class="sms-search" placeholder="Search messages...">
+        </div>
+    </div>
+    <div class="sms-list" id="sms-list">
+        <div class="list-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <p>No SMS messages</p>
+        </div>
+        <button class="play-pause-btn" id="sms-play-pause-btn" title="Play/Pause">
+            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+        </button>
+    </div>
+</div>

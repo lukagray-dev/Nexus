@@ -1,0 +1,82 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+}
+
+android {
+    namespace "nexus.android.child"
+    //noinspection GrDeprecatedAPIUsage
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "nexus.android.child"
+        minSdk 28
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    packaging {
+        resources {
+            excludes += ['META-INF/INDEX.LIST', 'META-INF/DEPENDENCIES']
+        }
+    }
+
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            def repoRoot = rootProject.projectDir.parentFile.parentFile
+            def localUserHome = new File(repoRoot, ".user-home")
+            localUserHome.mkdirs()
+            systemProperty "user.home", localUserHome.absolutePath
+        }
+    }
+}
+
+dependencies {
+    implementation libs.androidx.core.ktx
+    implementation libs.material
+    testImplementation libs.junit
+    testImplementation 'org.mockito:mockito-core:5.8.0'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.2.1'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+    // Firebase for signaling
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.auth
+    implementation libs.firebase.database
+    // Google Sign-In
+    implementation libs.play.services.auth
+    // WebRTC
+    implementation libs.webrtc
+    // Other Dependencies
+    implementation libs.kotlinx.coroutines.play.services
+    implementation libs.play.services.location
+    implementation libs.gson
+    implementation libs.androidx.appcompat
+    implementation libs.kotlinx.serialization.json
+    implementation libs.androidx.security.crypto
+    implementation libs.google.api.client.android
+    implementation libs.gmail.api
+    implementation libs.androidx.recyclerview
+    implementation libs.androidx.cardview
+}
