@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="740" viewBox="0 0 1400 740" role="img" aria-labelledby="title desc">
+  <title id="title">Nexus Signaling Flow</title>
+  <desc id="desc">Firebase WebRTC signaling and P2P connection flow diagram.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="60%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1F2937"/>
+    </linearGradient>
+    <linearGradient id="pillBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="pillGreen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+    <linearGradient id="pillAmber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="lineBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#38BDF8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#4ADE80"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#FCD34D"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#F87171"/>
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="740" fill="url(#bg)" rx="24"/>
+
+  <!-- Grid -->
+  <g opacity="0.03" stroke="#60a5fa" stroke-width="1">
+    <line x1="0" y1="180" x2="1400" y2="180"/>
+    <line x1="0" y1="360" x2="1400" y2="360"/>
+    <line x1="0" y1="540" x2="1400" y2="540"/>
+    <line x1="350" y1="0" x2="350" y2="740"/>
+    <line x1="700" y1="0" x2="700" y2="740"/>
+    <line x1="1050" y1="0" x2="1050" y2="740"/>
+  </g>
+
+  <!-- Header -->
+  <text x="700" y="60" text-anchor="middle" fill="#E5E7EB" font-size="40" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="2">SIGNALING &amp; CONNECTION FLOW</text>
+  <text x="700" y="90" text-anchor="middle" fill="#9CA3AF" font-size="16" font-family="Segoe UI, Arial">Firebase Realtime Database · WebRTC Trickle ICE · P2P Data Channel</text>
+  <rect x="300" y="104" width="800" height="2" rx="1" fill="url(#pillBlue)" opacity="0.5"/>
+
+  <!-- ── Column headers ── -->
+  <!-- Parent -->
+  <rect x="100" y="120" width="240" height="44" rx="22" fill="url(#pillBlue)"/>
+  <text x="220" y="148" text-anchor="middle" fill="#fff" font-size="15" font-family="Segoe UI, Arial" font-weight="700">PARENT  (Offerer)</text>
+
+  <!-- Firebase -->
+  <rect x="580" y="120" width="240" height="44" rx="22" fill="url(#pillAmber)"/>
+  <text x="700" y="148" text-anchor="middle" fill="#fff" font-size="15" font-family="Segoe UI, Arial" font-weight="700">FIREBASE  DB</text>
+
+  <!-- Child -->
+  <rect x="1060" y="120" width="240" height="44" rx="22" fill="url(#pillGreen)"/>
+  <text x="1180" y="148" text-anchor="middle" fill="#fff" font-size="15" font-family="Segoe UI, Arial" font-weight="700">CHILD  (Answerer)</text>
+
+  <!-- Vertical timeline lines -->
+  <line x1="220" y1="170" x2="220" y2="700" stroke="#1D4ED8" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+  <line x1="700" y1="170" x2="700" y2="700" stroke="#D97706" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+  <line x1="1180" y1="170" x2="1180" y2="700" stroke="#15803D" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+
+  <!-- ── Step 1: Child comes Online ── -->
+  <rect x="1020" y="190" width="320" height="36" rx="8" fill="#0A2E1A" stroke="#22C55E" stroke-width="1"/>
+  <text x="1180" y="213" text-anchor="middle" fill="#86EFAC" font-size="13" font-family="Segoe UI, Arial">Child comes online</text>
+
+  <!-- Child → Firebase: set status -->
+  <line x1="1172" y1="226" x2="708" y2="247" stroke="#4ADE80" stroke-width="1.8" marker-end="url(#arrowGreen)"/>
+  <rect x="860" y="228" width="240" height="22" rx="4" fill="#0A2E1A"/>
+  <text x="980" y="244" text-anchor="middle" fill="#86EFAC" font-size="11" font-family="Segoe UI, Arial">Set status: "online-waiting"</text>
+
+  <!-- ── Step 2: Parent writes OFFER ── -->
+  <rect x="60" y="280" width="320" height="36" rx="8" fill="#0C1F40" stroke="#38BDF8" stroke-width="1"/>
+  <text x="220" y="303" text-anchor="middle" fill="#93C5FD" font-size="13" font-family="Segoe UI, Arial">Parent initiates connection</text>
+
+  <!-- Parent → Firebase: OFFER -->
+  <line x1="228" y1="316" x2="692" y2="337" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#arrowBlue)"/>
+  <rect x="300" y="317" width="280" height="22" rx="4" fill="#0C1F40"/>
+  <text x="440" y="333" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial">Write OFFER → signaling/{id}/offer</text>
+
+  <!-- Firebase → Child: notify -->
+  <line x1="708" y1="348" x2="1172" y2="369" stroke="#FCD34D" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrowAmber)"/>
+  <rect x="820" y="349" width="240" height="22" rx="4" fill="#1A1200"/>
+  <text x="940" y="365" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial">OnDataChange(OFFER) notify</text>
+
+  <!-- ── Step 3: Child creates ANSWER ── -->
+  <rect x="1020" y="380" width="320" height="50" rx="8" fill="#0A2E1A" stroke="#22C55E" stroke-width="1"/>
+  <text x="1180" y="400" text-anchor="middle" fill="#86EFAC" font-size="12" font-family="Segoe UI, Arial">Set Remote Description</text>
+  <text x="1180" y="420" text-anchor="middle" fill="#86EFAC" font-size="12" font-family="Segoe UI, Arial">Create ANSWER</text>
+
+  <!-- Child → Firebase: ANSWER -->
+  <line x1="1172" y1="430" x2="708" y2="451" stroke="#4ADE80" stroke-width="1.8" marker-end="url(#arrowGreen)"/>
+  <rect x="860" y="432" width="240" height="22" rx="4" fill="#0A2E1A"/>
+  <text x="980" y="448" text-anchor="middle" fill="#86EFAC" font-size="11" font-family="Segoe UI, Arial">Write ANSWER → signaling/{id}/answer</text>
+
+  <!-- Firebase → Parent: notify -->
+  <line x1="692" y1="462" x2="228" y2="483" stroke="#FCD34D" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrowAmber)"/>
+  <rect x="300" y="463" width="280" height="22" rx="4" fill="#1A1200"/>
+  <text x="440" y="479" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial">OnDataChange(ANSWER) notify</text>
+
+  <!-- ── Step 4: Trickle ICE ── -->
+  <!-- ICE label box -->
+  <rect x="480" y="500" width="440" height="32" rx="8" fill="#1A1030" stroke="#818CF8" stroke-width="1"/>
+  <text x="700" y="521" text-anchor="middle" fill="#A78BFA" font-size="13" font-family="Segoe UI, Arial" font-weight="700">⟷  TRICKLE ICE EXCHANGE  ⟷</text>
+
+  <!-- Child ICE → Firebase → Parent -->
+  <line x1="1172" y1="548" x2="708" y2="560" stroke="#4ADE80" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <line x1="692" y1="560" x2="228" y2="548" stroke="#4ADE80" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="700" y="556" text-anchor="middle" fill="#4ADE80" font-size="11" font-family="Segoe UI, Arial">ICE Candidate (answerer)</text>
+
+  <!-- Parent ICE → Firebase → Child -->
+  <line x1="228" y1="584" x2="692" y2="596" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <line x1="708" y1="596" x2="1172" y2="584" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <text x="700" y="592" text-anchor="middle" fill="#38BDF8" font-size="11" font-family="Segoe UI, Arial">ICE Candidate (offerer)</text>
+
+  <!-- ── Step 5: P2P Established ── -->
+  <rect x="200" y="618" width="1000" height="40" rx="12" fill="#0F172A" stroke="#6366F1" stroke-width="1.5"/>
+  <text x="700" y="643" text-anchor="middle" fill="#818CF8" font-size="14" font-family="Segoe UI, Arial" font-weight="700">✦  P2P CONNECTION ESTABLISHED  ✦</text>
+
+  <!-- Media stream arrow -->
+  <line x1="1172" y1="670" x2="228" y2="670" stroke="#22C55E" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <rect x="820" y="657" width="200" height="22" rx="4" fill="#0A2E1A"/>
+  <text x="920" y="673" text-anchor="middle" fill="#86EFAC" font-size="11" font-family="Segoe UI, Arial">Stream Media (Video / Audio)</text>
+
+  <!-- Data channel arrow -->
+  <line x1="228" y1="694" x2="1172" y2="694" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+  <rect x="380" y="681" width="240" height="22" rx="4" fill="#0C1F40"/>
+  <text x="500" y="697" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial">Data Channel (Remote Commands)</text>
+</svg>

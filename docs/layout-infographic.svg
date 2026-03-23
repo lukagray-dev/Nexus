@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="680" viewBox="0 0 1400 680" role="img" aria-labelledby="t d">
+  <title id="t">Monorepo Layout</title>
+  <desc id="d">Nexus monorepo layout as visual tree.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="60%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="rootGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="125%">
+      <feDropShadow dx="0" dy="3" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="680" fill="url(#bg)" rx="24"/>
+
+  <!-- Dot grid -->
+  <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="20" cy="20" r="1" fill="#FFFFFF" opacity="0.035"/>
+  </pattern>
+  <rect width="1400" height="680" fill="url(#dots)" rx="24"/>
+
+  <!-- Header -->
+  <text x="700" y="64" text-anchor="middle" fill="#E5E7EB" font-size="44" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="3">MONOREPO LAYOUT</text>
+  <text x="700" y="96" text-anchor="middle" fill="#9CA3AF" font-size="17" font-family="Segoe UI, Arial">Clear module boundaries · Separated responsibilities · One root</text>
+  <rect x="300" y="110" width="800" height="2" rx="1" fill="url(#rootGrad)" opacity="0.6"/>
+
+  <!-- ── ROOT NODE ── -->
+  <rect x="550" y="128" width="300" height="54" rx="14" fill="#1E293B" stroke="url(#rootGrad)" stroke-width="2" filter="url(#shadow)"/>
+  <text x="700" y="148" text-anchor="middle" fill="#94A3B8" font-size="12" font-family="Consolas, monospace" letter-spacing="1">ROOT</text>
+  <text x="700" y="170" text-anchor="middle" fill="#E2E8F0" font-size="20" font-family="Consolas, monospace" font-weight="700">Nexus/</text>
+
+  <!-- Trunk line down from root -->
+  <line x1="700" y1="182" x2="700" y2="222" stroke="#334155" stroke-width="2"/>
+  <!-- Horizontal branch -->
+  <line x1="140" y1="222" x2="1260" y2="222" stroke="#334155" stroke-width="2"/>
+
+  <!-- ── Branch verticals to L1 cards ── -->
+  <line x1="170" y1="222" x2="170" y2="258" stroke="#1D4ED8" stroke-width="1.5"/>
+  <line x1="400" y1="222" x2="400" y2="258" stroke="#3B82F6" stroke-width="1.5"/>
+  <line x1="650" y1="222" x2="650" y2="258" stroke="#22C55E" stroke-width="1.5"/>
+  <line x1="900" y1="222" x2="900" y2="258" stroke="#EC4899" stroke-width="1.5"/>
+  <line x1="1150" y1="222" x2="1150" y2="258" stroke="#F59E0B" stroke-width="1.5"/>
+
+  <!-- ── L1 Cards ── -->
+
+  <!-- Child Agent -->
+  <rect x="60" y="258" width="220" height="170" rx="14" fill="#0C1F40" stroke="#38BDF8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="60" y="258" width="220" height="4" rx="2" fill="#38BDF8"/>
+  <text x="170" y="284" text-anchor="middle" fill="#7DD3FC" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">CHILD</text>
+  <text x="170" y="308" text-anchor="middle" fill="#BAE6FD" font-size="14" font-family="Consolas, monospace" font-weight="700">Nexus Child/</text>
+  <text x="170" y="332" text-anchor="middle" fill="#CBD5E1" font-size="12" font-family="Consolas, monospace">android/</text>
+  <rect x="80" y="350" width="180" height="1" fill="#1E3A5F"/>
+  <text x="170" y="372" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Android child agent</text>
+  <text x="170" y="390" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Telemetry · Remote control</text>
+
+  <!-- Parent Mobile -->
+  <rect x="300" y="258" width="200" height="170" rx="14" fill="#172554" stroke="#60A5FA" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="300" y="258" width="200" height="4" rx="2" fill="#60A5FA"/>
+  <text x="400" y="284" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">PARENT MOBILE</text>
+  <text x="400" y="308" text-anchor="middle" fill="#DBEAFE" font-size="14" font-family="Consolas, monospace" font-weight="700">Nexus Parent/</text>
+  <text x="400" y="332" text-anchor="middle" fill="#DBEAFE" font-size="12" font-family="Consolas, monospace">mobile/android/</text>
+  <rect x="316" y="350" width="168" height="1" fill="#1E3358"/>
+  <text x="400" y="372" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Android parent app</text>
+  <text x="400" y="390" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Mobile supervision UI</text>
+
+  <!-- Parent Desktop -->
+  <rect x="525" y="258" width="250" height="170" rx="14" fill="#052E2B" stroke="#34D399" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="525" y="258" width="250" height="4" rx="2" fill="#34D399"/>
+  <text x="650" y="284" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">PARENT DESKTOP</text>
+  <text x="650" y="308" text-anchor="middle" fill="#D1FAE5" font-size="14" font-family="Consolas, monospace" font-weight="700">Nexus Parent/</text>
+  <text x="650" y="332" text-anchor="middle" fill="#D1FAE5" font-size="12" font-family="Consolas, monospace">desktop/</text>
+  <rect x="545" y="350" width="210" height="1" fill="#0A3A2E"/>
+  <text x="650" y="372" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Electron dashboard</text>
+  <text x="650" y="390" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Command and control UI</text>
+
+  <!-- Email Service -->
+  <rect x="795" y="258" width="210" height="170" rx="14" fill="#2D0F20" stroke="#F472B6" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="795" y="258" width="210" height="4" rx="2" fill="#F472B6"/>
+  <text x="900" y="284" text-anchor="middle" fill="#F9A8D4" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">BACKEND API</text>
+  <text x="900" y="308" text-anchor="middle" fill="#FBCFE8" font-size="14" font-family="Consolas, monospace" font-weight="700">e-mail/</text>
+  <rect x="815" y="323" width="170" height="1" fill="#4A1530"/>
+  <text x="900" y="345" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">OTP delivery</text>
+  <text x="900" y="363" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Password reset API</text>
+  <text x="900" y="390" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Node.js · Brevo API</text>
+
+  <!-- Landing -->
+  <rect x="1030" y="258" width="240" height="170" rx="14" fill="#2A1700" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="1030" y="258" width="240" height="4" rx="2" fill="#F59E0B"/>
+  <text x="1150" y="284" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">WEB SURFACE</text>
+  <text x="1150" y="308" text-anchor="middle" fill="#FDE68A" font-size="14" font-family="Consolas, monospace" font-weight="700">landing/</text>
+  <rect x="1050" y="323" width="200" height="1" fill="#3D2100"/>
+  <text x="1150" y="345" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Public product site</text>
+  <text x="1150" y="363" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Brand + onboarding</text>
+  <text x="1150" y="390" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">HTML · Three.js · GSAP</text>
+
+  <!-- ── L2: Shared modules row ── -->
+  <!-- Vertical from root trunk back down -->
+  <line x1="700" y1="460" x2="700" y2="490" stroke="#334155" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="430" y1="490" x2="970" y2="490" stroke="#334155" stroke-width="1.5"/>
+
+  <line x1="500" y1="490" x2="500" y2="510" stroke="#475569" stroke-width="1.5"/>
+  <line x1="700" y1="490" x2="700" y2="510" stroke="#475569" stroke-width="1.5"/>
+  <line x1="900" y1="490" x2="900" y2="510" stroke="#475569" stroke-width="1.5"/>
+
+  <!-- Shared cards -->
+  <rect x="370" y="510" width="260" height="100" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.2"/>
+  <rect x="370" y="510" width="260" height="3" rx="1.5" fill="#475569"/>
+  <text x="500" y="536" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">SHARED ASSETS</text>
+  <text x="500" y="558" text-anchor="middle" fill="#E2E8F0" font-size="13" font-family="Consolas, monospace">assets/</text>
+  <text x="500" y="580" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Logos · icons · media</text>
+  <text x="500" y="598" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Shared across modules</text>
+
+  <rect x="570" y="510" width="260" height="100" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.2"/>
+  <rect x="570" y="510" width="260" height="3" rx="1.5" fill="#475569"/>
+  <text x="700" y="536" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">DOCS</text>
+  <text x="700" y="558" text-anchor="middle" fill="#E2E8F0" font-size="13" font-family="Consolas, monospace">docs/</text>
+  <text x="700" y="580" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Infographics · SVGs</text>
+  <text x="700" y="598" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Architecture diagrams</text>
+
+  <rect x="770" y="510" width="260" height="100" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.2"/>
+  <rect x="770" y="510" width="260" height="3" rx="1.5" fill="#475569"/>
+  <text x="900" y="536" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">CI / META</text>
+  <text x="900" y="558" text-anchor="middle" fill="#E2E8F0" font-size="13" font-family="Consolas, monospace">.github/</text>
+  <text x="900" y="580" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Workflows · templates</text>
+  <text x="900" y="598" text-anchor="middle" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Issue + PR automation</text>
+</svg>

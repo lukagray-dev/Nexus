@@ -8,7 +8,7 @@
 
 <p align="center">
   <b>Parental Control Platform</b><br/>
-  Child Agent + Parent Dashboards + Email Service
+  Child Agent & Parent Dashboards
 </p>
 
 <p align="center">
@@ -16,6 +16,9 @@
   <img src="https://img.shields.io/badge/Android-10%2B-34A853?style=for-the-badge&logo=android&logoColor=white" alt="Android 10+" />
   <img src="https://img.shields.io/badge/Electron-28%2B-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron 28+" />
   <img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js 18+" />
+  <img src="https://img.shields.io/badge/Architecture-Multi--App-2563EB?style=for-the-badge" alt="Multi app architecture" />
+  <img src="https://img.shields.io/badge/Realtime-WebRTC%20%2B%20Firebase-0EA5E9?style=for-the-badge" alt="Realtime stack" />
+  <img src="https://img.shields.io/badge/Target-Parental%20Control-16A34A?style=for-the-badge" alt="Parental control target" />
 </p>
 
 <p align="center">
@@ -26,116 +29,24 @@
   <a href="#community"><b>Community</b></a>
 </p>
 
----
+<p align="center">
+  <img src="docs/overview-infographic.svg" alt="Nexus overview infographic" width="100%" />
+  <img src="docs/layout-infographic.svg" alt="Nexus monorepo layout infographic" width="100%" />
+  <img src="docs/capabilities-infographic.svg" alt="Nexus capabilities infographic" width="100%" />
+  <img src="docs/techstack-infographic.svg" alt="Nexus tech stack infographic" width="100%" />
+  <img src="docs/signaling-infographic.svg" alt="Nexus signaling flow infographic" width="100%" />
+  <img src="docs/quickstart-infographic.svg" alt="Nexus quick start guide" width="100%" />
+</p>
 
-## Overview
+### Configuration Notes
 
-Nexus is a multi-application parental control system composed of:
-
-- A child-side Android agent
-- Parent dashboards for Android and desktop
-- An OTP/password-reset email service
-- A branded landing site
+* Release history and transparency are tracked in `CHANGELOG.md`.
+* `google-services.json` is required in Android modules.
+* Email service credentials must be supplied via environment variables.
+* Never commit secrets, private keys, or service-account files.
 
 > [!IMPORTANT]
 > Nexus must be used only on devices you lawfully own/manage and in compliance with local laws and consent requirements.
-
-## Monorepo Layout
-
-```text
-Nexus/
-|-- Nexus Child/android/           # Android child-side agent (Kotlin)
-|-- Nexus Parent/mobile/android/   # Android parent dashboard (Kotlin + XML)
-|-- Nexus Parent/desktop/          # Desktop parent dashboard (Electron)
-|-- e-mail/                        # OTP + password reset service (Node.js/Express)
-|-- landing/                       # Landing page (HTML/CSS/JS)
-|-- assets/                        # Shared media and branding assets
-`-- .github/                       # Repo metadata
-```
-
-## Highlighted Capabilities
-
-- Real-time parent-child signaling via Firebase Realtime Database
-- WebRTC media/control sessions between parent and child components
-- Parent monitoring interfaces on Android and desktop
-- Email verification and password recovery workflows
-- Static marketing/landing experience for distribution and onboarding
-
-## Tech Stack
-
-| Area | Stack |
-| --- | --- |
-| Child App | Kotlin, Android SDK, Gradle, Firebase Realtime Database, WebRTC |
-| Parent Android App | Kotlin, XML UI, Gradle, Firebase, WebRTC |
-| Parent Desktop App | Electron, Node.js, HTML, CSS, JavaScript |
-| Email Service | Node.js, Express, Firebase Admin SDK, Brevo API |
-| Landing Site | HTML5, CSS3, JavaScript, Three.js, GSAP |
-
-## Quick Start
-
-### 1) Clone
-
-```bash
-git clone https://github.com/soumo-git/Nexus.git
-cd Nexus
-```
-
-### 2) Parent Desktop
-
-```bash
-cd "Nexus Parent/desktop"
-npm install
-npm run dev
-```
-
-### 3) Parent Android
-
-```bash
-cd "Nexus Parent/mobile/android"
-./gradlew assembleDebug
-```
-
-### 4) Child Android
-
-```bash
-cd "Nexus Child/android"
-./gradlew assembleDebug
-```
-
-### 5) Email Service
-
-```bash
-cd "e-mail"
-npm install
-cp env.example .env
-npm run dev
-```
-
-### 6) Landing Site
-
-Open `landing/index.html` in a browser, or deploy the directory as a static site.
-
-## Configuration Notes
-
-- Release history and transparency are tracked in `CHANGELOG.md`.
-- `google-services.json` is required in Android modules.
-- Email service credentials must be supplied via environment variables.
-- Never commit secrets, private keys, or service-account files.
-
-## Module Docs
-
-- `Nexus Child/android/README.md`
-- `Nexus Parent/mobile/android/README.md`
-- `Nexus Parent/desktop/README.md`
-- `e-mail/README.md`
-- `landing/README.md`
-
-## Community
-
-- Contribution guide: `CONTRIBUTING.md`
-- Code of conduct: `CODE_OF_CONDUCT.md`
-- Security policy: `SECURITY.md`
-- License: `LICENSE` (MIT)
 
 ---
 

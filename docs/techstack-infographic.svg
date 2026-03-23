@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
+  <title id="t">Nexus Tech Stack</title>
+  <desc id="d">Technology stack by module for Nexus.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="60%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1F2937"/>
+    </linearGradient>
+    <linearGradient id="headerLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+    <!-- Card fills -->
+    <linearGradient id="gc1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0C2340"/>
+      <stop offset="100%" stop-color="#070F1C"/>
+    </linearGradient>
+    <linearGradient id="gc2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="100%" stop-color="#0D1830"/>
+    </linearGradient>
+    <linearGradient id="gc3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#052E2B"/>
+      <stop offset="100%" stop-color="#031A18"/>
+    </linearGradient>
+    <linearGradient id="gc4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2D0F20"/>
+      <stop offset="100%" stop-color="#1A0912"/>
+    </linearGradient>
+    <linearGradient id="gc5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2A1700"/>
+      <stop offset="100%" stop-color="#170E00"/>
+    </linearGradient>
+    <!-- Shared infra card -->
+    <linearGradient id="gcShared" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E1040"/>
+      <stop offset="100%" stop-color="#0F0920"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="760" fill="url(#bg)" rx="24"/>
+  <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="20" cy="20" r="1" fill="#fff" opacity="0.03"/>
+  </pattern>
+  <rect width="1400" height="760" fill="url(#dots)" rx="24"/>
+
+  <!-- Header -->
+  <text x="700" y="66" text-anchor="middle" fill="#E5E7EB" font-size="44" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="3">TECH STACK MAP</text>
+  <text x="700" y="98" text-anchor="middle" fill="#9CA3AF" font-size="17" font-family="Segoe UI, Arial">Purpose-built stacks for each product surface</text>
+  <rect x="300" y="114" width="800" height="2" rx="1" fill="url(#headerLine)" opacity="0.65"/>
+
+  <!-- ────────────────────────────────────────
+       ROW 1 — three app cards
+  ──────────────────────────────────────── -->
+
+  <!-- Card 1: Child App -->
+  <rect x="50" y="138" width="400" height="270" rx="18" fill="url(#gc1)" stroke="#38BDF8" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="50" y="138" width="400" height="5" rx="2.5" fill="#38BDF8"/>
+  <!-- header row -->
+  <circle cx="100" cy="190" r="28" fill="#0B1F3A" stroke="#38BDF8" stroke-width="1.5" filter="url(#glow)"/>
+  <text x="100" y="198" text-anchor="middle" fill="#38BDF8" font-size="24" font-family="Segoe UI, Arial">📱</text>
+  <text x="160" y="180" fill="#BAE6FD" font-size="22" font-family="Segoe UI, Arial" font-weight="700">Child App</text>
+  <text x="160" y="202" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Android on-device agent</text>
+  <rect x="70" y="218" width="360" height="1" fill="#1E3A5F"/>
+  <!-- Tech tags -->
+  <rect x="70" y="232" width="90" height="26" rx="13" fill="#0B1F3A" stroke="#38BDF8" stroke-width="1"/>
+  <text x="115" y="249" text-anchor="middle" fill="#7DD3FC" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Kotlin</text>
+  <rect x="172" y="232" width="120" height="26" rx="13" fill="#0B1F3A" stroke="#38BDF8" stroke-width="1"/>
+  <text x="232" y="249" text-anchor="middle" fill="#7DD3FC" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Android SDK</text>
+  <rect x="304" y="232" width="80" height="26" rx="13" fill="#0B1F3A" stroke="#38BDF8" stroke-width="1"/>
+  <text x="344" y="249" text-anchor="middle" fill="#7DD3FC" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Gradle</text>
+  <rect x="70" y="268" width="140" height="26" rx="13" fill="#0B1F3A" stroke="#38BDF8" stroke-width="1"/>
+  <text x="140" y="285" text-anchor="middle" fill="#7DD3FC" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Firebase Realtime DB</text>
+  <rect x="222" y="268" width="80" height="26" rx="13" fill="#0B1F3A" stroke="#38BDF8" stroke-width="1"/>
+  <text x="262" y="285" text-anchor="middle" fill="#7DD3FC" font-size="11" font-family="Segoe UI, Arial" font-weight="600">WebRTC</text>
+  <!-- Description -->
+  <rect x="70" y="310" width="360" height="1" fill="#1E3A5F"/>
+  <text x="70" y="332" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Data capture · Remote commands · Stealth mode</text>
+  <text x="70" y="352" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Foreground service · Reboot persistence</text>
+  <text x="70" y="372" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">WebRTC DataChannel + media streaming</text>
+
+  <!-- Card 2: Parent Android -->
+  <rect x="500" y="138" width="400" height="270" rx="18" fill="url(#gc2)" stroke="#60A5FA" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="500" y="138" width="400" height="5" rx="2.5" fill="#60A5FA"/>
+  <circle cx="550" cy="190" r="28" fill="#0F1E40" stroke="#60A5FA" stroke-width="1.5" filter="url(#glow)"/>
+  <text x="550" y="198" text-anchor="middle" fill="#60A5FA" font-size="24" font-family="Segoe UI, Arial">👨‍👩‍👧</text>
+  <text x="610" y="180" fill="#DBEAFE" font-size="22" font-family="Segoe UI, Arial" font-weight="700">Parent Android</text>
+  <text x="610" y="202" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Mobile supervision dashboard</text>
+  <rect x="520" y="218" width="360" height="1" fill="#1E3358"/>
+  <rect x="520" y="232" width="90" height="26" rx="13" fill="#0F1E40" stroke="#60A5FA" stroke-width="1"/>
+  <text x="565" y="249" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Kotlin</text>
+  <rect x="622" y="232" width="80" height="26" rx="13" fill="#0F1E40" stroke="#60A5FA" stroke-width="1"/>
+  <text x="662" y="249" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial" font-weight="600">XML UI</text>
+  <rect x="714" y="232" width="80" height="26" rx="13" fill="#0F1E40" stroke="#60A5FA" stroke-width="1"/>
+  <text x="754" y="249" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Gradle</text>
+  <rect x="520" y="268" width="100" height="26" rx="13" fill="#0F1E40" stroke="#60A5FA" stroke-width="1"/>
+  <text x="570" y="285" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Firebase</text>
+  <rect x="632" y="268" width="80" height="26" rx="13" fill="#0F1E40" stroke="#60A5FA" stroke-width="1"/>
+  <text x="672" y="285" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial" font-weight="600">WebRTC</text>
+  <rect x="520" y="310" width="360" height="1" fill="#1E3358"/>
+  <text x="520" y="332" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Real-time monitoring UI · Remote controls</text>
+  <text x="520" y="352" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Live camera/mic/location feeds</text>
+  <text x="520" y="372" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">SMS · Notifications · File browser</text>
+
+  <!-- Card 3: Parent Desktop -->
+  <rect x="950" y="138" width="400" height="270" rx="18" fill="url(#gc3)" stroke="#34D399" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="950" y="138" width="400" height="5" rx="2.5" fill="#34D399"/>
+  <circle cx="1000" cy="190" r="28" fill="#041E1B" stroke="#34D399" stroke-width="1.5" filter="url(#glow)"/>
+  <text x="1000" y="198" text-anchor="middle" fill="#34D399" font-size="24" font-family="Segoe UI, Arial">🖥</text>
+  <text x="1060" y="180" fill="#D1FAE5" font-size="22" font-family="Segoe UI, Arial" font-weight="700">Parent Desktop</text>
+  <text x="1060" y="202" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Electron command and control</text>
+  <rect x="970" y="218" width="360" height="1" fill="#0A3A2E"/>
+  <rect x="970" y="232" width="90" height="26" rx="13" fill="#041E1B" stroke="#34D399" stroke-width="1"/>
+  <text x="1015" y="249" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Electron</text>
+  <rect x="1072" y="232" width="90" height="26" rx="13" fill="#041E1B" stroke="#34D399" stroke-width="1"/>
+  <text x="1117" y="249" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Node.js</text>
+  <rect x="1174" y="232" width="80" height="26" rx="13" fill="#041E1B" stroke="#34D399" stroke-width="1"/>
+  <text x="1214" y="249" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial" font-weight="600">HTML/CSS</text>
+  <rect x="970" y="268" width="100" height="26" rx="13" fill="#041E1B" stroke="#34D399" stroke-width="1"/>
+  <text x="1020" y="285" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial" font-weight="600">JavaScript</text>
+  <rect x="1082" y="268" width="80" height="26" rx="13" fill="#041E1B" stroke="#34D399" stroke-width="1"/>
+  <text x="1122" y="285" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial" font-weight="600">WebRTC</text>
+  <rect x="970" y="310" width="360" height="1" fill="#0A3A2E"/>
+  <text x="970" y="332" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Draggable feature windows · AI assistant</text>
+  <text x="970" y="352" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Live camera/mic/screen feeds</text>
+  <text x="970" y="372" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">File browser · SMS · Location map</text>
+
+  <!-- ────────────────────────────────────────
+       ROW 2 — two service cards + shared infra
+  ──────────────────────────────────────── -->
+
+  <!-- Card 4: Email Service -->
+  <rect x="200" y="440" width="420" height="250" rx="18" fill="url(#gc4)" stroke="#F472B6" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="200" y="440" width="420" height="5" rx="2.5" fill="#F472B6"/>
+  <circle cx="255" cy="492" r="28" fill="#1F0A14" stroke="#F472B6" stroke-width="1.5" filter="url(#glow)"/>
+  <text x="255" y="500" text-anchor="middle" fill="#F472B6" font-size="24" font-family="Segoe UI, Arial">✉</text>
+  <text x="315" y="482" fill="#FBCFE8" font-size="22" font-family="Segoe UI, Arial" font-weight="700">Email Service</text>
+  <text x="315" y="504" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">OTP · password reset · backend API</text>
+  <rect x="220" y="520" width="380" height="1" fill="#4A1530"/>
+  <rect x="220" y="534" width="90" height="26" rx="13" fill="#1F0A14" stroke="#F472B6" stroke-width="1"/>
+  <text x="265" y="551" text-anchor="middle" fill="#F9A8D4" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Node.js</text>
+  <rect x="322" y="534" width="80" height="26" rx="13" fill="#1F0A14" stroke="#F472B6" stroke-width="1"/>
+  <text x="362" y="551" text-anchor="middle" fill="#F9A8D4" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Express</text>
+  <rect x="414" y="534" width="160" height="26" rx="13" fill="#1F0A14" stroke="#F472B6" stroke-width="1"/>
+  <text x="494" y="551" text-anchor="middle" fill="#F9A8D4" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Firebase Admin SDK</text>
+  <rect x="220" y="570" width="110" height="26" rx="13" fill="#1F0A14" stroke="#F472B6" stroke-width="1"/>
+  <text x="275" y="587" text-anchor="middle" fill="#F9A8D4" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Brevo API</text>
+  <rect x="220" y="614" width="380" height="1" fill="#4A1530"/>
+  <text x="220" y="636" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Transactional email delivery · REST API</text>
+  <text x="220" y="656" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Firebase auth integration · env-based config</text>
+
+  <!-- Card 5: Landing Site -->
+  <rect x="660" y="440" width="420" height="250" rx="18" fill="url(#gc5)" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="660" y="440" width="420" height="5" rx="2.5" fill="#F59E0B"/>
+  <circle cx="715" cy="492" r="28" fill="#1C1000" stroke="#F59E0B" stroke-width="1.5" filter="url(#glow)"/>
+  <text x="715" y="500" text-anchor="middle" fill="#F59E0B" font-size="24" font-family="Segoe UI, Arial">🌐</text>
+  <text x="775" y="482" fill="#FDE68A" font-size="22" font-family="Segoe UI, Arial" font-weight="700">Landing Site</text>
+  <text x="775" y="504" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Public brand + onboarding surface</text>
+  <rect x="680" y="520" width="380" height="1" fill="#3D2100"/>
+  <rect x="680" y="534" width="70" height="26" rx="13" fill="#1C1000" stroke="#F59E0B" stroke-width="1"/>
+  <text x="715" y="551" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial" font-weight="600">HTML5</text>
+  <rect x="762" y="534" width="60" height="26" rx="13" fill="#1C1000" stroke="#F59E0B" stroke-width="1"/>
+  <text x="792" y="551" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial" font-weight="600">CSS3</text>
+  <rect x="834" y="534" width="100" height="26" rx="13" fill="#1C1000" stroke="#F59E0B" stroke-width="1"/>
+  <text x="884" y="551" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial" font-weight="600">JavaScript</text>
+  <rect x="946" y="534" width="90" height="26" rx="13" fill="#1C1000" stroke="#F59E0B" stroke-width="1"/>
+  <text x="991" y="551" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial" font-weight="600">Three.js</text>
+  <rect x="680" y="570" width="60" height="26" rx="13" fill="#1C1000" stroke="#F59E0B" stroke-width="1"/>
+  <text x="710" y="587" text-anchor="middle" fill="#FCD34D" font-size="11" font-family="Segoe UI, Arial" font-weight="600">GSAP</text>
+  <rect x="680" y="614" width="380" height="1" fill="#3D2100"/>
+  <text x="680" y="636" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">3D animated hero · smooth scroll</text>
+  <text x="680" y="656" fill="#94A3B8" font-size="12" font-family="Segoe UI, Arial">Static deployment · no build step</text>
+
+  <!-- ── Shared Infrastructure footer bar ── -->
+  <rect x="50" y="710" width="1300" height="32" rx="10" fill="#0F172A" stroke="#1E293B" stroke-width="1"/>
+  <text x="700" y="731" text-anchor="middle" fill="#64748B" font-size="13" font-family="Segoe UI, Arial">Shared:  <tspan fill="#38BDF8" font-weight="600">Firebase Realtime DB</tspan>  ·  <tspan fill="#34D399" font-weight="600">WebRTC (libwebrtc)</tspan>  ·  <tspan fill="#A78BFA" font-weight="600">DTLS/SRTP encryption</tspan>  ·  <tspan fill="#F472B6" font-weight="600">Firebase Auth</tspan>  ·  <tspan fill="#F59E0B" font-weight="600">Google STUN</tspan></text>
+</svg>

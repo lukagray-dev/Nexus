@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1020" viewBox="0 0 1400 1020" role="img" aria-labelledby="title desc">
+  <title id="title">Nexus Capabilities</title>
+  <desc id="desc">Nexus Agent and Dashboard capabilities infographic.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="60%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1F2937"/>
+    </linearGradient>
+    <linearGradient id="chipBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="chipGreen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+    <linearGradient id="chipAmber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="cardBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0C2340"/>
+      <stop offset="100%" stop-color="#0F1A2E"/>
+    </linearGradient>
+    <linearGradient id="cardGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#062818"/>
+      <stop offset="100%" stop-color="#0A1F14"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowStrong" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="1020" fill="url(#bg)" rx="24"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.04" stroke="#60a5fa" stroke-width="1">
+    <line x1="0" y1="200" x2="1400" y2="200"/>
+    <line x1="0" y1="400" x2="1400" y2="400"/>
+    <line x1="0" y1="600" x2="1400" y2="600"/>
+    <line x1="0" y1="800" x2="1400" y2="800"/>
+    <line x1="200" y1="0" x2="200" y2="1020"/>
+    <line x1="500" y1="0" x2="500" y2="1020"/>
+    <line x1="800" y1="0" x2="800" y2="1020"/>
+    <line x1="1100" y1="0" x2="1100" y2="1020"/>
+  </g>
+
+  <!-- Header -->
+  <text x="700" y="72" text-anchor="middle" fill="#E5E7EB" font-size="44" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="2">NEXUS CAPABILITIES</text>
+  <text x="700" y="104" text-anchor="middle" fill="#9CA3AF" font-size="18" font-family="Segoe UI, Arial">Comprehensive monitoring and management suite for child devices</text>
+
+  <!-- Divider line -->
+  <rect x="300" y="120" width="800" height="2" rx="1" fill="url(#chipBlue)" opacity="0.6"/>
+
+  <!-- ═══════════════════════════════════════════════
+       LEFT PANEL — CHILD AGENT
+  ════════════════════════════════════════════════ -->
+  <rect x="40" y="140" width="660" height="700" rx="20" fill="url(#cardBlue)" stroke="#1D4ED8" stroke-width="1.5" opacity="0.95"/>
+  <!-- Card top accent line -->
+  <rect x="40" y="140" width="660" height="4" rx="2" fill="url(#chipBlue)"/>
+
+  <!-- Agent chip -->
+  <rect x="60" y="164" width="160" height="32" rx="16" fill="url(#chipBlue)"/>
+  <text x="140" y="185" text-anchor="middle" fill="#fff" font-size="13" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="1">CHILD AGENT</text>
+
+  <text x="60" y="224" fill="#93C5FD" font-size="20" font-family="Segoe UI, Arial" font-weight="700">On-device intelligence layer</text>
+  <text x="60" y="248" fill="#64748B" font-size="14" font-family="Segoe UI, Arial">Live visibility · Resilient execution · Remote control</text>
+
+  <!-- Separator -->
+  <rect x="60" y="264" width="620" height="1" fill="#1E3A5F"/>
+
+  <!-- Capability rows — Agent -->
+  <!-- Row template: icon circle + label + desc -->
+
+  <!-- 1: Real-time Environmental Monitoring -->
+  <circle cx="85" cy="305" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="311" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">📡</text>
+  <text x="116" y="300" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Real-time Environmental Monitoring</text>
+  <text x="116" y="318" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Camera · Microphone · GPS · SMS · Call logs · File storage</text>
+
+  <!-- 2: Live Display Capture -->
+  <circle cx="85" cy="360" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="366" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">🖥</text>
+  <text x="116" y="355" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Live Display Capture</text>
+  <text x="116" y="373" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Real-time screen streaming · High-resolution snapshots</text>
+
+  <!-- 3: Active Call Supervision -->
+  <circle cx="85" cy="415" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="421" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">📞</text>
+  <text x="116" y="410" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Active Call Supervision</text>
+  <text x="116" y="428" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Real-time monitoring of incoming and outgoing calls</text>
+
+  <!-- 4: Encrypted Messaging Oversight -->
+  <circle cx="85" cy="470" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="476" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">💬</text>
+  <text x="116" y="465" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Encrypted Messaging Oversight</text>
+  <text x="116" y="483" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">WhatsApp · Messenger · Telegram via Accessibility Services</text>
+
+  <!-- 5: Notification Interception -->
+  <circle cx="85" cy="525" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="531" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">🔔</text>
+  <text x="116" y="520" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Notification Interception</text>
+  <text x="116" y="538" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">All system and app-level notifications, live</text>
+
+  <!-- 6: Email Monitoring -->
+  <circle cx="85" cy="580" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="586" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">✉</text>
+  <text x="116" y="575" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Email Monitoring</text>
+  <text x="116" y="593" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Gmail via official Google API integration</text>
+
+  <!-- 7: Discreet Operation + Identity Camouflage -->
+  <circle cx="85" cy="635" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="641" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">👁</text>
+  <text x="116" y="630" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Discreet Operation + Identity Camouflage</text>
+  <text x="116" y="648" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Hidden from launcher · Dynamic icon + label masking</text>
+
+  <!-- 8: System Resilience -->
+  <circle cx="85" cy="690" r="18" fill="#0B2545" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="85" y="696" text-anchor="middle" fill="#38BDF8" font-size="16" font-family="Segoe UI, Arial">🛡</text>
+  <text x="116" y="685" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">System Resilience</text>
+  <text x="116" y="703" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Auto-recovery from termination · Reboot persistence</text>
+
+  <!-- Bottom additional tools pill row -->
+  <rect x="60" y="730" width="620" height="1" fill="#1E3A5F"/>
+  <text x="60" y="760" fill="#60A5FA" font-size="12" font-family="Segoe UI, Arial" font-weight="600" letter-spacing="1">ADDITIONAL TOOLS</text>
+  <rect x="60" y="774" width="200" height="28" rx="14" fill="#0B2545" stroke="#60A5FA" stroke-width="1"/>
+  <text x="160" y="793" text-anchor="middle" fill="#93C5FD" font-size="12" font-family="Segoe UI, Arial">📢 Priority Voice Broadcast</text>
+  <rect x="276" y="774" width="190" height="28" rx="14" fill="#0B2545" stroke="#60A5FA" stroke-width="1"/>
+  <text x="371" y="793" text-anchor="middle" fill="#93C5FD" font-size="12" font-family="Segoe UI, Arial">🖼 Remote Wallpaper Control</text>
+
+  <!-- ═══════════════════════════════════════════════
+       RIGHT PANEL — PARENT DASHBOARD
+  ════════════════════════════════════════════════ -->
+  <rect x="720" y="140" width="640" height="460" rx="20" fill="url(#cardGreen)" stroke="#15803D" stroke-width="1.5" opacity="0.95"/>
+  <rect x="720" y="140" width="640" height="4" rx="2" fill="url(#chipGreen)"/>
+
+  <!-- Dashboard chip -->
+  <rect x="740" y="164" width="190" height="32" rx="16" fill="url(#chipGreen)"/>
+  <text x="835" y="185" text-anchor="middle" fill="#fff" font-size="13" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="1">PARENT DASHBOARD</text>
+
+  <text x="740" y="224" fill="#86EFAC" font-size="20" font-family="Segoe UI, Arial" font-weight="700">Central command and control</text>
+  <text x="740" y="248" fill="#64748B" font-size="14" font-family="Segoe UI, Arial">Unified admin interface for all connected child devices</text>
+
+  <rect x="740" y="264" width="600" height="1" fill="#14532D"/>
+
+  <!-- Dashboard rows -->
+  <circle cx="765" cy="305" r="18" fill="#0A2E1A" stroke="#4ADE80" stroke-width="1.5"/>
+  <text x="765" y="311" text-anchor="middle" fill="#4ADE80" font-size="16" font-family="Segoe UI, Arial">🖥</text>
+  <text x="796" y="300" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Unified Command Console</text>
+  <text x="796" y="318" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Single interface for live state and historical events</text>
+
+  <circle cx="765" cy="360" r="18" fill="#0A2E1A" stroke="#4ADE80" stroke-width="1.5"/>
+  <text x="765" y="366" text-anchor="middle" fill="#4ADE80" font-size="16" font-family="Segoe UI, Arial">🔒</text>
+  <text x="796" y="355" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Secure Data Ingestion</text>
+  <text x="796" y="373" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Receives and organizes device data for rapid review</text>
+
+  <circle cx="765" cy="415" r="18" fill="#0A2E1A" stroke="#4ADE80" stroke-width="1.5"/>
+  <text x="765" y="421" text-anchor="middle" fill="#4ADE80" font-size="16" font-family="Segoe UI, Arial">🎮</text>
+  <text x="796" y="410" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Remote Device Controls</text>
+  <text x="796" y="428" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Trigger actions · Inspect activity · Manage responses</text>
+
+  <circle cx="765" cy="470" r="18" fill="#0A2E1A" stroke="#4ADE80" stroke-width="1.5"/>
+  <text x="765" y="476" text-anchor="middle" fill="#4ADE80" font-size="16" font-family="Segoe UI, Arial">📊</text>
+  <text x="796" y="465" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Operational Clarity</text>
+  <text x="796" y="483" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Structured timeline view for fast decision-making</text>
+
+  <circle cx="765" cy="525" r="18" fill="#0A2E1A" stroke="#4ADE80" stroke-width="1.5"/>
+  <text x="765" y="531" text-anchor="middle" fill="#4ADE80" font-size="16" font-family="Segoe UI, Arial">🌐</text>
+  <text x="796" y="520" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Multi-Platform Access</text>
+  <text x="796" y="538" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Android mobile + Electron desktop dashboard</text>
+
+  <!-- ═══════════════════════════════════════════════
+       BOTTOM RIGHT — WEB ACTIVITY + APP TRACKING
+  ════════════════════════════════════════════════ -->
+  <rect x="720" y="620" width="640" height="220" rx="20" fill="#131A2A" stroke="#7C3AED" stroke-width="1.5" opacity="0.95"/>
+  <rect x="720" y="620" width="640" height="4" rx="2" fill="url(#chipAmber)"/>
+
+  <rect x="740" y="644" width="200" height="32" rx="16" fill="url(#chipAmber)"/>
+  <text x="840" y="665" text-anchor="middle" fill="#fff" font-size="13" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="1">ANALYTICS LAYER</text>
+
+  <circle cx="765" cy="715" r="18" fill="#1A1030" stroke="#A78BFA" stroke-width="1.5"/>
+  <text x="765" y="721" text-anchor="middle" fill="#A78BFA" font-size="16" font-family="Segoe UI, Arial">🌍</text>
+  <text x="796" y="710" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Web Activity Analysis</text>
+  <text x="796" y="728" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Browsing history across Chrome, Firefox, and standard browsers</text>
+
+  <circle cx="765" cy="770" r="18" fill="#1A1030" stroke="#A78BFA" stroke-width="1.5"/>
+  <text x="765" y="776" text-anchor="middle" fill="#A78BFA" font-size="16" font-family="Segoe UI, Arial">📱</text>
+  <text x="796" y="765" fill="#E2E8F0" font-size="14" font-family="Segoe UI, Arial" font-weight="700">Application Lifecycle Tracking</text>
+  <text x="796" y="783" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Usage duration · Frequency · Access patterns per app</text>
+
+  <!-- ═══════════════════════════════════════════════
+       BOTTOM FOOTER BAR
+  ════════════════════════════════════════════════ -->
+  <rect x="40" y="870" width="1320" height="110" rx="16" fill="#0B1220" stroke="#1E293B" stroke-width="1"/>
+
+  <!-- Three stat pills -->
+  <rect x="120" y="895" width="320" height="60" rx="12" fill="#0F172A" stroke="#1D4ED8" stroke-width="1"/>
+  <text x="280" y="920" text-anchor="middle" fill="#93C5FD" font-size="13" font-family="Segoe UI, Arial" font-weight="700">TRANSPORT</text>
+  <text x="280" y="942" text-anchor="middle" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">WebRTC P2P · Firebase Signaling</text>
+
+  <rect x="540" y="895" width="320" height="60" rx="12" fill="#0F172A" stroke="#15803D" stroke-width="1"/>
+  <text x="700" y="920" text-anchor="middle" fill="#86EFAC" font-size="13" font-family="Segoe UI, Arial" font-weight="700">PLATFORM</text>
+  <text x="700" y="942" text-anchor="middle" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">Android (Child) · Android + Electron (Parent)</text>
+
+  <rect x="960" y="895" width="320" height="60" rx="12" fill="#0F172A" stroke="#D97706" stroke-width="1"/>
+  <text x="1120" y="920" text-anchor="middle" fill="#FCD34D" font-size="13" font-family="Segoe UI, Arial" font-weight="700">ENCRYPTION</text>
+  <text x="1120" y="942" text-anchor="middle" fill="#64748B" font-size="12" font-family="Segoe UI, Arial">WebRTC DTLS/SRTP end-to-end</text>
+</svg>

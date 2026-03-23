@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" role="img" aria-labelledby="t d">
+  <title id="t">Nexus Quick Start</title>
+  <desc id="d">Step-by-step quick start guide for compiling Nexus.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="60%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1F2937"/>
+    </linearGradient>
+    <linearGradient id="headerLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+    <!-- Step number badge gradients -->
+    <linearGradient id="b1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0284C7"/><stop offset="100%" stop-color="#0EA5E9"/></linearGradient>
+    <linearGradient id="b2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#10B981"/></linearGradient>
+    <linearGradient id="b3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2563EB"/><stop offset="100%" stop-color="#60A5FA"/></linearGradient>
+    <linearGradient id="b4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#A78BFA"/></linearGradient>
+    <linearGradient id="b5" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#DB2777"/><stop offset="100%" stop-color="#F472B6"/></linearGradient>
+    <linearGradient id="b6" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#D97706"/><stop offset="100%" stop-color="#F59E0B"/></linearGradient>
+    <!-- Card fills matching badge accent -->
+    <linearGradient id="c1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0C1E35"/><stop offset="100%" stop-color="#070F1C"/></linearGradient>
+    <linearGradient id="c2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#052E2B"/><stop offset="100%" stop-color="#031A18"/></linearGradient>
+    <linearGradient id="c3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D1F45"/><stop offset="100%" stop-color="#080F25"/></linearGradient>
+    <linearGradient id="c4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A0E35"/><stop offset="100%" stop-color="#0D0820"/></linearGradient>
+    <linearGradient id="c5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2D0F20"/><stop offset="100%" stop-color="#1A0912"/></linearGradient>
+    <linearGradient id="c6" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2A1700"/><stop offset="100%" stop-color="#170E00"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="860" fill="url(#bg)" rx="24"/>
+  <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="20" cy="20" r="1" fill="#fff" opacity="0.03"/>
+  </pattern>
+  <rect width="1400" height="860" fill="url(#dots)" rx="24"/>
+
+  <!-- Header -->
+  <text x="700" y="66" text-anchor="middle" fill="#E5E7EB" font-size="44" font-family="Segoe UI, Arial" font-weight="700" letter-spacing="3">QUICK START</text>
+  <text x="700" y="98" text-anchor="middle" fill="#9CA3AF" font-size="17" font-family="Segoe UI, Arial">Compile and run each module from source</text>
+  <rect x="300" y="114" width="800" height="2" rx="1" fill="url(#headerLine)" opacity="0.65"/>
+
+  <!-- Vertical spine connecting all steps -->
+  <line x1="100" y1="155" x2="100" y2="820" stroke="#1E293B" stroke-width="2" stroke-dasharray="6,5"/>
+
+  <!-- ══════════════════════════════════════
+       STEP 1 — Clone
+  ══════════════════════════════════════ -->
+  <circle cx="100" cy="172" r="22" fill="url(#b1)" filter="url(#glow)"/>
+  <text x="100" y="179" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, Arial" font-weight="700">1</text>
+
+  <rect x="144" y="142" width="1216" height="90" rx="14" fill="url(#c1)" stroke="#0EA5E9" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="144" y="142" width="1216" height="4" rx="2" fill="#0EA5E9"/>
+
+  <text x="175" y="174" fill="#BAE6FD" font-size="15" font-family="Segoe UI, Arial" font-weight="700">Clone the repository</text>
+  <rect x="175" y="183" width="560" height="26" rx="6" fill="#060D18"/>
+  <text x="190" y="200" fill="#38BDF8" font-size="12" font-family="Consolas, monospace">git clone https://github.com/soumo-git/Nexus.git</text>
+  <rect x="748" y="183" width="200" height="26" rx="6" fill="#060D18"/>
+  <text x="763" y="200" fill="#38BDF8" font-size="12" font-family="Consolas, monospace">cd Nexus</text>
+
+  <!-- ══════════════════════════════════════
+       STEP 2 — Parent Desktop
+  ══════════════════════════════════════ -->
+  <circle cx="100" cy="280" r="22" fill="url(#b2)" filter="url(#glow)"/>
+  <text x="100" y="287" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, Arial" font-weight="700">2</text>
+
+  <rect x="144" y="250" width="1216" height="100" rx="14" fill="url(#c2)" stroke="#34D399" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="144" y="250" width="1216" height="4" rx="2" fill="#34D399"/>
+
+  <!-- Icon + title -->
+  <circle cx="185" cy="285" r="18" fill="#041E1B" stroke="#34D399" stroke-width="1.2"/>
+  <text x="185" y="292" text-anchor="middle" fill="#34D399" font-size="14" font-family="Segoe UI, Arial">🖥</text>
+  <text x="214" y="278" fill="#D1FAE5" font-size="15" font-family="Segoe UI, Arial" font-weight="700">Parent Desktop</text>
+  <text x="214" y="296" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Electron · Node.js</text>
+
+  <!-- Command -->
+  <rect x="380" y="264" width="820" height="26" rx="6" fill="#031A18"/>
+  <text x="395" y="281" fill="#6EE7B7" font-size="12" font-family="Consolas, monospace">cd "Nexus Parent/desktop" &amp;&amp; npm install &amp;&amp; npm run dev</text>
+
+  <!-- Ref link pill -->
+  <rect x="1214" y="264" width="130" height="26" rx="13" fill="#041E1B" stroke="#34D399" stroke-width="1"/>
+  <text x="1279" y="281" text-anchor="middle" fill="#6EE7B7" font-size="11" font-family="Segoe UI, Arial">📄 README.md</text>
+
+  <!-- Sub-note -->
+  <text x="380" y="333" fill="#4B5563" font-size="11" font-family="Segoe UI, Arial">See: Nexus Parent/desktop/README.md for detailed setup</text>
+
+  <!-- ══════════════════════════════════════
+       STEP 3 — Parent Android
+  ══════════════════════════════════════ -->
+  <circle cx="100" cy="395" r="22" fill="url(#b3)" filter="url(#glow)"/>
+  <text x="100" y="402" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, Arial" font-weight="700">3</text>
+
+  <rect x="144" y="365" width="1216" height="100" rx="14" fill="url(#c3)" stroke="#60A5FA" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="144" y="365" width="1216" height="4" rx="2" fill="#60A5FA"/>
+
+  <circle cx="185" cy="400" r="18" fill="#0F1E40" stroke="#60A5FA" stroke-width="1.2"/>
+  <text x="185" y="407" text-anchor="middle" fill="#60A5FA" font-size="14" font-family="Segoe UI, Arial">👨‍👩‍👧</text>
+  <text x="214" y="393" fill="#DBEAFE" font-size="15" font-family="Segoe UI, Arial" font-weight="700">Parent Android</text>
+  <text x="214" y="411" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Kotlin · Android SDK</text>
+
+  <rect x="380" y="379" width="820" height="26" rx="6" fill="#080F25"/>
+  <text x="395" y="396" fill="#93C5FD" font-size="12" font-family="Consolas, monospace">cd "Nexus Parent/mobile/android" &amp;&amp; ./gradlew assembleDebug</text>
+
+  <rect x="1214" y="379" width="130" height="26" rx="13" fill="#0F1E40" stroke="#60A5FA" stroke-width="1"/>
+  <text x="1279" y="396" text-anchor="middle" fill="#93C5FD" font-size="11" font-family="Segoe UI, Arial">📄 README.md</text>
+
+  <text x="380" y="448" fill="#4B5563" font-size="11" font-family="Segoe UI, Arial">See: Nexus Parent/mobile/android/README.md for detailed setup</text>
+
+  <!-- ══════════════════════════════════════
+       STEP 4 — Child Android
+  ══════════════════════════════════════ -->
+  <circle cx="100" cy="510" r="22" fill="url(#b4)" filter="url(#glow)"/>
+  <text x="100" y="517" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, Arial" font-weight="700">4</text>
+
+  <rect x="144" y="480" width="1216" height="100" rx="14" fill="url(#c4)" stroke="#A78BFA" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="144" y="480" width="1216" height="4" rx="2" fill="#A78BFA"/>
+
+  <circle cx="185" cy="515" r="18" fill="#1A0E35" stroke="#A78BFA" stroke-width="1.2"/>
+  <text x="185" y="522" text-anchor="middle" fill="#A78BFA" font-size="14" font-family="Segoe UI, Arial">📱</text>
+  <text x="214" y="508" fill="#EDE9FE" font-size="15" font-family="Segoe UI, Arial" font-weight="700">Child Android</text>
+  <text x="214" y="526" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Kotlin · Android SDK</text>
+
+  <rect x="380" y="494" width="820" height="26" rx="6" fill="#0D0820"/>
+  <text x="395" y="511" fill="#C4B5FD" font-size="12" font-family="Consolas, monospace">cd "Nexus Child/android" &amp;&amp; ./gradlew assembleDebug</text>
+
+  <rect x="1214" y="494" width="130" height="26" rx="13" fill="#1A0E35" stroke="#A78BFA" stroke-width="1"/>
+  <text x="1279" y="511" text-anchor="middle" fill="#C4B5FD" font-size="11" font-family="Segoe UI, Arial">📄 README.md</text>
+
+  <text x="380" y="563" fill="#4B5563" font-size="11" font-family="Segoe UI, Arial">See: Nexus Child/android/README.md for detailed setup</text>
+
+  <!-- ══════════════════════════════════════
+       STEP 5 — Email Service (multi-command)
+  ══════════════════════════════════════ -->
+  <circle cx="100" cy="625" r="22" fill="url(#b5)" filter="url(#glow)"/>
+  <text x="100" y="632" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, Arial" font-weight="700">5</text>
+
+  <rect x="144" y="592" width="1216" height="150" rx="14" fill="url(#c5)" stroke="#F472B6" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="144" y="592" width="1216" height="4" rx="2" fill="#F472B6"/>
+
+  <circle cx="185" cy="630" r="18" fill="#1F0A14" stroke="#F472B6" stroke-width="1.2"/>
+  <text x="185" y="637" text-anchor="middle" fill="#F472B6" font-size="14" font-family="Segoe UI, Arial">✉</text>
+  <text x="214" y="623" fill="#FBCFE8" font-size="15" font-family="Segoe UI, Arial" font-weight="700">Email Service</text>
+  <text x="214" y="641" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Node.js · Express · Brevo API</text>
+
+  <!-- 4 commands in a 2x2 grid -->
+  <rect x="380" y="606" width="360" height="26" rx="6" fill="#1A0912"/>
+  <text x="395" y="623" fill="#F9A8D4" font-size="12" font-family="Consolas, monospace">cd "e-mail" &amp;&amp; npm install</text>
+
+  <rect x="754" y="606" width="280" height="26" rx="6" fill="#1A0912"/>
+  <text x="769" y="623" fill="#F9A8D4" font-size="12" font-family="Consolas, monospace">cp env.example .env</text>
+
+  <rect x="380" y="642" width="660" height="26" rx="6" fill="#1A0912"/>
+  <text x="395" y="659" fill="#F9A8D4" font-size="12" font-family="Consolas, monospace">Fill in: Firebase service account · Brevo API key · sender email</text>
+
+  <rect x="380" y="678" width="200" height="26" rx="6" fill="#1A0912"/>
+  <text x="395" y="695" fill="#F9A8D4" font-size="12" font-family="Consolas, monospace">npm run dev</text>
+
+  <rect x="1214" y="606" width="130" height="26" rx="13" fill="#1F0A14" stroke="#F472B6" stroke-width="1"/>
+  <text x="1279" y="623" text-anchor="middle" fill="#F9A8D4" font-size="11" font-family="Segoe UI, Arial">📄 README.md</text>
+
+  <text x="595" y="716" fill="#4B5563" font-size="11" font-family="Segoe UI, Arial">See: e-mail/README.md for env variable reference</text>
+
+  <!-- ══════════════════════════════════════
+       STEP 6 — Landing Site
+  ══════════════════════════════════════ -->
+  <circle cx="100" cy="790" r="22" fill="url(#b6)" filter="url(#glow)"/>
+  <text x="100" y="797" text-anchor="middle" fill="#fff" font-size="16" font-family="Segoe UI, Arial" font-weight="700">6</text>
+
+  <rect x="144" y="760" width="1216" height="80" rx="14" fill="url(#c6)" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="144" y="760" width="1216" height="4" rx="2" fill="#F59E0B"/>
+
+  <circle cx="185" cy="795" r="18" fill="#1C1000" stroke="#F59E0B" stroke-width="1.2"/>
+  <text x="185" y="802" text-anchor="middle" fill="#F59E0B" font-size="14" font-family="Segoe UI, Arial">🌐</text>
+  <text x="214" y="788" fill="#FDE68A" font-size="15" font-family="Segoe UI, Arial" font-weight="700">Landing Site</text>
+  <text x="214" y="806" fill="#64748B" font-size="11" font-family="Segoe UI, Arial">Static · no build step</text>
+
+  <rect x="380" y="774" width="560" height="26" rx="6" fill="#170E00"/>
+  <text x="395" y="791" fill="#FCD34D" font-size="12" font-family="Consolas, monospace">Open landing/index.html in browser  —  or deploy as static site</text>
+</svg>
