@@ -10,6 +10,7 @@ for stable releases.
 
 ### Added
 - `CHANGELOG.md` for transparent release tracking.
+- Collaboration workflow note for achievement-driven PR validation.
 
 ## [0.1.0-pre.1] - 2026-03-22
 
