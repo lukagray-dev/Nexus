@@ -9,10 +9,6 @@
 * **Core Objective**:
   * Providing parents a **comprehensive surveillance** over minor-owned devices.
   * With **minimal detectability and high survivability** against app/OS updates.
-* **Global Constraints**:
-  * **Binary size**: <100 MB per app (agent + dashboard, mobile + desktop).
-  * **Performance**: Native-level execution on all critical paths.
-  * **Maintenance**: Native implementation for Child, Electron for Desktop Parent.
 
 ## **Framework & Technology Strategy**
 
@@ -148,7 +144,7 @@ Additional engagement and management tools include:
 * The Dashboard serves as the centralized administrative interface, providing comprehensive command-and-control capabilities over the distributed Agent network.
 * It functions as the secure endpoint for data reception, visualization, and strategic oversight, enabling parents to monitor and manage child device activity through a unified and intuitive console.
 
-## **Additional Mods**
+## **Additional Mods** (Later goals 🙋🏻‍♂️)
 
 To enable deep chat and email visibility beyond accessibility and notification-based methods, Nexus supports optional modified (modded) application builds for selected third-party apps. *These mods operate entirely at the application layer and do not require device rooting*.
 
@@ -185,27 +181,6 @@ To enable deep chat and email visibility beyond accessibility and notification-b
 * Parents manually initiate downloads and installs of modded apps.
 * Original apps must be uninstalled before installing modded versions.
 * Automatic Play Store updates are inherently blocked due to signature mismatch.
-
-### Update Strategy
-
-* Custom update mechanism managed by Nexus Agent:
-  * Version manifest per app
-  * Manual update trigger by parent
-  * Rollback support for failed or incompatible builds
-* Old upstream versions may continue functioning until server-side enforcement.
-
-### Security and Isolation
-
-* Mods operate strictly within their own app sandbox.
-* No cross-app filesystem access.
-* No kernel, SELinux, or system privilege escalation.
-* Nexus Agent trusts mods by signature hash only.
-
-### Maintenance Model
-
-* Mod logic is modular and deterministic.
-* Patching is repeatable across upstream versions.
-* Designed for open-source collaboration and community maintenance.
 
 ### Limitations
 

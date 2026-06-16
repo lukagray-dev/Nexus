@@ -7,9 +7,7 @@ plugins {
 
 android {
     namespace 'nexus.android.parent'
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk 36
 
     defaultConfig {
         applicationId "nexus.android.parent"

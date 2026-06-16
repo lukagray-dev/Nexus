@@ -8,7 +8,7 @@ object AppConfig {
 
     // Firebase Configuration
     object Firebase {
-        const val DATABASE_URL = "https://nexusparentalcontrol-default-rtdb.asia-southeast1.firebasedatabase.app"
+        const val DATABASE_URL = "https://nexus-33-default-rtdb.firebaseio.com"
     }
 
     // WebRTC Configuration

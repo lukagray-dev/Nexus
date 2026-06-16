@@ -1,0 +1,234 @@
+name: Build and Release Beta
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-version:
+    name: Calculate Next Beta Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next_version.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest beta tag
+        id: latest_tag
+        run: |
+          # Get all beta tags sorted
+          LATEST=$(git tag -l "v*-beta" | sort -V | tail -n 1)
+          
+          if [ -z "$LATEST" ]; then
+            echo "No previous beta tags found"
+            echo "tag=v0.0.0-beta" >> $GITHUB_OUTPUT
+          else
+            echo "Latest beta tag: $LATEST"
+            echo "tag=$LATEST" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate next version
+        id: next_version
+        run: |
+          LATEST="${{ steps.latest_tag.outputs.tag }}"
+          
+          # Extract version number (e.g., v0.0.1-beta -> 0.0.1)
+          VERSION=$(echo "$LATEST" | sed 's/v\(.*\)-beta/\1/')
+          
+          # Split into major.minor.patch
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          
+          # Increment patch version
+          PATCH=$((PATCH + 1))
+          
+          # Create new version
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}-beta"
+          
+          echo "Next version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+  build-child-android:
+    name: Build Child Android
+    runs-on: ubuntu-latest
+    needs: prepare-version
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Install SDK packages
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build Child Android APK
+        working-directory: Nexus Child/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: |
+          VERSION="${{ needs.prepare-version.outputs.version }}"
+          cp "Nexus Child/android/app/build/outputs/apk/release/app-release-unsigned.apk" \
+             "child-android-${VERSION}.apk"
+
+      - name: Upload Child APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: child-android
+          path: child-android-*.apk
+
+  build-parent-android:
+    name: Build Parent Android
+    runs-on: ubuntu-latest
+    needs: prepare-version
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Install SDK packages
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build Parent Android APK
+        working-directory: Nexus Parent/mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: |
+          VERSION="${{ needs.prepare-version.outputs.version }}"
+          cp "Nexus Parent/mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk" \
+             "parent-android-${VERSION}.apk"
+
+      - name: Upload Parent APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: parent-android
+          path: parent-android-*.apk
+
+  build-parent-windows:
+    name: Build Parent Windows
+    runs-on: windows-latest
+    needs: prepare-version
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Nexus Parent/desktop/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Nexus Parent/desktop
+        run: npm ci
+
+      - name: Build Windows Portable
+        working-directory: Nexus Parent/desktop
+        run: npm run build:win
+
+      - name: Rename executable
+        shell: pwsh
+        run: |
+          $VERSION = "${{ needs.prepare-version.outputs.version }}"
+          $PortableExe = Get-ChildItem "Nexus Parent/desktop/release" -Filter "*.exe" | Select-Object -First 1
+          if ($PortableExe) {
+            Copy-Item $PortableExe.FullName -Destination "parent-windows-$VERSION.exe"
+            Write-Host "Created: parent-windows-$VERSION.exe"
+          } else {
+            Write-Error "No executable found in release directory"
+            exit 1
+          }
+
+      - name: Upload Windows Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: parent-windows
+          path: parent-windows-*.exe
+
+  create-release:
+    name: Create Pre-Release
+    runs-on: ubuntu-latest
+    needs: [prepare-version, build-child-android, build-parent-android, build-parent-windows]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display artifact structure
+        run: ls -R artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.prepare-version.outputs.version }}
+          name: ${{ needs.prepare-version.outputs.version }}
+          body: |
+            ## Nexus Beta Release ${{ needs.prepare-version.outputs.version }}
+            
+            **Automated pre-release build from main branch**
+            
+            ### Downloads
+            - **Child Android**: `child-android-${{ needs.prepare-version.outputs.version }}.apk`
+            - **Parent Android**: `parent-android-${{ needs.prepare-version.outputs.version }}.apk`
+            - **Parent Windows**: `parent-windows-${{ needs.prepare-version.outputs.version }}.exe` (Portable - No installer needed)
+            
+            ### Installation
+            - **Android**: Enable "Install from unknown sources" and install the APK
+            - **Windows**: Download and run the .exe directly (portable, no installation required)
+            
+            ---
+            *This is a pre-release beta build. Report issues on GitHub.*
+          prerelease: true
+          draft: false
+          files: |
+            artifacts/child-android/*.apk
+            artifacts/parent-android/*.apk
+            artifacts/parent-windows/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -51,36 +51,15 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
+          "target": "portable",
           "arch": [
             "x64"
           ]
         }
       ],
-      "icon": "build/icon.png",
+      "icon": "dist/Nexus_Parent_icon.png",
       "publisherName": "Nexus Team",
-      "sign": "./scripts/no-sign.js"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowElevation": true,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": "always",
-      "createStartMenuShortcut": true,
-      "shortcutName": "Nexus Parent",
-      "include": "build/installer.nsh",
-      "artifactName": "${productName}-Setup-${version}.${ext}",
-      "deleteAppDataOnUninstall": false,
-      "runAfterFinish": true,
-      "menuCategory": true,
-      "displayLanguageSelector": false,
-      "installerLanguages": [
-        "en_US"
-      ],
-      "language": "1033",
-      "perMachine": false,
-      "warningsAsErrors": false,
-      "differentialPackage": false
+      "sign": null
     }
   }
 }

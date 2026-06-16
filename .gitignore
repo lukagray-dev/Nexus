@@ -106,3 +106,4 @@ temp/
 
 # Large raw media (keep out of git history)
 assets/*.mp4
+res-backup/
