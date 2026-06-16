@@ -171,12 +171,12 @@ jobs:
         shell: pwsh
         run: |
           $VERSION = "${{ needs.prepare-version.outputs.version }}"
-          $PortableExe = Get-ChildItem "Nexus Parent/desktop/release" -Filter "*.exe" | Select-Object -First 1
-          if ($PortableExe) {
-            Copy-Item $PortableExe.FullName -Destination "parent-windows-$VERSION.exe"
-            Write-Host "Created: parent-windows-$VERSION.exe"
+          $SetupExe = Get-ChildItem "Nexus Parent/desktop/release" -Filter "*setup*.exe" | Select-Object -First 1
+          if ($SetupExe) {
+            Copy-Item $SetupExe.FullName -Destination "parent-windows-$VERSION-setup.exe"
+            Write-Host "Created: parent-windows-$VERSION-setup.exe"
           } else {
-            Write-Error "No executable found in release directory"
+            Write-Error "No setup executable found in release directory"
             exit 1
           }
 
@@ -249,7 +249,7 @@ jobs:
           fi
           
           if [ "${{ steps.check_builds.outputs.desktop }}" == "success" ]; then
-            echo "- ✅ **Parent Windows**: \`parent-windows-${VERSION}.exe\` (Portable - No installer needed)" >> release_body.md
+            echo "- ✅ **Parent Windows**: \`parent-windows-${VERSION}-setup.exe\` (Installer)" >> release_body.md
           else
             echo "- ❌ **Parent Windows**: Build failed" >> release_body.md
           fi
@@ -258,7 +258,7 @@ jobs:
           
           ### Installation
           - **Android**: Enable "Install from unknown sources" and install the APK
-          - **Windows**: Download and run the .exe directly (portable, no installation required)
+          - **Windows**: Run the installer and follow the setup wizard
           
           ---
           *This is a pre-release beta build. Report issues on GitHub.*

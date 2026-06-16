@@ -43,11 +43,19 @@
       "node_modules/opus-decoder/**/*"
     ],
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "icon": "dist/Nexus_Parent_icon.png"
     },
-    "portable": {
-      "artifactName": "Nexus-Parent-Portable.exe"
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nexus Parent",
+      "artifactName": "parent-windows-${version}-setup.${ext}",
+      "installerIcon": "dist/Nexus_Parent_icon.png",
+      "uninstallerIcon": "dist/Nexus_Parent_icon.png",
+      "installerHeaderIcon": "dist/Nexus_Parent_icon.png"
     }
   }
 }
