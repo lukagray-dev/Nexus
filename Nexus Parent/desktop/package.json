@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "cross-env NODE_ENV=development electron .",
-    "build:win": "electron-builder --win",
+    "build:win": "electron-builder --win --x64 portable",
     "test": "vitest",
     "coverage": "vitest run --coverage"
   },
@@ -42,24 +42,12 @@
       "node_modules/@supabase/**/*",
       "node_modules/opus-decoder/**/*"
     ],
-    "extraResources": [
-      {
-        "from": "dist/Nexus_Parent_icon.png",
-        "to": "app-icon.png"
-      }
-    ],
     "win": {
-      "target": [
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "dist/Nexus_Parent_icon.png",
-      "publisherName": "Nexus Team",
-      "sign": null
+      "target": "portable",
+      "icon": "dist/Nexus_Parent_icon.png"
+    },
+    "portable": {
+      "artifactName": "Nexus-Parent-Portable.exe"
     }
   }
 }
