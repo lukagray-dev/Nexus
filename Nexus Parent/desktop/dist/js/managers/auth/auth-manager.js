@@ -11,11 +11,10 @@ class AuthManager {
         this.currentUser = null;
         this.authStateListener = null;
         this.pendingVerification = null; // Store email/password for auto sign-in
-        
+
         // Handler modules
         this.signInHandler = null;
         this.signUpHandler = null;
-        this.userInfoHandler = null;
         
         console.log('🔐 AuthManager initialized');
     }
@@ -99,7 +98,7 @@ class AuthManager {
     waitForHandlers() {
         return new Promise((resolve) => {
             const checkHandlers = () => {
-                if (window.SignInHandler && window.SignUpHandler && window.UserInfoHandler) {
+                if (window.SignInHandler && window.SignUpHandler) {
                     resolve();
                 } else {
                     setTimeout(checkHandlers, 50);
@@ -115,7 +114,6 @@ class AuthManager {
     initHandlers() {
         this.signInHandler = new window.SignInHandler(this);
         this.signUpHandler = new window.SignUpHandler(this);
-        this.userInfoHandler = new window.UserInfoHandler(this);
         console.log('✅ Auth handlers initialized');
     }
 
@@ -146,37 +144,40 @@ class AuthManager {
             console.log('⚠️ Password reset in progress, skipping auth state navigation');
             return;
         }
-        
+
         if (session && session.user) {
-            // Verify the session is still valid by checking with Supabase
             try {
                 const { data: { user }, error } = await this.supabase.auth.getUser();
-                
+
                 if (error || !user) {
-                    // Session is invalid (user deleted or token expired)
+                    // Session is genuinely invalid — force sign-out regardless of current screen
                     console.log('⚠️ Invalid session detected, signing out...');
                     await this.supabase.auth.signOut();
                     this.currentUser = null;
                     this.showSignIn();
                     return;
                 }
-                
-                // Check if email is verified
+
+                // Email not yet verified — stay on auth screen (only if not already on dashboard)
                 if (!user.email_confirmed_at) {
                     console.log('⚠️ Email not verified yet, staying on auth screen');
-                    // Don't proceed - user needs to verify email first
                     return;
                 }
-                
+
                 this.currentUser = user;
-                
-                // Load user data
-                if (this.userInfoHandler) {
-                    await this.userInfoHandler.loadUserData(user);
+
+                // If the dashboard is already visible (user is connected), do NOT navigate away.
+                // Supabase fires this event on every token refresh (e.g. window focus), which
+                // would otherwise kick the user back to a screen mid-session.
+                const dashboardScreen = document.getElementById('dashboard-screen');
+                const isDashboardVisible = dashboardScreen && !dashboardScreen.classList.contains('hidden');
+                if (isDashboardVisible) {
+                    console.log('ℹ️ Auth token refreshed silently — dashboard active, skipping navigation');
+                    return;
                 }
-                
-                // Show user info screen
-                this.showUserInfo();
+
+                // Proceed directly to the connect screen — no intermediate user-info page
+                this.proceedToConnect();
             } catch (error) {
                 console.error('❌ Session validation failed:', error);
                 await this.supabase.auth.signOut();
@@ -185,7 +186,12 @@ class AuthManager {
             }
         } else {
             this.currentUser = null;
-            this.showSignIn();
+            // Only navigate to sign-in if dashboard is not active (avoids booting a connected user)
+            const dashboardScreen = document.getElementById('dashboard-screen');
+            const isDashboardVisible = dashboardScreen && !dashboardScreen.classList.contains('hidden');
+            if (!isDashboardVisible) {
+                this.showSignIn();
+            }
         }
     }
 
@@ -213,22 +219,6 @@ class AuthManager {
     }
 
     /**
-     * Show user info screen
-     */
-    showUserInfo() {
-        const authScreen = document.getElementById('auth-screen');
-        const connectScreen = document.getElementById('connect-screen');
-        const dashboardScreen = document.getElementById('dashboard-screen');
-        
-        // Make sure auth screen is visible and others are hidden
-        if (authScreen) authScreen.classList.remove('hidden');
-        if (connectScreen) connectScreen.classList.add('hidden');
-        if (dashboardScreen) dashboardScreen.classList.add('hidden');
-        
-        this.showAuthView('userinfo');
-    }
-
-    /**
      * Show verification waiting screen
      */
     showVerificationWaiting(email) {
@@ -253,7 +243,7 @@ class AuthManager {
      * Show specific auth view
      */
     showAuthView(view) {
-        const views = ['signin', 'signup', 'userinfo', 'verification', 'reset-password'];
+        const views = ['signin', 'signup', 'verification', 'reset-password'];
         views.forEach(v => {
             const el = document.getElementById(`auth-${v}`);
             if (el) {
@@ -283,13 +273,6 @@ class AuthManager {
             if (childIdInput) {
                 setTimeout(() => childIdInput.focus(), 100);
             }
-        }
-        
-        // Setup back button if not already done
-        const backBtn = document.getElementById('connect-back-btn');
-        if (backBtn && !backBtn.hasAttribute('data-listener')) {
-            backBtn.setAttribute('data-listener', 'true');
-            backBtn.addEventListener('click', () => this.showUserInfo());
         }
     }
 

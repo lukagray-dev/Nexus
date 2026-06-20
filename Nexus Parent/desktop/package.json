@@ -44,18 +44,18 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "dist/Nexus_Parent_icon.png"
+      "icon": "build/icon.ico"
     },
     "nsis": {
-      "oneClick": true,
-      "allowToChangeInstallationDirectory": false,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Nexus Parent",
       "artifactName": "parent-windows-${version}-setup.${ext}",
-      "installerIcon": "dist/Nexus_Parent_icon.png",
-      "uninstallerIcon": "dist/Nexus_Parent_icon.png",
-      "installerHeaderIcon": "dist/Nexus_Parent_icon.png"
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
     }
   }
 }
