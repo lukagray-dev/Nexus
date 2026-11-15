@@ -1,0 +1,281 @@
+/**
+ * @file camera.css
+ * @description Full-viewport Video Player layout for Camera Feed.
+ *
+ * Hey friend! This styles the camera feed to occupy the entire main content area:
+ * - Edge-to-edge full-bleed video surface (no inner boxed HUD frames).
+ * - Interactive timeline / seek / progress bar.
+ * - Live indicator with running timestamp (• Live 00:14:28).
+ * - Rotatable feed (90° increments).
+ * - Lens switcher (Front / Rear).
+ * - Audio/video clip recorder.
+ */
+
+@import '../../../tokens.css';
+
+.feed-page-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+  overflow: hidden;
+}
+
+/* Full-area Edge-to-Edge Feed Canvas Area */
+.feed-viewport-area {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+  overflow: hidden;
+}
+
+/* Display Surface */
+.feed-display-surface {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feed-video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-ambient-canvas {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, #1c1c1c 0%, #050505 100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* Paused Stream Overlay Screen */
+.feed-paused-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.feed-paused-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(20, 20, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  padding: 8px 16px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.feed-paused-pill img {
+  width: 14px;
+  height: 14px;
+  filter: invert(1);
+}
+
+/* Floating Bottom Player Controls Bar */
+.feed-player-controls-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.75) 50%, transparent 100%);
+  padding: 16px 24px 14px 24px;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+/* Seek / Progress Track */
+.feed-progress-track {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+  transition: height 0.12s ease;
+}
+
+.feed-progress-track:hover {
+  height: 6px;
+}
+
+.feed-progress-fill {
+  width: 100%;
+  height: 100%;
+  background-color: #ef4444;
+  border-radius: 2px;
+  position: relative;
+}
+
+.feed-progress-scrubber {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  transition: transform 0.12s ease;
+}
+
+.feed-progress-track:hover .feed-progress-scrubber {
+  transform: translateY(-50%) scale(1);
+}
+
+/* Controls Row */
+.feed-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.feed-controls-left,
+.feed-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Base Player Control Button */
+.feed-control-btn {
+  height: 34px;
+  padding: 0 10px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.feed-control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.feed-control-btn img {
+  width: 16px;
+  height: 16px;
+  filter: invert(1);
+}
+
+.feed-btn-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+/* Live Badge with Pulsing Dot */
+.feed-live-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  user-select: none;
+}
+
+.feed-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  display: inline-block;
+  animation: live-dot-pulse 1.2s infinite alternate;
+}
+
+@keyframes live-dot-pulse {
+  from { opacity: 0.4; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1.15); }
+}
+
+.feed-live-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.live-separator {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 10px;
+}
+
+.feed-live-timestamp {
+  font-family: var(--mono-font-family);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Lens Switch Button */
+.feed-lens-btn {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0 12px;
+}
+
+.feed-lens-btn:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Record Button */
+.feed-record-btn {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0 12px;
+}
+
+.feed-record-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #ef4444;
+}
+
+.feed-record-btn.is-recording {
+  background-color: #7f1d1d;
+  border-color: #ef4444;
+}
+
+.feed-record-btn.is-recording .feed-record-dot {
+  animation: live-dot-pulse 0.8s infinite alternate;
+}
+
+.feed-record-timer {
+  font-family: var(--mono-font-family);
+  font-size: 11px;
+  font-weight: 600;
+}

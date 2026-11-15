@@ -1,0 +1,107 @@
+/**
+ * @file main-content.css
+ * @description Master container and header styles for the full-viewport Main Content Area.
+ * Pure Black (#000000) theme matching Operon GUI with neutral grays (no blue tints).
+ */
+
+@import '../tokens.css';
+@import './empty-state/empty-state.css';
+@import './connection-state/connection-state.css';
+@import './camera/camera.css';
+@import './screen/screen.css';
+@import './location/location.css';
+@import './storage/storage.css';
+@import './mic/mic.css';
+
+/* Full area content container - Pure Black */
+.content-pane {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background-color: #000000;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Common View Topbar - Neutral Dark Gray */
+.view-topbar {
+  height: 44px;
+  background-color: #121212;
+  border-bottom: none;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.view-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #ffffff;
+}
+
+.view-badge {
+  font-size: 10.5px;
+  font-family: var(--mono-font-family);
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 2px 7px;
+  letter-spacing: 0.3px;
+}
+
+.view-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-btn {
+  height: 28px;
+  padding: 0 10px;
+  background-color: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  outline: none;
+}
+
+.topbar-btn:hover {
+  background-color: #282828;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.topbar-btn:active {
+  background-color: #333333;
+}
+
+/* Full Viewport Content Body - Pure Black */
+.view-body {
+  flex: 1;
+  width: 100%;
+  height: calc(100% - 44px);
+  position: relative;
+  overflow: hidden;
+  background-color: #000000;
+}

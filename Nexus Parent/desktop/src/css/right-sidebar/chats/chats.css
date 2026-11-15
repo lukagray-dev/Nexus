@@ -1,0 +1,32 @@
+/**
+ * @file whatsapp.css
+ * @description WhatsApp Activity Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme.
+ */
+
+.rs-whatsapp-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: var(--sidebar-background);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.wa-item:hover {
+  background-color: #141414;
+}
+
+.wa-unread-badge {
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 700;
+}
+

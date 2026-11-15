@@ -1,0 +1,26 @@
+/**
+ * @file telegram.css
+ * @description Telegram Monitor Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme.
+ */
+
+.rs-telegram-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.tg-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: var(--sidebar-background);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.tg-item:hover {
+  background-color: #141414;
+}
+

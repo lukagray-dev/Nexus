@@ -1,0 +1,291 @@
+/**
+ * @file right-sidebar.css
+ * @description Master Right Collapsible Sidebar stylesheet for Nexus Parent.
+ *
+ * Hey friend! This coordinates the right-sidebar layout and imports each modular
+ * feature panel stylesheet:
+ *  - applock, calllog, chatgpt, chats, claude, facebook, gmail, grok,
+ *    instagram, keyboard, notification, sms, snapchat, telegram,
+ *    vibrateflash, wallpaper, wellbeing, whatsapp.
+ */
+
+@import '../tokens.css';
+@import './applock/applock.css';
+@import './calllog/calllog.css';
+@import './chatgpt/chatgpt.css';
+@import './chats/chats.css';
+@import './claude/claude.css';
+@import './facebook/facebook.css';
+@import './gmail/gmail.css';
+@import './grok/grok.css';
+@import './instagram/instagram.css';
+@import './keyboard/keyboard.css';
+@import './notification/notification.css';
+@import './sms/sms.css';
+@import './snapchat/snapchat.css';
+@import './telegram/telegram.css';
+@import './vibrateflash/vibrateflash.css';
+@import './wallpaper/wallpaper.css';
+@import './wellbeing/wellbeing.css';
+@import './whatsapp/whatsapp.css';
+
+:root {
+  --right-sidebar-width: 380px;
+  --right-sidebar-min-width: 300px;
+  --right-sidebar-max-width: 600px;
+}
+
+/* Base Sidebar Aside Container */
+.right-sidebar {
+  position: relative;
+  display: none;
+  flex-direction: column;
+  width: var(--right-sidebar-width);
+  min-width: var(--right-sidebar-min-width);
+  max-width: var(--right-sidebar-max-width);
+  height: 100%;
+  background-color: #121212;
+  border-left: none;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  z-index: 45;
+  box-sizing: border-box;
+}
+
+.right-sidebar.open {
+  display: flex;
+}
+
+/* Left Edge Drag Resize Handle */
+.right-sidebar-resize-handle {
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: ew-resize;
+  background-color: transparent;
+  transition: background-color 0.12s ease;
+  z-index: 50;
+}
+
+.right-sidebar-resize-handle:hover,
+.right-sidebar-resize-handle.resizing {
+  background-color: #ffffff;
+}
+
+/* Top Header */
+.rs-header {
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  background-color: var(--sidebar-background);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: none;
+  box-sizing: border-box;
+}
+
+.rs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rs-header-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#rs-body-host {
+  background-color: var(--sidebar-background);
+}
+
+.rs-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rs-icon-btn {
+  width: 26px;
+  height: 26px;
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  outline: none;
+}
+
+.rs-icon-btn img {
+  width: 12px;
+  height: 12px;
+  filter: invert(1);
+  opacity: 0.75;
+}
+
+.rs-icon-btn:hover {
+  background-color: #242424;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.rs-icon-btn:hover img {
+  opacity: 1;
+}
+
+.rs-icon-btn.close-btn:hover {
+  background-color: #dc2626;
+  border-color: #ef4444;
+}
+
+.rs-icon-btn.close-btn:hover img {
+  filter: brightness(0) invert(1);
+}
+
+/* Panel Body & Scrollable Area */
+.rs-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #101010;
+}
+
+/* Empty Panel Placeholder */
+.rs-empty-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+}
+
+.rs-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.rs-empty-icon img {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
+  opacity: 0.5;
+}
+
+.rs-empty-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.rs-empty-desc {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 240px;
+}
+
+/* Bottom Footer Dock & Monitoring Play/Pause Button */
+.rs-footer {
+  height: 48px;
+  min-height: 48px;
+  flex: 0 0 48px;
+  background-color: var(--sidebar-background);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.rs-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rs-footer-status {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.rs-footer-status.live {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.status-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  display: inline-block;
+  animation: live-dot-pulse 1s infinite alternate;
+}
+
+.rs-footer-right {
+  display: flex;
+  align-items: center;
+}
+
+.rs-play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #202020;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.rs-play-btn:hover {
+  background-color: #2c2c2c;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.rs-play-btn.active {
+  background-color: #252525;
+}
+
+.rs-play-btn img {
+  width: 13px;
+  height: 13px;
+  filter: invert(1);
+}

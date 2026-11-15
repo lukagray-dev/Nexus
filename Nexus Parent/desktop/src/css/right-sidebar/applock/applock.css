@@ -1,0 +1,80 @@
+/**
+ * @file applock.css
+ * @description App Lock Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme with smooth toggle switches.
+ */
+
+.rs-applock-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.applock-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+}
+
+.applock-count-text {
+  color: #ffffff;
+}
+
+.applock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.applock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.applock-app-name {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.applock-app-pkg {
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-family: var(--mono-font-family);
+}
+
+.switch-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background-color: #262626;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.switch-toggle.active {
+  background-color: #ffffff;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #888888;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.switch-toggle.active .switch-thumb {
+  transform: translateX(16px);
+  background-color: var(--sidebar-background);
+}
+

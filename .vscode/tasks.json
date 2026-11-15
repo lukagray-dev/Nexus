@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Nexus Parent Desktop",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run-desktop.bat",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Build Frontend (TypeScript)",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/Nexus Parent/desktop"
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Check Rust Backend",
+      "type": "shell",
+      "command": "cargo check",
+      "options": {
+        "cwd": "${workspaceFolder}/Nexus Parent/desktop/src-tauri"
+      },
+      "problemMatcher": ["$rustc"]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+/**
+ * @file vibrateflash.css
+ * @description Vibrate & Flash Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme with subtle red for emergency SOS buttons.
+ */
+
+.rs-vibrateflash-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.vf-grid {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vf-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vf-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.vf-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.vf-action-btn {
+  height: 38px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  outline: none;
+}
+
+.vf-action-btn:hover {
+  background-color: #242424;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.vf-action-btn.btn-sos {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ffffff;
+}
+
+.vf-action-btn.btn-sos:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.vf-action-btn img {
+  width: 14px;
+  height: 14px;
+  filter: invert(1);
+}
+

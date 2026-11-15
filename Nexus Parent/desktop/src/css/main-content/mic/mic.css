@@ -1,0 +1,279 @@
+/**
+ * @file mic.css
+ * @description Compact Floating Draggable Panel styles for Microphone Monitoring.
+ *
+ * Hey friend! This stylesheet styles the small floating audio widget:
+ * - Ultra-compact 280px wide floating panel.
+ * - Simple dynamic audio wave visualization.
+ * - 3 sleek controls: Play/Pause, Hold to Speak, and Record.
+ */
+
+@import '../../../tokens.css';
+
+/* Full area workspace hosting the floating panel */
+.mic-workspace {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+  overflow: hidden;
+}
+
+/* Floating Draggable Small Panel */
+.mic-floating-panel {
+  position: absolute;
+  width: 280px;
+  box-sizing: border-box;
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 100;
+  transition: box-shadow 0.15s ease;
+}
+
+.mic-floating-panel.is-dragging {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 1), 0 0 0 1px rgba(255, 255, 255, 0.25);
+  cursor: grabbing;
+}
+
+.mic-floating-panel.is-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Draggable Header Bar */
+.mic-panel-header {
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  cursor: grab;
+}
+
+.mic-panel-header:active {
+  cursor: grabbing;
+}
+
+.mic-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drag-grip-icon {
+  width: 12px;
+  height: 12px;
+  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drag-grip-icon img {
+  width: 12px;
+  height: 12px;
+  filter: invert(1);
+}
+
+.mic-panel-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.2px;
+}
+
+.mic-panel-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.mic-header-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background-color: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.mic-header-btn img {
+  width: 11px;
+  height: 11px;
+  filter: invert(1);
+  opacity: 0.6;
+}
+
+.mic-header-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.mic-header-btn:hover img {
+  opacity: 1;
+}
+
+.mic-header-btn.btn-close-panel:hover {
+  background-color: #dc2626;
+}
+
+/* 4. Waveform Animation Container */
+.mic-wave-container {
+  height: 34px;
+  margin: 0 10px 8px 10px;
+  background-color: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+
+.mic-wave-canvas {
+  width: 100%;
+  height: 30px;
+  display: block;
+}
+
+/* Controls Row */
+.mic-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 10px 10px;
+  box-sizing: border-box;
+}
+
+/* Play/Pause Button */
+.mic-btn-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background-color: #202020;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.mic-btn-icon img {
+  width: 13px;
+  height: 13px;
+  filter: invert(1);
+}
+
+.mic-btn-icon:hover {
+  background-color: #2c2c2c;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mic-btn-icon.active {
+  background-color: #252525;
+}
+
+/* Hold to Speak Button */
+.mic-btn-speak {
+  flex: 1;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #202020;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.mic-btn-speak img {
+  width: 12px;
+  height: 12px;
+  filter: invert(1);
+  opacity: 0.85;
+}
+
+.mic-btn-speak:hover {
+  background-color: #2c2c2c;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mic-btn-speak.is-speaking {
+  background-color: #15803d;
+  border-color: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+/* Record Button */
+.mic-btn-record {
+  height: 32px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background-color: #202020;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.mic-btn-record:hover {
+  background-color: #2c2c2c;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.record-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  display: inline-block;
+}
+
+.mic-btn-record.is-recording {
+  background-color: #7f1d1d;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.mic-btn-record.is-recording .record-dot {
+  animation: rec-pulse 1s infinite alternate;
+}
+
+@keyframes rec-pulse {
+  from { opacity: 0.4; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.15); }
+}
+
+.record-timer {
+  font-family: var(--mono-font-family);
+  font-size: 10.5px;
+}

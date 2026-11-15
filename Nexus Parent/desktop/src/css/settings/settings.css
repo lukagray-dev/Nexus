@@ -1,0 +1,181 @@
+/**
+ * @file settings.css
+ * @description Settings Modal / Drawer Styles for Nexus Parent.
+ *
+ * Hey friend! This styles the application configuration modal:
+ * - ICE/STUN/TURN connection endpoints.
+ * - Auto-connect and stealth toggles.
+ * - Monospace telemetry and version information.
+ * - Strict pure black & white design tokens.
+ */
+
+@import '../tokens.css';
+
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  animation: settings-fade-in 0.15s ease-out;
+}
+
+@keyframes settings-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.settings-modal {
+  width: 100%;
+  max-width: 520px;
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-header {
+  height: 48px;
+  background-color: #181818;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.settings-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.settings-close-btn:hover {
+  background-color: var(--surface-hover);
+  color: #ffffff;
+}
+
+.settings-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.settings-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-label-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.settings-label-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.settings-input {
+  width: 100%;
+  height: 34px;
+  background-color: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-family: var(--mono-font-family);
+  font-size: 12px;
+  color: #ffffff;
+  outline: none;
+}
+
+.settings-input:focus {
+  border-color: #ffffff;
+}
+
+.settings-footer {
+  padding: 14px 20px;
+  background-color: #161616;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.settings-btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  outline: none;
+}
+
+.settings-btn-primary {
+  background-color: #ffffff;
+  color: #000000;
+  border: none;
+}
+
+.settings-btn-primary:hover {
+  background-color: #e5e5e5;
+}
+
+.settings-btn-secondary {
+  background-color: #222222;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.settings-btn-secondary:hover {
+  background-color: #2a2a2a;
+  color: #ffffff;
+}

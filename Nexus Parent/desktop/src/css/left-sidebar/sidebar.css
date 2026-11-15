@@ -1,0 +1,435 @@
+/**
+ * @file sidebar.css
+ * @description Left Collapsible Sidebar layout & styling for Nexus Parent.
+ *
+ * Hey friend! This manages the main feature navigation sidebar:
+ * 1. Strict Black & White theme: selected items, resize handles, and icons are white.
+ * 2. Primary "Pair Child Device" quick action button with shortcut badge.
+ * 3. Real-time search filter bar for monitoring features.
+ * 4. Categorized collapsible feature sections: Live Surveillance, Comms, Social/AI, Controls.
+ * 5. Danger Red Armed "Stealth Mode" button at the bottom.
+ * 6. Interactive right-edge resize handle with min/max width limits.
+ */
+
+@import '../tokens.css';
+
+.left-sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-min-width);
+  max-width: var(--sidebar-max-width);
+  height: calc(100vh - var(--titlebar-height));
+  background-color: var(--sidebar-background);
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+/* Collapsed state triggered from titlebar or Ctrl+B */
+.left-sidebar.collapsed {
+  display: none !important;
+}
+
+/* Top Action Section */
+.sidebar-top {
+  padding: 10px 10px 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Pair Device / Primary Action Button */
+.btn-sidebar-primary {
+  width: 100%;
+  height: 32px;
+  background-color: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+  outline: none;
+}
+
+.btn-sidebar-primary:hover {
+  background-color: #262626;
+  border-color: #404040;
+}
+
+.btn-sidebar-primary-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.key-badge {
+  background-color: #262626;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-family: var(--mono-font-family);
+  color: var(--text-muted);
+}
+
+/* Search Container */
+.sidebar-search-container {
+  height: 28px;
+  background-color: #161616;
+  border: 1px solid #262626;
+  border-radius: 5px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.sidebar-search-container:focus-within {
+  border-color: #555555;
+}
+
+.sidebar-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 12px;
+}
+
+.sidebar-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-search-clear {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 2px;
+  display: none;
+}
+
+.btn-search-clear:hover {
+  color: var(--text-primary);
+}
+
+/* Scrollable Middle Section */
+.sidebar-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Feature Section Group */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sidebar-section-header {
+  height: 24px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.12s ease;
+}
+
+.sidebar-section-header:hover {
+  color: var(--text-secondary);
+}
+
+.section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.15s ease;
+}
+
+.sidebar-section.collapsed .section-chevron {
+  transform: rotate(-90deg);
+}
+
+.sidebar-section.collapsed .sidebar-section-items {
+  display: none;
+}
+
+.sidebar-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Individual Feature Item */
+.sidebar-item {
+  height: 30px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.sidebar-item:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-item.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sidebar-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sidebar-item-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background-color: #222222;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+  font-weight: 600;
+}
+
+.item-badge.live {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Bottom Controls Section */
+.sidebar-bottom {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Stealth Mode Action Button */
+.btn-stealth-mode {
+  width: 100%;
+  height: 32px;
+  background-color: #161616;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  outline: none;
+}
+
+.btn-stealth-mode:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: var(--danger-red);
+}
+
+.count-pill {
+  font-size: 10px;
+  font-family: var(--mono-font-family);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-sidebar-settings {
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 0 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  outline: none;
+}
+
+.btn-sidebar-settings:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* Right Resize Handle - Pure White on hover & resize */
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 100;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.resizing {
+  background-color: #ffffff;
+}
+
+/* Universal CSS Mask-Image Icon Colorizer for Sidebar */
+.sidebar-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  flex-shrink: 0;
+}
+
+/* Specific Sidebar Icon Masks */
+.icon-sidebar-camera {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/camera.svg');
+  mask-image: url('../../assets/icons/left-sidebar/camera.svg');
+}
+.icon-sidebar-mic {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/mic.svg');
+  mask-image: url('../../assets/icons/left-sidebar/mic.svg');
+}
+.icon-sidebar-monitor {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/monitor.svg');
+  mask-image: url('../../assets/icons/left-sidebar/monitor.svg');
+}
+.icon-sidebar-location {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/map-pin.svg');
+  mask-image: url('../../assets/icons/left-sidebar/map-pin.svg');
+}
+.icon-sidebar-sms {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/message-square.svg');
+  mask-image: url('../../assets/icons/left-sidebar/message-square.svg');
+}
+.icon-sidebar-phone {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/phone-call.svg');
+  mask-image: url('../../assets/icons/left-sidebar/phone-call.svg');
+}
+.icon-sidebar-bell {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/bell.svg');
+  mask-image: url('../../assets/icons/left-sidebar/bell.svg');
+}
+.icon-sidebar-keyboard {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/keyboard.svg');
+  mask-image: url('../../assets/icons/left-sidebar/keyboard.svg');
+}
+.icon-sidebar-folder {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/folder.svg');
+  mask-image: url('../../assets/icons/left-sidebar/folder.svg');
+}
+.icon-sidebar-chat {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/message-circle.svg');
+  mask-image: url('../../assets/icons/left-sidebar/message-circle.svg');
+}
+.icon-sidebar-telegram {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/send.svg');
+  mask-image: url('../../assets/icons/left-sidebar/send.svg');
+}
+.icon-sidebar-bot {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/bot.svg');
+  mask-image: url('../../assets/icons/left-sidebar/bot.svg');
+}
+.icon-sidebar-activity {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/activity.svg');
+  mask-image: url('../../assets/icons/left-sidebar/activity.svg');
+}
+.icon-sidebar-lock {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/lock.svg');
+  mask-image: url('../../assets/icons/left-sidebar/lock.svg');
+}
+.icon-sidebar-zap {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/zap.svg');
+  mask-image: url('../../assets/icons/left-sidebar/zap.svg');
+}
+.icon-sidebar-image {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/image.svg');
+  mask-image: url('../../assets/icons/left-sidebar/image.svg');
+}
+.icon-sidebar-eye-off {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/eye-off.svg');
+  mask-image: url('../../assets/icons/left-sidebar/eye-off.svg');
+}
+.icon-sidebar-settings {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/settings.svg');
+  mask-image: url('../../assets/icons/left-sidebar/settings.svg');
+}
+.icon-sidebar-search {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/search.svg');
+  mask-image: url('../../assets/icons/left-sidebar/search.svg');
+}
+.icon-sidebar-plus {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/plus.svg');
+  mask-image: url('../../assets/icons/left-sidebar/plus.svg');
+}
+.icon-sidebar-chevron-down {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/chevron-down.svg');
+  mask-image: url('../../assets/icons/left-sidebar/chevron-down.svg');
+}
+.icon-sidebar-toggle {
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/panel-left.svg');
+  mask-image: url('../../assets/icons/left-sidebar/panel-left.svg');
+}

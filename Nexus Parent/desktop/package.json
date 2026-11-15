@@ -1,0 +1,14 @@
+{
+  "name": "nexus-parent",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "cargo tauri dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

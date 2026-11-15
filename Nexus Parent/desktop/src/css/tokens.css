@@ -1,0 +1,166 @@
+/**
+ * @file tokens.css
+ * @description Centralized Design Tokens and Global Foundation for Nexus Parent Desktop.
+ *
+ * Hey friend! This stylesheet defines the root visual system for Nexus Parent:
+ * 1. Strict Pure Black (#000000) & White typography theme matching the industrial Operon architecture.
+ * 2. Neutral dark gray surfaces for cards, toolbars, and menus (#121212, #1a1a1a, #262626).
+ * 3. The only accent color permitted across the entire application is Danger Red (#ef4444) for Close & Stealth Mode.
+ * 4. Zero-margin reset, custom dark scrollbar styles, and core container layout properties.
+ */
+
+:root {
+  /* Typography: Modern clean system stack with monospace fallback for telemetry */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono-font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+
+  /* Surfaces & Backgrounds: Pure Pitch Black (#000000) Canvas */
+  --window-background: #000000;
+  --titlebar-background: #121212;
+  --titlebar-background-soft: #121212;
+  --sidebar-background: #121212;
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-pressed: rgba(255, 255, 255, 0.14);
+
+  /* Dropdown & Popovers (Neutral Grays) */
+  --dropdown-surface: #1a1a1a;
+  --dropdown-surface-hover: #262626;
+  --dropdown-surface-pressed: #333333;
+  --dropdown-border: #333333;
+  --dropdown-separator: #2a2a2a;
+  --dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.95);
+
+  /* Text & Foreground hierarchy */
+  --text-primary: #ffffff;
+  --text-secondary: #d3d3d3;
+  --text-muted: #888888;
+  --text-inverse: #000000;
+
+  /* Strict B&W Accent & Selection */
+  --accent-white: #ffffff;
+  --accent-white-subtle: rgba(255, 255, 255, 0.12);
+  --accent-white-border: rgba(255, 255, 255, 0.25);
+
+  /* Danger / Stealth Action States: The ONLY accent color allowed in the application */
+  --danger-red: #ef4444;
+  --danger-red-hover: #ffffff;
+  --danger-red-surface-hover: #dc2626;
+  --danger-red-surface-pressed: #b91c1c;
+
+  /* Titlebar & Dropdown Measurements */
+  --titlebar-height: 36px;
+  --titlebar-padding-x: 12px;
+  --titlebar-logo-size: 20px;
+  --titlebar-icon-size: 14px;
+  --titlebar-icon-hit-width: 28px;
+  --titlebar-icon-hit-height: 24px;
+  --titlebar-font-size: 14px;
+  --dropdown-font-size: 13px;
+  --dropdown-width: 230px;
+  --dropdown-radius: 6px;
+
+  /* General Layout Dimensions */
+  --border-subtle: #222222;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* Sidebar width constraints */
+  --sidebar-width: 260px;
+  --sidebar-min-width: 200px;
+  --sidebar-max-width: 450px;
+}
+
+/* Base Universal Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+}
+
+/* Root Viewport Structure */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--window-background);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--titlebar-font-size);
+  -webkit-font-smoothing: antialiased;
+  border: none;
+  outline: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  border: none;
+  outline: none;
+}
+
+/* Main Viewport Container housing Left Sidebar, Central Content Pane, and Right Sidebar */
+#main-viewport {
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - var(--titlebar-height));
+  background-color: var(--window-background);
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* Central Content Pane */
+#content-pane {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background-color: var(--window-background);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Sleek Dark Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  overscroll-behavior: none;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  transition: background-color 150ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.34);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+}

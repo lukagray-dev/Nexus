@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 1. Deep Obsidian Smokey Base (#0B0C10) -->
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#FF0B0C10" />
+
+    <!-- 2. Primary Smoky Glass Plume (Top-Left Diffuse Cloud) -->
+    <path
+        android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="36"
+                android:centerY="32"
+                android:gradientRadius="60">
+                <item android:offset="0.0" android:color="#40E2E8F0" />
+                <item android:offset="0.25" android:color="#2694A3B8" />
+                <item android:offset="0.55" android:color="#12475569" />
+                <item android:offset="1.0" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 3. Secondary Ambient Smoky Swirl (Counter-Illumination) -->
+    <path
+        android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="76"
+                android:centerY="74"
+                android:gradientRadius="48">
+                <item android:offset="0.0" android:color="#24CBD5E1" />
+                <item android:offset="0.35" android:color="#1264748B" />
+                <item android:offset="0.8" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 4. Diagonal Glass Sheen & Refraction Gradient -->
+    <path
+        android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108">
+                <item android:offset="0.0" android:color="#30FFFFFF" />
+                <item android:offset="0.35" android:color="#12FFFFFF" />
+                <item android:offset="0.7" android:color="#00000000" />
+                <item android:offset="1.0" android:color="#10FFFFFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

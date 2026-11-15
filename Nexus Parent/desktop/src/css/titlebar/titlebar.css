@@ -1,0 +1,185 @@
+/**
+ * @file titlebar.css
+ * @description Titlebar Layout & Control Styling for Nexus Parent.
+ *
+ * Hey friend! This handles the custom frameless window titlebar:
+ * 1. Native draggable titlebar region (-webkit-app-region: drag and data-tauri-drag-region).
+ * 2. Brand logo on the left that toggles the sidebar on click/hover.
+ * 3. Titlebar menus (File, Devices, View, Safety, Help).
+ * 4. Window control actions (Minimize, Maximize/Restore, and Danger Red Close).
+ */
+
+@import '../tokens.css';
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--titlebar-height);
+  background-color: var(--titlebar-background);
+  padding: 0 var(--titlebar-padding-x);
+  position: relative;
+  z-index: 1000;
+  border-bottom: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  -webkit-app-region: drag; /* Native window dragging support in WebViews */
+}
+
+/* Draggable Center Spacer */
+.titlebar-drag-spacer {
+  flex: 1;
+  height: 100%;
+  cursor: default;
+}
+
+/* Left Chrome Section */
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  -webkit-app-region: no-drag; /* Interactive controls must be clickable */
+}
+
+/* Brand Logo Container */
+.brand-container {
+  width: var(--titlebar-logo-size);
+  height: var(--titlebar-logo-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.brand-container:hover {
+  background-color: var(--surface-hover);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: brightness(0) invert(1); /* Pure white SVG icon on dark background */
+}
+
+.brand-toggle-icon {
+  display: none;
+  width: var(--titlebar-icon-size);
+  height: var(--titlebar-icon-size);
+  background-color: var(--text-primary);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
+  -webkit-mask-image: url('../../assets/icons/left-sidebar/panel-left.svg');
+  mask-image: url('../../assets/icons/left-sidebar/panel-left.svg');
+}
+
+.brand-container:hover .brand-logo-img {
+  display: none;
+}
+
+.brand-container:hover .brand-toggle-icon {
+  display: inline-block;
+}
+
+/* Right Window Actions (Minimize / Maximize / Close) */
+.titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+  -webkit-app-region: no-drag; /* Window control buttons must be clickable */
+}
+
+.action-btn {
+  width: var(--titlebar-icon-hit-width);
+  height: var(--titlebar-icon-hit-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.action-btn:hover {
+  background-color: var(--surface-hover);
+}
+
+.action-btn:active {
+  background-color: var(--surface-pressed);
+}
+
+/* Close button specialized danger styling */
+.action-btn.close-btn:hover {
+  background-color: var(--danger-red-surface-hover);
+}
+
+.action-btn.close-btn:active {
+  background-color: var(--danger-red-surface-pressed);
+}
+
+/* Universal CSS Mask-Image Icon Colorizer */
+.ui-icon {
+  display: inline-block;
+  width: var(--titlebar-icon-size);
+  height: var(--titlebar-icon-size);
+  background-color: var(--text-secondary);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
+  transition: background-color 0.15s ease;
+}
+
+.action-btn:hover .ui-icon {
+  background-color: var(--text-primary);
+}
+
+/* Close icon color states */
+.action-btn.close-btn .ui-icon {
+  background-color: var(--danger-red);
+}
+
+.action-btn.close-btn:hover .ui-icon {
+  background-color: var(--danger-red-hover);
+}
+
+/* Mask URL definitions */
+.icon-minimize {
+  -webkit-mask-image: url('../../assets/icons/titlebar/minimize.svg');
+  mask-image: url('../../assets/icons/titlebar/minimize.svg');
+}
+
+.icon-maximize {
+  -webkit-mask-image: url('../../assets/icons/titlebar/maximize.svg');
+  mask-image: url('../../assets/icons/titlebar/maximize.svg');
+}
+
+.icon-unmaxmize {
+  -webkit-mask-image: url('../../assets/icons/titlebar/unmaxmize.svg');
+  mask-image: url('../../assets/icons/titlebar/unmaxmize.svg');
+}
+
+.icon-close {
+  -webkit-mask-image: url('../../assets/icons/titlebar/close.svg');
+  mask-image: url('../../assets/icons/titlebar/close.svg');
+}

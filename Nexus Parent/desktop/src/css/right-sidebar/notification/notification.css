@@ -1,0 +1,50 @@
+/**
+ * @file notifications.css
+ * @description Notifications Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme.
+ */
+
+.rs-notifications-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: var(--sidebar-background);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.notif-item:hover {
+  background-color: #141414;
+}
+
+.notif-app-badge {
+  font-weight: 600;
+}
+
+.notif-card-title {
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.notif-card-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.notif-card-pkg {
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+}
+

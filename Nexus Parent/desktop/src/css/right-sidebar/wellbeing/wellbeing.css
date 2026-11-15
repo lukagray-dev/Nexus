@@ -1,0 +1,85 @@
+/**
+ * @file wellbeing.css
+ * @description Digital Wellbeing Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme.
+ */
+
+.rs-wellbeing-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.wellbeing-summary-subbar {
+  background-color: #0c0c0c;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wellbeing-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wellbeing-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+  letter-spacing: 0.3px;
+}
+
+.wellbeing-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: var(--mono-font-family);
+}
+
+.wellbeing-metrics-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+}
+
+.usage-app-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.usage-app-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.usage-app-name {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.usage-app-time {
+  color: var(--text-secondary);
+  font-family: var(--mono-font-family);
+}
+
+.usage-progress-bar {
+  width: 100%;
+  height: 5px;
+  background-color: #1e1e1e;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.usage-progress-fill {
+  height: 100%;
+  background-color: #ffffff;
+  border-radius: 3px;
+}
+

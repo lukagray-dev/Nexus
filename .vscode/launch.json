@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Nexus Parent Desktop (Run & Debug)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "\"${workspaceFolder}/scripts/debug-desktop.bat\"",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Nexus Parent Desktop (Direct Tauri Dev)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "cargo tauri dev",
+      "cwd": "${workspaceFolder}/Nexus Parent/desktop"
+    }
+  ]
+}

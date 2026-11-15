@@ -1,0 +1,102 @@
+# ==============================================================================
+# Nexus Monorepo Root .gitignore
+# Production-grade gitignore covering Node.js, TypeScript, Tauri, Rust, Android & OS
+# ==============================================================================
+
+# Node.js & Dependencies
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+*.log
+
+# Build, Bundler & Compiler Outputs
+dist/
+build/
+out/
+release/
+src/js/
+**/src/js/
+*.tsbuildinfo
+*.js.map
+*.d.ts.map
+
+# Rust, Cargo & Tauri
+target/
+**/target/
+**/gen/schemas/
+*.rs.bk
+
+# Temporary Files, Scratchpad & Vendor Dumps
+.temp/
+**/.temp/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Environment Variables & Local Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+*.jks
+*.keystore
+*.keystore.properties
+google-services.json
+**/google-services.json
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# IDE & Editor Specific Configurations
+.idea/
+**/.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Testing & Coverage Outputs
+coverage/
+**/coverage/
+.nyc_output/
+*.lcov
+
+# Android / Gradle
+.gradle/
+**/.gradle/
+local.properties
+**/local.properties
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+.cxx/
+**/.cxx/
+**/captures/

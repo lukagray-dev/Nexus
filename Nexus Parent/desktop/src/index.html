@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus Parent</title>
+  
+  <!-- Foundation & Component Stylesheets following sibling structure -->
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/titlebar/titlebar.css" />
+  <link rel="stylesheet" href="css/titlebar/menu.css" />
+  <link rel="stylesheet" href="css/left-sidebar/sidebar.css" />
+  <link rel="stylesheet" href="css/main-content/main-content.css" />
+  <link rel="stylesheet" href="css/right-sidebar/right-sidebar.css" />
+  <link rel="stylesheet" href="css/settings/settings.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Custom Native Draggable Titlebar -->
+    <header id="app-titlebar" class="titlebar" data-tauri-drag-region>
+      <!-- Left Chrome Section: Brand Logo & Navigation Menus -->
+      <div class="titlebar-left">
+        <!-- Brand Logo and Sidebar Toggle Button -->
+        <div id="brand-container" class="brand-container" title="Toggle Sidebar (Ctrl+B)">
+          <img id="brand-logo-img" class="brand-logo-img" src="assets/logo/nexus-parent.svg" alt="Nexus Parent Logo" />
+          <span id="brand-toggle-icon" class="brand-toggle-icon"></span>
+        </div>
+
+        <!-- Titlebar Navigation Menus -->
+        <nav class="titlebar-menus">
+          <!-- File Menu -->
+          <div class="menu-container">
+            <button class="menu-trigger" data-menu="file">File</button>
+            <div class="dropdown-menu" data-menu="file">
+              <div id="menu-item-pair-device" class="dropdown-item">
+                <span>Pair Child Device</span>
+                <span class="dropdown-item-shortcut">Ctrl+P</span>
+              </div>
+              <div id="menu-item-settings" class="dropdown-item">
+                <span>Settings</span>
+                <span class="dropdown-item-shortcut">Ctrl+,</span>
+              </div>
+              <div class="dropdown-separator"></div>
+              <div id="menu-item-close-window" class="dropdown-item">
+                <span>Close Window</span>
+                <span class="dropdown-item-shortcut">Ctrl+W</span>
+              </div>
+              <div id="menu-item-exit" class="dropdown-item">
+                <span>Exit</span>
+                <span class="dropdown-item-shortcut">Ctrl+Q</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Devices Menu -->
+          <div class="menu-container">
+            <button class="menu-trigger" data-menu="devices">Devices</button>
+            <div class="dropdown-menu" data-menu="devices">
+              <div id="menu-item-refresh-devices" class="dropdown-item">
+                <span>Refresh Device Telemetry</span>
+                <span class="dropdown-item-shortcut">Ctrl+R</span>
+              </div>
+              <div id="menu-item-lock-all" class="dropdown-item">
+                <span>Lock Child Device</span>
+                <span class="dropdown-item-shortcut">Ctrl+Shift+L</span>
+              </div>
+              <div class="dropdown-separator"></div>
+              <div id="menu-item-stealth" class="dropdown-item">
+                <span>Toggle Stealth Mode</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- View Menu -->
+          <div class="menu-container">
+            <button class="menu-trigger" data-menu="view">View</button>
+            <div class="dropdown-menu" data-menu="view">
+              <div id="menu-item-toggle-sidebar" class="dropdown-item">
+                <span>Toggle Left Sidebar</span>
+                <span class="dropdown-item-shortcut">Ctrl+B</span>
+              </div>
+              <div class="dropdown-separator"></div>
+              <div id="menu-item-view-dashboard" class="dropdown-item">
+                <span>Dashboard Overview</span>
+                <span class="dropdown-item-shortcut">Ctrl+1</span>
+              </div>
+              <div id="menu-item-view-camera" class="dropdown-item">
+                <span>Camera Feed</span>
+                <span class="dropdown-item-shortcut">Ctrl+2</span>
+              </div>
+              <div id="menu-item-view-screen" class="dropdown-item">
+                <span>Screen Mirror</span>
+                <span class="dropdown-item-shortcut">Ctrl+3</span>
+              </div>
+              <div id="menu-item-view-location" class="dropdown-item">
+                <span>Location Radar</span>
+                <span class="dropdown-item-shortcut">Ctrl+4</span>
+              </div>
+              <div id="menu-item-view-storage" class="dropdown-item">
+                <span>Storage Explorer</span>
+                <span class="dropdown-item-shortcut">Ctrl+5</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety Menu -->
+          <div class="menu-container">
+            <button class="menu-trigger" data-menu="safety">Safety</button>
+            <div class="dropdown-menu" data-menu="safety">
+              <div id="menu-item-applock" class="dropdown-item">
+                <span>App Lock Guard</span>
+              </div>
+              <div id="menu-item-geofences" class="dropdown-item">
+                <span>Geofence Boundaries</span>
+              </div>
+              <div id="menu-item-wellbeing" class="dropdown-item">
+                <span>Screen Time Limits</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Help Menu -->
+          <div class="menu-container">
+            <button class="menu-trigger" data-menu="help">Help</button>
+            <div class="dropdown-menu" data-menu="help">
+              <div id="menu-item-docs" class="dropdown-item">
+                <span>Nexus Documentation</span>
+              </div>
+              <div id="menu-item-support" class="dropdown-item">
+                <span>Diagnostics & ICE Status</span>
+              </div>
+              <div class="dropdown-separator"></div>
+              <div id="menu-item-about" class="dropdown-item">
+                <span>About Nexus Parent</span>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Draggable Center Spacer Region -->
+      <div class="titlebar-drag-spacer" data-tauri-drag-region></div>
+
+      <!-- Right Window Actions: Minimize / Maximize / Close -->
+      <div class="titlebar-actions">
+        <button id="btn-minimize" class="action-btn" title="Minimize" aria-label="Minimize">
+          <span class="ui-icon icon-minimize"></span>
+        </button>
+        <button id="btn-maximize" class="action-btn" title="Maximize" aria-label="Maximize">
+          <span id="icon-max-restore" class="ui-icon icon-maximize"></span>
+        </button>
+        <button id="btn-close" class="action-btn close-btn" title="Close" aria-label="Close">
+          <span class="ui-icon icon-close"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Viewport: Collapsible Left Sidebar + Central Full Area Content Pane + Right Sidebar -->
+    <main id="main-viewport">
+      <!-- Collapsible Left Sidebar with Nexus Features -->
+      <aside id="left-sidebar" class="left-sidebar">
+        <!-- Top Action Section -->
+        <div class="sidebar-top">
+          <button id="btn-sidebar-pair" class="btn-sidebar-primary">
+            <div class="btn-sidebar-primary-left">
+              <span class="sidebar-icon icon-sidebar-plus"></span>
+              <span>Pair Child Device</span>
+            </div>
+            <span class="key-badge">Ctrl+P</span>
+          </button>
+          <div class="sidebar-search-container">
+            <span class="sidebar-icon icon-sidebar-search"></span>
+            <input id="sidebar-search-input" class="sidebar-search-input" type="text" placeholder="Search features..." />
+            <button id="btn-search-clear" class="btn-search-clear" title="Clear search">✕</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Middle Section with Nexus Features -->
+        <div id="sidebar-scroll-content" class="sidebar-scroll-content"></div>
+
+        <!-- Bottom Section -->
+        <div class="sidebar-bottom">
+          <!-- Stealth Mode Quick Action -->
+          <button id="btn-stealth-mode" class="btn-stealth-mode" title="Toggle Child App Stealth Operation">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="sidebar-icon icon-sidebar-eye-off"></span>
+              <span>Stealth Mode</span>
+            </div>
+            <span class="count-pill" style="color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">ARMED</span>
+          </button>
+
+          <button id="btn-sidebar-settings" class="btn-sidebar-settings">
+            <span class="sidebar-icon icon-sidebar-settings"></span>
+            <span>Settings</span>
+          </button>
+        </div>
+
+        <!-- Right Resize Handle -->
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+      </aside>
+
+      <!-- Full-Area Main Content Pane -->
+      <section id="content-pane" class="content-pane"></section>
+
+      <!-- Right Collapsible Sidebar -->
+      <aside id="right-sidebar" class="right-sidebar"></aside>
+    </main>
+  </div>
+
+  <!-- Application Static Script Entrypoint -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

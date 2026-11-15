@@ -1,0 +1,39 @@
+/**
+ * @file ai.css
+ * @description AI Apps Monitor Panel styles for Guardian G-Home Right Sidebar.
+ * Pure Black & White theme.
+ */
+
+.rs-ai-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-telemetry-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+  letter-spacing: 0.3px;
+}
+
+.ai-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: var(--sidebar-background);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-model-badge {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ai-prompt-title {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #ffffff;
+  font-style: italic;
+}
+

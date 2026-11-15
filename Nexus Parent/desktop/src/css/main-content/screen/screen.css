@@ -1,0 +1,14 @@
+/**
+ * @file screen.css
+ * @description Full-viewport Video Player layout for Screen Feed.
+ *
+ * Hey friend! This styles the screen feed to be identical to the camera feed:
+ * - Edge-to-edge full-bleed video surface across the entire main content area.
+ * - Interactive timeline / seek / progress bar.
+ * - Live indicator with running timestamp (• Live 00:14:28).
+ * - Rotatable feed (90° increments).
+ * - Audio/video clip recorder.
+ * - Fullscreen toggle.
+ */
+
+@import '../camera/camera.css';

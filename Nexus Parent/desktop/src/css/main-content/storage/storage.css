@@ -1,0 +1,331 @@
+/**
+ * @file files.css
+ * @description Remote File Explorer & Storage Monitor View styles for G-Home desktop main content area.
+ *
+ * Hey friend! This stylesheet powers the full-viewport file monitoring interface.
+ * Just like the Operon GUI, we follow a strict pitch black (#000000) canvas with neutral dark grays
+ * (#121212, #181818, #222222) and crisp white typography (#ffffff).
+ * Absolutely NO blue undertones or emojis are used here.
+ */
+
+@import '../../../tokens.css';
+
+/* Full area container for Monitor Files */
+.files-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+  overflow: hidden;
+}
+
+/* Secondary Navigation & Breadcrumbs Bar */
+.files-subbar {
+  height: 40px;
+  background-color: #121212;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+/* Breadcrumb Navigation Trail */
+.files-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.breadcrumb-item {
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.12s ease;
+}
+
+.breadcrumb-item:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.breadcrumb-item.active {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.breadcrumb-separator {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 11px;
+}
+
+/* Search Box inside Subbar */
+.files-search-wrap {
+  width: 260px;
+  height: 26px;
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.files-search-wrap:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
+  background-color: #202020;
+}
+
+.files-search-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-family: var(--font-family);
+}
+
+.files-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Category Filter Bar */
+.files-categories-bar {
+  padding: 8px 16px;
+  background-color: #0c0c0c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.category-pill {
+  height: 24px;
+  padding: 0 10px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.category-pill:hover {
+  background-color: #222222;
+  color: #ffffff;
+}
+
+.category-pill.active {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  font-weight: 600;
+}
+
+.category-pill-badge {
+  font-size: 10px;
+  opacity: 0.8;
+  font-family: var(--mono-font-family);
+}
+
+/* Storage Bar Area */
+.storage-summary-strip {
+  padding: 6px 16px;
+  background-color: #000000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+}
+
+.storage-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.storage-progress-bar {
+  width: 140px;
+  height: 6px;
+  background-color: #222222;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.storage-progress-fill {
+  height: 100%;
+  width: 55.8%;
+  background-color: #ffffff;
+  border-radius: 3px;
+}
+
+/* File Explorer Table Area */
+.files-explorer-area {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  background-color: #000000;
+}
+
+.files-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12.5px;
+}
+
+.files-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #121212;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 5;
+}
+
+.files-table th {
+  padding: 8px 16px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.files-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+}
+
+.files-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.files-table tbody tr:hover {
+  background-color: #141414;
+}
+
+.files-table tbody tr.selected {
+  background-color: #1e1e1e;
+}
+
+/* Cell Layouts */
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.file-icon-badge {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.file-icon-badge img,
+.file-icon-badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+.file-mono-text {
+  font-family: var(--mono-font-family);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* Action Buttons inside row */
+.file-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.file-action-btn {
+  width: 26px;
+  height: 26px;
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  outline: none;
+}
+
+.file-action-btn:hover {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.file-action-btn img,
+.file-action-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Toast / Status banner when action triggered */
+.files-toast {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background-color: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.95);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.files-toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
