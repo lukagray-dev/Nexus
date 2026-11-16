@@ -19,8 +19,6 @@
 
 </div>
 
----
-
 ## **What is Nexus?**
 
 **Nexus** is an industrial-grade parental oversight and device surveillance ecosystem designed to protect children while guaranteeing absolute end-to-end privacy for families. 
@@ -31,8 +29,6 @@ Nexus is divided into two primary subsystems:
 
 1. **Nexus Parent (Desktop Console)**: A resource-efficient desktop application powered by **Tauri v2** and **Rust**, running a zero-dependency static TypeScript/CSS frontend rendered directly in the OS webview.
 2. **Nexus Child (Mobile Client)**: A native Android application written in **Kotlin** and **Jetpack Compose**, integrating device-level telemetry, background accessibility hooks, and low-latency media capture.
-
----
 
 ## **Why Nexus?**
 
@@ -46,8 +42,6 @@ When evaluating a complete rewrite, two fundamental architectural goals became n
 2. **Zero-Trust Family Privacy**: A child's room, screen, and location telemetry belong exclusively to their parents. Nexus replaces middleman cloud storage with cryptographic, direct device-to-device WebRTC data channels and encrypted media pipelines.
 
 > Nexus evolved from an early experimental prototype into an industrial, production-grade security and parental monitoring system.
-
----
 
 ## **Architecture & Security Model**
 
@@ -101,8 +95,6 @@ graph LR
 - **Dynamic Live Badging**: Left sidebar options dynamically display status badges only when that specific feature is streaming live telemetry.
 - **Stealth Protection**: Child client runs in silent daemon mode, preventing unauthorized termination or tamper attempts on the target device.
 
----
-
 ## **Key System Capabilities**
 
 Nexus provides a comprehensive surveillance, communications, and activity oversight suite:
@@ -122,8 +114,6 @@ Nexus provides a comprehensive surveillance, communications, and activity oversi
 | | **Digital Wellbeing** | App usage breakdowns, screen time limits, and category timers. |
 | **Device Controls** | **Stealth Mode** | Arms or disarms silent operation, hiding the application icon on the child device. |
 | | **Remote Actions** | Remote vibration trigger, flashlight toggle, wallpaper swap, and selective App Lock. |
-
----
 
 ## **Monorepo Layout**
 
@@ -158,52 +148,43 @@ graph TD
 ### Directory Structure
 
 ```text
-Nexus/
-├── .vscode/                       # VS Code run & debug configurations
-│   ├── launch.json                # "Nexus Parent Desktop (Dev)" launcher
-│   └── tasks.json                 # Tauri build & run task automation
+D:\Nexus\
+├── assets/                    # Shared brand assets (logos, vector SVGs)
+│   └── logo/                  # nexus-parent.svg, nexus-child.svg
 │
-├── assets/                        # Brand logos and vector assets
-│   └── logo/                      # nexus-parent.svg, nexus-child.svg
+├── docs/                      # Architectural blueprints & agent guides
+│   ├── WEBRTC-ARCHITECTURE.md
+│   ├── FOLDER-STRUCTURE.md
+│   └── UI-PREFERENCES.md
 │
-├── Nexus Child/                   # Native Android Child Application
-│   ├── app/                       # Android app module (Kotlin + Compose)
-│   │   ├── src/main/java/         # Background daemons, accessibility, UI
-│   │   └── build.gradle.kts       # Android build definitions
-│   └── gradle/                    # Gradle wrapper and version catalog
+├── Nexus Child/               # Native Android Mobile Application
+│   ├── app/                   # Android application module
+│   │   ├── src/main/java/     # Kotlin + Jetpack Compose source code
+│   │   ├── src/main/res/      # Android XML drawables, layouts, themes
+│   │   └── build.gradle.kts   # App build dependencies & SDK configs
+│   └── gradle/                # Gradle wrapper & version catalogs
 │
-├── Nexus Parent/                  # Parent Monitoring Controller
-│   └── desktop/                   # Tauri v2 Desktop Application
-│       ├── package.json           # TypeScript compilation scripts
-│       ├── tsconfig.json          # Strict ESNext/Bundler TS settings
-│       ├── src-tauri/             # Rust Backend Engine
-│       │   ├── src/               # IPC command handlers & window lifecycle
-│       │   │   ├── left-sidebar/  # Sidebar state and command modules
-│       │   │   ├── main-content/  # Camera, Screen, Mic, Location, Storage handlers
-│       │   │   └── right-sidebar/ # Comms, Social, and Device Control handlers
-│       │   ├── Cargo.toml         # Rust dependencies (Tauri v2)
-│       │   ├── tauri.conf.json    # Window framing & permission capabilities
-│       │   └── capabilities/      # Window dragging, minimize/maximize ACLs
-│       └── src/                   # Pure Static Frontend (Zero DevServer)
-│           ├── index.html         # Native Webview application container
-│           ├── css/               # Modular CSS tokens and component styles
-│           ├── ts/                # Strictly typed modular TypeScript source
-│           └── assets/            # Minimalist monochrome vector icons
+├── Nexus Parent/              # Parent Monitoring Console
+│   └── desktop/               # Tauri v2 Desktop Application
+│       ├── package.json       # Build scripts (`npm run build`, `dev`)
+│       ├── tsconfig.json      # Strict ESNext/Bundler TypeScript settings
+│       ├── src-tauri/         # Rust backend (OS window, capabilities, IPC)
+│       └── src/               # Pure static frontend (HTML, CSS, TS, Assets)
 │
-├── scripts/                       # One-click developer & operator launchers
-│   ├── run-desktop.bat            # Automated one-click desktop app runner
-│   ├── run-parent-desktop.bat     # Core dependency check, build & dev runner
-│   ├── debug-desktop.bat          # Lightweight VS Code debugger bridge
-│   └── debug-parent-desktop.bat   # Non-blocking terminal runner for VS Code
+├── scripts/                   # One-click execution & debug launchers
+│   ├── run-desktop.bat        # Automated one-click desktop app runner
+│   ├── run-parent-desktop.bat # Dependency check, build, and cargo tauri dev
+│   ├── debug-desktop.bat      # VS Code debugger bridge
+│   └── debug-parent-desktop.bat
 │
-├── .gitignore                     # Monorepo gitignore (Node, Rust, Android, OS)
-├── AGENTS.md                      # AI agent operating principles & engineering rules
-├── CONTRIBUTING.md                # Contribution guidelines and coding standards
-├── LICENSE                        # GNU AGPLv3 License
-└── README.md                      # Project documentation (this file)
+├── .vscode/                   # VS Code configuration (tracked in git)
+│   ├── launch.json            # "Nexus Parent Desktop (Dev)" F5 runner
+│   └── tasks.json             # Build & execution automation tasks
+│
+├── .gitignore                 # Root gitignore (excludes src/js, target, node_modules)
+├── AGENTS.md                  # Core AI agent engineering standards & principles
+└── README.md                  # Project overview & documentation
 ```
-
----
 
 ## **Key Design Principles**
 
@@ -212,8 +193,6 @@ Nexus/
 3. **Tactical B&W Minimalist Aesthetic**: A dark-mode, high-contrast, distraction-free surveillance UI. Strictly vector-driven (SVGs/PNGs) with zero operating system emojis.
 4. **Hardware-Decoded WebRTC**: Browsers and modern WebViews possess native, hardware-accelerated H.264/VP8/VP9 and Opus decoders. Nexus leverages these directly to provide sub-100ms video latency.
 5. **Deterministic State Synchronization**: All monitoring feeds and inspection panels share a centralized state registry ([state.ts](file:///d:/Nexus/Nexus%20Parent/desktop/src/ts/left-sidebar/state.ts)), ensuring UI badges and background workers stay perfectly in sync.
-
----
 
 ## **Getting Started**
 
@@ -251,8 +230,6 @@ The script will automatically:
 2. Press `Ctrl + Shift + D` to open the **Run and Debug** view.
 3. Select **"Nexus Parent Desktop (Dev)"** from the dropdown.
 4. Press `F5` (or click the green Play button).
-
----
 
 ## **License & Contributing**
 
