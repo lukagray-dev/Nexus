@@ -1,5 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base Application Theme: High-Contrast Tactical Monochrome -->
+    <style name="Theme.NexusChild" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/background_primary</item>
+        <item name="android:colorBackground">@color/background_primary</item>
+        <item name="android:statusBarColor">@color/background_primary</item>
+        <item name="android:navigationBarColor">@color/background_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Primary branding palette -->
+        <item name="colorPrimary">@color/accent_white</item>
+        <item name="colorOnPrimary">@color/accent_black</item>
+        <item name="colorSecondary">@color/accent_white</item>
+        <item name="colorOnSecondary">@color/accent_black</item>
+        
+        <!-- Text styling defaults -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
 
-    <style name="Theme.NexusChild" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Tactical Primary Action Button (Solid White with Black Text) -->
+    <style name="Widget.Nexus.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/bg_button_primary</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/accent_black</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="iconTint">@color/accent_black</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+    </style>
+
+    <!-- Tactical Secondary Action Button (Dark Elevated Background with White Text) -->
+    <style name="Widget.Nexus.Button.Secondary" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/bg_button_secondary</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="iconTint">@color/text_primary</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+    </style>
 </resources>
