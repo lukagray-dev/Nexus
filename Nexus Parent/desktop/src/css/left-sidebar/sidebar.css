@@ -42,6 +42,7 @@
   flex-direction: column;
   gap: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
 }
 
 /* Pair Device / Primary Action Button */
@@ -67,6 +68,123 @@
 .btn-sidebar-primary:hover {
   background-color: #262626;
   border-color: #404040;
+}
+
+.btn-sidebar-connected {
+  background-color: #141414;
+  border-color: #333333;
+}
+
+.device-btn-id {
+  font-family: var(--mono-font-family);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+}
+
+.sidebar-caret {
+  font-size: 9px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.btn-sidebar-connected.open .sidebar-caret {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu for Connected Device */
+.sidebar-device-dropdown {
+  position: absolute;
+  top: 48px;
+  left: 10px;
+  right: 10px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+  animation: dropdownFadeIn 0.12s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-telemetry-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-device-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.dropdown-device-model {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dropdown-telemetry-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: #111111;
+  border-radius: 4px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.dropdown-stat-label {
+  color: var(--text-secondary);
+}
+
+.dropdown-stat-value {
+  font-family: var(--mono-font-family);
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.dropdown-disconnect-btn {
+  width: 100%;
+  height: 28px;
+  background-color: #201414;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.dropdown-disconnect-btn:hover {
+  background-color: #2e1818;
+  border-color: #ef4444;
 }
 
 .btn-sidebar-primary-left {

@@ -4,11 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/load-env.js && tsc",
     "watch": "tsc --watch",
+    "pretest": "node scripts/load-env.js && tsc",
+    "test": "node --test test/webrtc-protocol.test.js",
     "dev": "cargo tauri dev"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "firebase": "^13.3.0"
   }
 }

@@ -11,7 +11,7 @@ import type { NotificationItem } from '../types.js';
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   { app: 'Instagram', title: 'New follower request', desc: 'emma_w wants to follow you.', time: '4m ago', pkg: 'com.instagram.android' },
   { app: 'YouTube', title: 'New Video uploaded', desc: 'Veritasium: How Quantum Computers Really Work', time: '18m ago', pkg: 'com.google.android.youtube' },
-  { app: 'Snapchat', title: 'Snap received', desc: 'New Snap from Lucas (Streak 84 🔥)', time: '45m ago', pkg: 'com.snapchat.android' },
+  { app: 'Snapchat', title: 'Snap received', desc: 'New Snap from Lucas (Streak 84)', time: '45m ago', pkg: 'com.snapchat.android' },
   { app: 'Google Classroom', title: 'Assignment Due Tomorrow', desc: 'Biology Chapter 4 Cell Division due at 11:59 PM', time: '2h ago', pkg: 'com.google.android.apps.classroom' },
   { app: 'Duolingo', title: 'Keep your streak alive!', desc: 'Take 3 minutes to practice Spanish today.', time: '5h ago', pkg: 'com.duolingo' }
 ];

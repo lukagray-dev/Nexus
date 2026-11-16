@@ -100,3 +100,7 @@ gen/
 .cxx/
 **/.cxx/
 **/captures/
+
+PLAN.md
+**/firebase-env.ts
+**/firebase-env.js

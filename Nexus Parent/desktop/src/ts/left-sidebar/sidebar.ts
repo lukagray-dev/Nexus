@@ -170,15 +170,167 @@ function setupKeyboardShortcuts(): void {
 
 /**
  * Connects the "Pair Child Device" button at top of sidebar and titlebar menu.
+ * When a device is connected:
+ * - Replaces button text with the formatted 12-digit Child ID.
+ * - Displays a live green online dot beside it.
+ * - Clicking toggles a dropdown showing live telemetry (model, battery, network) and a Disconnect button.
  */
 function setupPairDeviceButton(): void {
   const pairBtn = document.getElementById('btn-sidebar-pair');
-  pairBtn?.addEventListener('click', () => {
-    sidebarState.setActiveFeatureId(null);
-    if (deviceState.isConnected()) {
+  if (!pairBtn) return;
+
+  const sidebarTop = pairBtn.parentElement;
+  let dropdownEl: HTMLElement | null = null;
+
+  const closeDropdown = () => {
+    if (dropdownEl) {
+      dropdownEl.remove();
+      dropdownEl = null;
+      pairBtn.classList.remove('open');
+    }
+  };
+
+  const renderDropdown = () => {
+    if (dropdownEl) {
+      closeDropdown();
+      return;
+    }
+
+    const device = deviceState.getConnectedDevice();
+    if (!device) return;
+
+    dropdownEl = document.createElement('div');
+    dropdownEl.id = 'sidebar-device-dropdown';
+    dropdownEl.className = 'sidebar-device-dropdown';
+
+    const osText = device.androidVersion ? `Android ${device.androidVersion}` : 'Android';
+    const storageText = device.storageUsageText || 'Calculating...';
+
+    dropdownEl.innerHTML = `
+      <div class="dropdown-telemetry-header">
+        <span class="dropdown-device-name">${device.name}</span>
+        <span class="dropdown-device-model">${device.model} • ${osText}</span>
+      </div>
+      <div class="dropdown-telemetry-stats">
+        <div class="dropdown-stat-row">
+          <span class="dropdown-stat-label">Battery</span>
+          <span class="dropdown-stat-value">${device.batteryPercent}%${device.isCharging ? ' (Charging)' : ''}</span>
+        </div>
+        <div class="dropdown-stat-row">
+          <span class="dropdown-stat-label">Network</span>
+          <span class="dropdown-stat-value">${device.networkState || 'WiFi'}</span>
+        </div>
+        <div class="dropdown-stat-row">
+          <span class="dropdown-stat-label">Storage</span>
+          <span class="dropdown-stat-value">${storageText}</span>
+        </div>
+        <div class="dropdown-stat-row">
+          <span class="dropdown-stat-label">Status</span>
+          <span class="dropdown-stat-value" style="color: #22c55e;">Online</span>
+        </div>
+      </div>
+      <div class="dropdown-separator"></div>
+      <button id="btn-dropdown-disconnect" class="dropdown-disconnect-btn" title="Disconnect Child Device">
+        <img src="assets/icons/main-content/connection-state/unlink.svg" alt="" style="width: 12px; height: 12px;" />
+        <span>Disconnect Device</span>
+      </button>
+    `;
+
+    dropdownEl.querySelector('#btn-dropdown-disconnect')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      sidebarState.setActiveFeatureId(null);
       deviceState.disconnect();
+    });
+
+    sidebarTop?.appendChild(dropdownEl);
+    pairBtn.classList.add('open');
+  };
+
+  // Close dropdown when clicking anywhere outside
+  document.addEventListener('click', (e) => {
+    if (!dropdownEl) return;
+    const target = e.target as HTMLElement;
+    if (!dropdownEl.contains(target) && !pairBtn.contains(target)) {
+      closeDropdown();
     }
   });
+
+  const updatePairButtonUi = () => {
+    const isConnected = deviceState.isConnected();
+    const device = deviceState.getConnectedDevice();
+
+    if (isConnected && device) {
+      pairBtn.className = 'btn-sidebar-primary btn-sidebar-connected';
+      pairBtn.title = `Connected to ${device.name} (${device.id})`;
+      pairBtn.innerHTML = `
+        <div class="btn-sidebar-primary-left">
+          <img src="assets/icons/main-content/connection-state/smartphone.svg" alt="" style="width: 13px; height: 13px; opacity: 0.85;" />
+          <span class="device-btn-id">${device.id}</span>
+          <span class="status-pulse-dot active" title="Device is online"></span>
+        </div>
+        <span class="sidebar-caret">▼</span>
+      `;
+    } else {
+      closeDropdown();
+      pairBtn.className = 'btn-sidebar-primary';
+      pairBtn.title = 'Pair a new child device';
+      pairBtn.innerHTML = `
+        <div class="btn-sidebar-primary-left">
+          <span class="sidebar-icon icon-sidebar-plus"></span>
+          <span>Pair Child Device</span>
+        </div>
+        <span class="key-badge">Ctrl+P</span>
+      `;
+    }
+
+    // If dropdown is open, refresh telemetry contents
+    if (dropdownEl && isConnected && device) {
+      const headerName = dropdownEl.querySelector('.dropdown-device-name');
+      if (headerName) headerName.textContent = device.name;
+
+      const headerModel = dropdownEl.querySelector('.dropdown-device-model');
+      if (headerModel) {
+        const os = device.androidVersion ? `Android ${device.androidVersion}` : 'Android';
+        headerModel.textContent = `${device.model} • ${os}`;
+      }
+
+      const stats = dropdownEl.querySelector('.dropdown-telemetry-stats');
+      if (stats) {
+        stats.innerHTML = `
+          <div class="dropdown-stat-row">
+            <span class="dropdown-stat-label">Battery</span>
+            <span class="dropdown-stat-value">${device.batteryPercent}%${device.isCharging ? ' (Charging)' : ''}</span>
+          </div>
+          <div class="dropdown-stat-row">
+            <span class="dropdown-stat-label">Network</span>
+            <span class="dropdown-stat-value">${device.networkState || 'WiFi'}</span>
+          </div>
+          <div class="dropdown-stat-row">
+            <span class="dropdown-stat-label">Storage</span>
+            <span class="dropdown-stat-value">${device.storageUsageText || 'Calculating...'}</span>
+          </div>
+          <div class="dropdown-stat-row">
+            <span class="dropdown-stat-label">Status</span>
+            <span class="dropdown-stat-value" style="color: #22c55e;">Online</span>
+          </div>
+        `;
+      }
+    }
+  };
+
+  pairBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (deviceState.isConnected()) {
+      renderDropdown();
+    } else {
+      sidebarState.setActiveFeatureId(null);
+    }
+  });
+
+  // Re-render button whenever device connection or telemetry updates
+  deviceState.subscribe(updatePairButtonUi);
+  updatePairButtonUi();
 
   const pairMenuItem = document.getElementById('menu-item-pair-device');
   pairMenuItem?.addEventListener('click', () => {

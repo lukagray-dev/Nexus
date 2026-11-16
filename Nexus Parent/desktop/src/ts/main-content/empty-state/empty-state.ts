@@ -151,29 +151,35 @@ function bindPairingEvents(card: HTMLElement, onConnected: () => void): void {
   });
 
   // Submission handler
-  const submitConnection = (): void => {
+  const submitConnection = async (): Promise<void> => {
     const raw = cleanInput(input.value);
     if (raw.length < 12) return;
 
     connectBtn.disabled = true;
-    feedback.innerHTML = '<span class="feedback-text text-connecting">Establishing encrypted P2P WebRTC link...</span>';
+    feedback.innerHTML = '<span class="feedback-text text-connecting">Authenticating anonymously...</span>';
 
-    setTimeout(() => {
-      const ok = deviceState.connect(raw);
-      if (ok) {
+    try {
+      await deviceState.connectLive(raw, (progressText) => {
+        feedback.innerHTML = `<span class="feedback-text text-connecting">${progressText}</span>`;
+      });
+      feedback.innerHTML = '<span class="feedback-text text-ready">WebRTC link established!</span>';
+      setTimeout(() => {
         onConnected();
-      } else {
-        feedback.innerHTML = '<span class="feedback-text text-error">Failed to connect. Please check the ID.</span>';
-        connectBtn.disabled = false;
-      }
-    }, 600);
+      }, 300);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to connect. Please verify device ID.';
+      feedback.innerHTML = `<span class="feedback-text text-error">${message}</span>`;
+      connectBtn.disabled = false;
+    }
   };
 
-  connectBtn.addEventListener('click', submitConnection);
+  connectBtn.addEventListener('click', () => {
+    void submitConnection();
+  });
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !connectBtn.disabled) {
-      submitConnection();
+      void submitConnection();
     }
   });
 
