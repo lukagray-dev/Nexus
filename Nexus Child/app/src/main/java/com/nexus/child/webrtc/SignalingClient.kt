@@ -23,7 +23,8 @@ import org.webrtc.SessionDescription
  */
 class SignalingClient(
     private val deviceId: String,
-    private val onOfferReceived: (SessionDescription) -> Unit
+    private val onOfferReceived: (SessionDescription) -> Unit,
+    private val onRenegotiationAnswerReceived: ((SessionDescription) -> Unit)? = null
 ) {
 
     companion object {
@@ -79,21 +80,26 @@ class SignalingClient(
                 val mapType = object : GenericTypeIndicator<Map<String, Any>>() {}
                 val data = snapshot.getValue(mapType) ?: return
 
-                val offer = runCatching { data.toSessionDescription() }.getOrNull()
-                if (offer == null || offer.description.isBlank()) {
-                    Log.w(TAG, "Ignoring invalid or blank offer payload from Firebase.")
+                val desc = runCatching { data.toSessionDescription() }.getOrNull()
+                if (desc == null || desc.description.isBlank()) {
+                    Log.w(TAG, "Ignoring invalid or blank SDP payload from Firebase.")
                     return
                 }
 
-                // Prevent reprocessing identical offer snapshots
-                if (offer.description == lastProcessedOfferSdp) {
-                    Log.d(TAG, "Ignoring duplicate offer with identical SDP.")
+                // Prevent reprocessing identical SDP snapshots
+                if (desc.description == lastProcessedOfferSdp) {
+                    Log.d(TAG, "Ignoring duplicate SDP with identical content.")
                     return
                 }
 
-                lastProcessedOfferSdp = offer.description
-                Log.d(TAG, "Valid SDP Offer received from Parent. Passing to WebRtcManager...")
-                onOfferReceived(offer)
+                lastProcessedOfferSdp = desc.description
+                if (desc.type == SessionDescription.Type.OFFER) {
+                    Log.d(TAG, "Valid SDP Offer received from Parent. Passing to WebRtcManager...")
+                    onOfferReceived(desc)
+                } else if (desc.type == SessionDescription.Type.ANSWER) {
+                    Log.d(TAG, "Valid renegotiation SDP Answer received from Parent. Passing to handler...")
+                    onRenegotiationAnswerReceived?.invoke(desc)
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -118,6 +124,21 @@ class SignalingClient(
             Log.d(TAG, "SDP Answer published successfully to Firebase.")
         }.addOnFailureListener { error ->
             Log.e(TAG, "Failed to publish SDP Answer: ${error.message}", error)
+        }
+    }
+
+    /**
+     * Publishes a renegotiation SDP Offer into /signaling/{deviceId}/answer (Role Reversal).
+     * The Desktop Parent listens on /answer and detects when type == 'offer' to generate an answer.
+     *
+     * @param offer The renegotiation offer containing new or updated media tracks.
+     */
+    fun sendRenegotiationOffer(offer: SessionDescription) {
+        Log.d(TAG, "Publishing renegotiation SDP Offer (role reversal) to /signaling/$deviceId/answer...")
+        signalingRef.child("answer").setValue(offer.serialize()).addOnSuccessListener {
+            Log.d(TAG, "Renegotiation SDP Offer published successfully to Firebase.")
+        }.addOnFailureListener { error ->
+            Log.e(TAG, "Failed to publish renegotiation SDP Offer: ${error.message}", error)
         }
     }
 

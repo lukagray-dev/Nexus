@@ -189,7 +189,19 @@
   background-color: #252525;
 }
 
-/* Hold to Speak Button */
+/* Spinner Loading State */
+.mic-btn-icon.is-loading {
+  background-color: #222222;
+  border-color: rgba(255, 255, 255, 0.25);
+  cursor: wait;
+}
+
+.mic-btn-icon.is-loading img {
+  width: 14px;
+  height: 14px;
+}
+
+/* Speak Button (Intercom) */
 .mic-btn-speak {
   flex: 1;
   height: 32px;
@@ -202,28 +214,53 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
   transition: all 0.12s ease;
   user-select: none;
 }
 
-.mic-btn-speak img {
+.mic-btn-speak img.mic-speak-icon {
   width: 12px;
   height: 12px;
   filter: invert(1);
   opacity: 0.85;
 }
 
-.mic-btn-speak:hover {
+.mic-btn-speak:hover:not(:disabled) {
   background-color: #2c2c2c;
   border-color: rgba(255, 255, 255, 0.25);
 }
 
+/* Spinner Loading State for Speak Button */
+.mic-btn-speak.is-loading {
+  background-color: #222222;
+  border-color: rgba(255, 255, 255, 0.25);
+  cursor: wait;
+}
+
+.mic-btn-speak.is-loading img.mic-speak-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Active Speaking State */
 .mic-btn-speak.is-speaking {
   background-color: #15803d;
   border-color: #22c55e;
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.mic-btn-speak.is-speaking img.mic-speak-icon {
+  opacity: 1;
+}
+
+.mic-speak-wave {
+  width: 14px;
+  height: 14px;
+  filter: invert(1);
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* Record Button */

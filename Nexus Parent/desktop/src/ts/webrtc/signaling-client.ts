@@ -151,6 +151,25 @@ export class DesktopSignalingClient {
   }
 
   /**
+   * Publishes the Parent's SDP Answer back to /signaling/{childId}/offer during role-reversal renegotiation.
+   *
+   * @param childId The 12-digit normalized Child ID
+   * @param answer The generated RTCSessionDescriptionInit answer
+   */
+  public async sendRenegotiationAnswer(childId: string, answer: RTCSessionDescriptionInit): Promise<void> {
+    const rawId = this.normalizeChildId(childId);
+    const db = getFirebaseDatabase();
+    const offerRef = ref(db, `signaling/${rawId}/offer`);
+
+    console.log(`[SignalingClient] Publishing renegotiation SDP Answer to /signaling/${rawId}/offer...`);
+    await set(offerRef, {
+      type: answer.type,
+      sdp: answer.sdp
+    });
+    console.log('[SignalingClient] Renegotiation SDP Answer successfully published to Firebase.');
+  }
+
+  /**
    * Resets and clears the signaling session paths in Firebase.
    */
   public async clearSignalingSession(childId: string): Promise<void> {

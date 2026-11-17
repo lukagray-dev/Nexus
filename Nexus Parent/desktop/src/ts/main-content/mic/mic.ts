@@ -2,20 +2,36 @@
  * @file mic.ts
  * @description Compact Floating Draggable Microphone Monitor component for Nexus Parent.
  *
- * Hey friend! This module implements a small, sleek floating audio monitor overlay.
- * It contains strictly 4 core items:
- *  1. Play / Pause button (toggles live audio listening)
- *  2. Hold to Speak button (two-way intercom push-to-talk)
- *  3. Record button (toggles audio recording clip)
- *  4. Audio waveform animation (real-time dynamic visualizer)
+ * Hey friend! This module implements a sleek floating audio monitor overlay with real-time
+ * WebRTC audio playback and visualizer:
+ *  1. Play / Pause / Loading button:
+ *     - When user clicks Play, shows animated loading spinner (loading.svg) while sending MIC_ON
+ *     - When Child acknowledges with MIC_STARTED, flips to active Pause button and starts playback
+ *     - When user clicks Pause, shows animated loading spinner while sending MIC_OFF
+ *     - When Child acknowledges with MIC_STOPPED, flips back to Play button and stops audio
+ *  2. Real-Time Web Audio API Frequency Visualizer:
+ *     - 36-bar canvas spectrum analyzing live audio PCM buffers from the child device
+ *  3. Hold to Speak button (Push-to-talk intercom)
+ *  4. Record button (audio clip recording)
  */
 
 import { sidebarState } from '../../left-sidebar/state.js';
+import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { parentAudioController } from './parent-audio-controller.js';
 
 // Cache the active floating panel DOM instance and its coordinates
 let activePanelInstance: HTMLElement | null = null;
 let lastPanelLeft: number | null = null;
 let lastPanelTop: number | null = null;
+
+// Global audio playback and analysis singletons for the mic module
+let audioElement: HTMLAudioElement | null = null;
+let audioContext: AudioContext | null = null;
+let analyserNode: AnalyserNode | null = null;
+let audioSourceNode: MediaStreamAudioSourceNode | null = null;
+
+export type MicButtonState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
+export type SpeakButtonState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
 
 /**
  * Synchronizes the floating Mic overlay with the current content container.
@@ -124,22 +140,23 @@ export function renderMicPanel(): HTMLElement {
       </div>
     </div>
 
-    <!-- 4. Simple Wave Animation Container -->
+    <!-- 4. Dynamic Audio Wave Visualizer Canvas -->
     <div class="mic-wave-container">
       <canvas id="mic-wave-canvas" class="mic-wave-canvas" width="256" height="34"></canvas>
     </div>
 
     <!-- 3 Core Action Controls -->
     <div class="mic-controls-row">
-      <!-- 1. Play / Pause Button (starts paused by default) -->
+      <!-- 1. Play / Pause / Loading Button (starts in IDLE/paused state) -->
       <button id="btn-mic-play" class="mic-btn-icon" title="Play live audio stream">
         <img id="mic-play-icon" src="assets/icons/main-content/play.svg" alt="" />
       </button>
 
-      <!-- 2. Hold to Speak Button -->
-      <button id="btn-mic-speak" class="mic-btn-speak" title="Hold down to talk to child phone">
-        <img src="assets/icons/main-content/mic-audio-lines.svg" alt="" />
-        <span>Hold to Speak</span>
+      <!-- 2. Click to Speak Button (Microphone Intercom) -->
+      <button id="btn-mic-speak" class="mic-btn-speak" title="Click to speak to child (Mic off)">
+        <img id="mic-speak-icon" class="mic-speak-icon" src="assets/icons/main-content/mic.svg" alt="" />
+        <img id="mic-speak-wave" class="mic-speak-wave" src="assets/icons/animations/wave.svg" alt="" style="display: none;" />
+        <span id="mic-speak-label">Speak</span>
       </button>
 
       <!-- 3. Record Button -->
@@ -151,7 +168,7 @@ export function renderMicPanel(): HTMLElement {
     </div>
   `;
 
-  // Bind dragging and control events to this panel
+  // Bind dragging, WebRTC commands, and visualizer events to this panel
   setTimeout(() => {
     bindMicPanelEvents(panel);
   }, 0);
@@ -182,7 +199,8 @@ export function renderMicView(): HTMLElement {
 }
 
 /**
- * Attaches dragging, audio waveform rendering, and controls event listeners.
+ * Attaches dragging, WebRTC DataChannel signaling, audio element playback,
+ * and real-time frequency waveform rendering to the panel.
  */
 function bindMicPanelEvents(panel: HTMLElement): void {
   const header = panel.querySelector<HTMLElement>('#mic-panel-header');
@@ -190,6 +208,9 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   const btnPlay = panel.querySelector<HTMLButtonElement>('#btn-mic-play');
   const playIcon = panel.querySelector<HTMLImageElement>('#mic-play-icon');
   const btnSpeak = panel.querySelector<HTMLButtonElement>('#btn-mic-speak');
+  const micSpeakIcon = panel.querySelector<HTMLImageElement>('#mic-speak-icon');
+  const micSpeakWave = panel.querySelector<HTMLImageElement>('#mic-speak-wave');
+  const micSpeakLabel = panel.querySelector<HTMLElement>('#mic-speak-label');
   const btnRecord = panel.querySelector<HTMLButtonElement>('#btn-mic-record');
   const recordLabel = panel.querySelector<HTMLElement>('#mic-record-label');
   const recordTimer = panel.querySelector<HTMLElement>('#mic-record-timer');
@@ -197,16 +218,194 @@ function bindMicPanelEvents(panel: HTMLElement): void {
 
   if (!header) return;
 
-  // State flags (starts in paused state by default)
-  let isPlaying = false;
+  // State flags
+  let micState: MicButtonState = 'IDLE';
+  let speakState: SpeakButtonState = 'IDLE';
   let isSpeaking = false;
   let isRecording = false;
   let recordSeconds = 0;
   let recordInterval: ReturnType<typeof setInterval> | null = null;
   let animFrameId: number | null = null;
+  let confirmationTimeout: ReturnType<typeof setTimeout> | null = null;
+  let speakTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Updates the Speak button visuals according to its state machine:
+   * - IDLE: Standard mic icon and "Speak" label.
+   * - STARTING: Rotating loading spinner waiting for Child confirmation.
+   * - STREAMING: Active mic icon, animated wave icon, glowing aura, and canvas pulse.
+   * - STOPPING: Rotating loading spinner waiting for Child mute confirmation.
+   */
+  function setSpeakButtonState(state: SpeakButtonState): void {
+    speakState = state;
+    if (!btnSpeak || !micSpeakIcon || !micSpeakWave || !micSpeakLabel) return;
+
+    switch (state) {
+      case 'IDLE':
+        micSpeakIcon.src = 'assets/icons/main-content/mic.svg';
+        micSpeakWave.style.display = 'none';
+        micSpeakLabel.textContent = 'Speak';
+        btnSpeak.classList.remove('is-speaking', 'is-loading');
+        btnSpeak.removeAttribute('disabled');
+        btnSpeak.setAttribute('title', 'Click to speak to child (Mic off)');
+        isSpeaking = false;
+        break;
+
+      case 'STARTING':
+        micSpeakIcon.src = 'assets/icons/animations/loading.svg';
+        micSpeakWave.style.display = 'none';
+        micSpeakLabel.textContent = 'Connecting...';
+        btnSpeak.classList.remove('is-speaking');
+        btnSpeak.classList.add('is-loading');
+        btnSpeak.setAttribute('disabled', 'true');
+        btnSpeak.setAttribute('title', 'Connecting to child loudspeaker...');
+        isSpeaking = false;
+        break;
+
+      case 'STREAMING':
+        micSpeakIcon.src = 'assets/icons/main-content/mic.svg';
+        micSpeakWave.style.display = 'inline-block';
+        micSpeakLabel.textContent = 'Speaking';
+        btnSpeak.classList.remove('is-loading');
+        btnSpeak.classList.add('is-speaking');
+        btnSpeak.removeAttribute('disabled');
+        btnSpeak.setAttribute('title', 'Speaking to child at MAX volume (Click to stop)');
+        isSpeaking = true;
+        break;
+
+      case 'STOPPING':
+        micSpeakIcon.src = 'assets/icons/animations/loading.svg';
+        micSpeakWave.style.display = 'none';
+        micSpeakLabel.textContent = 'Stopping...';
+        btnSpeak.classList.remove('is-speaking');
+        btnSpeak.classList.add('is-loading');
+        btnSpeak.setAttribute('disabled', 'true');
+        btnSpeak.setAttribute('title', 'Restoring normal phone volume...');
+        isSpeaking = false;
+        break;
+    }
+  }
+
+  /**
+   * Updates the Play/Pause/Loading button visuals strictly according to current state.
+   */
+  function setButtonState(state: MicButtonState): void {
+    micState = state;
+    if (!btnPlay || !playIcon) return;
+
+    switch (state) {
+      case 'IDLE':
+        playIcon.src = 'assets/icons/main-content/play.svg';
+        btnPlay.classList.remove('active', 'is-loading');
+        btnPlay.removeAttribute('disabled');
+        btnPlay.setAttribute('title', 'Play live audio stream');
+        sidebarState.setFeatureLive('mic', false);
+        break;
+
+      case 'STARTING':
+        playIcon.src = 'assets/icons/animations/loading.svg';
+        btnPlay.classList.remove('active');
+        btnPlay.classList.add('is-loading');
+        btnPlay.setAttribute('disabled', 'true');
+        btnPlay.setAttribute('title', 'Connecting to child microphone...');
+        break;
+
+      case 'STREAMING':
+        playIcon.src = 'assets/icons/main-content/pause.svg';
+        btnPlay.classList.remove('is-loading');
+        btnPlay.classList.add('active');
+        btnPlay.removeAttribute('disabled');
+        btnPlay.setAttribute('title', 'Pause live audio stream');
+        sidebarState.setFeatureLive('mic', true);
+        break;
+
+      case 'STOPPING':
+        playIcon.src = 'assets/icons/animations/loading.svg';
+        btnPlay.classList.add('is-loading');
+        btnPlay.setAttribute('disabled', 'true');
+        btnPlay.setAttribute('title', 'Stopping child microphone...');
+        break;
+    }
+  }
+
+  /**
+   * Attaches the incoming WebRTC MediaStream to the hidden HTML5 <audio> element
+   * and configures Web Audio API AnalyserNode for the canvas visualizer.
+   */
+  function attachIncomingAudioStream(): void {
+    const stream = webrtcManager.getMicStream();
+    if (!stream) {
+      console.log('[Mic] MediaStream not yet available. Awaiting nexus-mic-stream event...');
+      return;
+    }
+
+    console.log('[Mic] Attaching audio stream to HTML5 playback element...');
+
+    // Step 1: Ensure hidden <audio> element exists and plays stream
+    if (!audioElement) {
+      audioElement = document.createElement('audio');
+      audioElement.id = 'nexus-mic-audio-stream';
+      audioElement.autoplay = true;
+      audioElement.style.display = 'none';
+      document.body.appendChild(audioElement);
+    }
+
+    audioElement.srcObject = stream;
+    audioElement.play().catch((err) => {
+      console.warn('[Mic] Audio autoplay prevented by browser policy:', err);
+    });
+
+    // Step 2: Wire Web Audio API AnalyserNode
+    try {
+      if (!audioContext || audioContext.state === 'closed') {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        audioContext = new AudioCtx();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      if (audioSourceNode) {
+        audioSourceNode.disconnect();
+      }
+
+      audioSourceNode = audioContext.createMediaStreamSource(stream);
+      analyserNode = audioContext.createAnalyser();
+      analyserNode.fftSize = 64; // Yields 32 frequency bins, ideal for our 36 visualizer bars
+      analyserNode.smoothingTimeConstant = 0.8;
+      audioSourceNode.connect(analyserNode);
+      console.log('[Mic] Web Audio AnalyserNode successfully connected to microphone stream.');
+    } catch (err) {
+      console.error('[Mic] Failed to configure Web Audio AnalyserNode:', err);
+    }
+  }
+
+  /**
+   * Stops audio element playback and releases Web Audio nodes.
+   */
+  function stopAudioPlayback(): void {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.srcObject = null;
+    }
+    if (audioSourceNode) {
+      try {
+        audioSourceNode.disconnect();
+      } catch (e) {
+        console.warn('[Mic] Warning disconnecting audio source node:', e);
+      }
+      audioSourceNode = null;
+    }
+    analyserNode = null;
+  }
 
   // Close button hides overlay and turns off live state
   btnClose?.addEventListener('click', () => {
+    if (micState === 'STREAMING') {
+      webrtcManager.sendCommand('MIC_OFF');
+    }
+    stopAudioPlayback();
+    setButtonState('IDLE');
     sidebarState.setFeatureLive('mic', false);
     sidebarState.setMicOpen(false);
   });
@@ -263,40 +462,174 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     }
   });
 
-  // 1. Play / Pause Control
+  // 1. Play / Pause / Loading Control with Confirmation-based flow
   btnPlay?.addEventListener('click', () => {
-    isPlaying = !isPlaying;
-    if (isPlaying) {
-      btnPlay.classList.add('active');
-      btnPlay.setAttribute('title', 'Pause live audio stream');
-      if (playIcon) playIcon.src = 'assets/icons/main-content/pause.svg';
-      sidebarState.setFeatureLive('mic', true);
-    } else {
-      btnPlay.classList.remove('active');
-      btnPlay.setAttribute('title', 'Play live audio stream');
-      if (playIcon) playIcon.src = 'assets/icons/main-content/play.svg';
-      sidebarState.setFeatureLive('mic', false);
+    if (micState === 'IDLE') {
+      console.log('[Mic] Play clicked: Sending MIC_ON command...');
+      setButtonState('STARTING');
+
+      const sent = webrtcManager.sendCommand('MIC_ON');
+      if (!sent) {
+        console.warn('[Mic] Cannot send MIC_ON: DataChannel is not open.');
+        setButtonState('IDLE');
+        return;
+      }
+
+      // Safety fallback timer: if Child app doesn't confirm within 20s, revert state
+      if (confirmationTimeout) clearTimeout(confirmationTimeout);
+      confirmationTimeout = setTimeout(() => {
+        if (micState === 'STARTING') {
+          console.warn('[Mic] Timeout waiting for MIC_STARTED from Child. Reverting to IDLE.');
+          setButtonState('IDLE');
+        }
+      }, 20000);
+    } else if (micState === 'STREAMING') {
+      console.log('[Mic] Pause clicked: Sending MIC_OFF command...');
+      setButtonState('STOPPING');
+
+      const sent = webrtcManager.sendCommand('MIC_OFF');
+      if (!sent) {
+        console.warn('[Mic] Cannot send MIC_OFF: DataChannel is not open.');
+        setButtonState('STREAMING');
+        return;
+      }
+
+      // Safety fallback timer: if Child app doesn't confirm within 20s, revert state
+      if (confirmationTimeout) clearTimeout(confirmationTimeout);
+      confirmationTimeout = setTimeout(() => {
+        if (micState === 'STOPPING') {
+          console.warn('[Mic] Timeout waiting for MIC_STOPPED from Child. Reverting to STREAMING.');
+          setButtonState('STREAMING');
+        }
+      }, 20000);
     }
   });
 
-  // 2. Hold to Speak Control
-  const startSpeaking = (e: Event) => {
-    e.preventDefault();
-    isSpeaking = true;
-    btnSpeak?.classList.add('is-speaking');
-  };
+  // WebRTC Connection State Listener: Auto-reset on peer disconnection
+  const unbindConnectionState = webrtcManager.onConnectionStateChange((state) => {
+    console.log('[Mic] WebRTC connection state changed:', state);
+    if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+      console.log('[Mic] Connection lost. Executing automatic microphone and intercom reset...');
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      if (speakTimeout) {
+        clearTimeout(speakTimeout);
+        speakTimeout = null;
+      }
+      setButtonState('IDLE');
+      setSpeakButtonState('IDLE');
+      stopAudioPlayback();
+      parentAudioController.mute();
+    }
+  });
 
-  const stopSpeaking = (e: Event) => {
-    e.preventDefault();
-    isSpeaking = false;
-    btnSpeak?.classList.remove('is-speaking');
-  };
+  // DataChannel Message Handler for Child confirmations
+  const unbindDataChannel = webrtcManager.onMessage((rawMessage: string) => {
+    const message = rawMessage.trim();
+    console.log('[Mic] DataChannel message received:', message);
 
-  btnSpeak?.addEventListener('mousedown', startSpeaking);
-  btnSpeak?.addEventListener('mouseup', stopSpeaking);
-  btnSpeak?.addEventListener('mouseleave', stopSpeaking);
-  btnSpeak?.addEventListener('touchstart', startSpeaking, { passive: false });
-  btnSpeak?.addEventListener('touchend', stopSpeaking);
+    if (message === 'MIC_STARTED') {
+      console.log('[Mic] Confirmation received: MIC_STARTED. Activating stream and pause button...');
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      setButtonState('STREAMING');
+      attachIncomingAudioStream();
+    } else if (message === 'MIC_STOPPED') {
+      console.log('[Mic] Confirmation received: MIC_STOPPED. Deactivating stream and play button...');
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      stopAudioPlayback();
+      setButtonState('IDLE');
+    } else if (message.startsWith('MIC_ERROR:')) {
+      console.error('[Mic] Child reported error:', message);
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      if (micState === 'STARTING') {
+        setButtonState('IDLE');
+      } else if (micState === 'STOPPING') {
+        setButtonState('STREAMING');
+      }
+    } else if (message === 'PARENT_AUDIO_UNMUTED') {
+      console.log('[Mic] Confirmation received: PARENT_AUDIO_UNMUTED. Speaking mode active!');
+      if (speakTimeout) {
+        clearTimeout(speakTimeout);
+        speakTimeout = null;
+      }
+      setSpeakButtonState('STREAMING');
+    } else if (message === 'PARENT_AUDIO_MUTED') {
+      console.log('[Mic] Confirmation received: PARENT_AUDIO_MUTED. Speaking mode stopped.');
+      if (speakTimeout) {
+        clearTimeout(speakTimeout);
+        speakTimeout = null;
+      }
+      setSpeakButtonState('IDLE');
+    } else if (message.startsWith('PARENT_AUDIO_ERROR:')) {
+      console.error('[Mic] Child reported parent audio error:', message);
+      if (speakTimeout) {
+        clearTimeout(speakTimeout);
+        speakTimeout = null;
+      }
+      parentAudioController.mute();
+      setSpeakButtonState('IDLE');
+    }
+  });
+
+  // Global window listener for incoming microphone stream events
+  const onMicStreamReceived = (event: Event) => {
+    const customEvent = event as CustomEvent<{ stream: MediaStream; track: MediaStreamTrack }>;
+    console.log('[Mic] Global nexus-mic-stream event received:', customEvent.detail);
+    if (micState === 'STREAMING' || micState === 'STARTING') {
+      attachIncomingAudioStream();
+    }
+  };
+  window.addEventListener('nexus-mic-stream', onMicStreamReceived);
+
+  // 2. Click to Speak Control (Microphone Intercom)
+  btnSpeak?.addEventListener('click', async () => {
+    if (speakState === 'IDLE') {
+      console.log('[Mic] Speak clicked: Activating parent microphone and requesting loudspeaker boost...');
+      setSpeakButtonState('STARTING');
+
+      try {
+        await parentAudioController.unmute();
+
+        // Safety fallback timer: if Child app doesn't confirm within 20s, revert state
+        if (speakTimeout) clearTimeout(speakTimeout);
+        speakTimeout = setTimeout(() => {
+          if (speakState === 'STARTING') {
+            console.warn('[Mic] Timeout waiting for PARENT_AUDIO_UNMUTED from Child. Reverting to IDLE.');
+            parentAudioController.mute();
+            setSpeakButtonState('IDLE');
+          }
+        }, 20000);
+      } catch (err) {
+        console.error('[Mic] Failed to activate parent microphone:', err);
+        setSpeakButtonState('IDLE');
+      }
+    } else if (speakState === 'STREAMING') {
+      console.log('[Mic] Speak clicked to stop: Muting parent microphone...');
+      setSpeakButtonState('STOPPING');
+
+      parentAudioController.mute();
+
+      // Safety fallback timer: if Child app doesn't confirm within 20s, revert state
+      if (speakTimeout) clearTimeout(speakTimeout);
+      speakTimeout = setTimeout(() => {
+        if (speakState === 'STOPPING') {
+          console.warn('[Mic] Timeout waiting for PARENT_AUDIO_MUTED from Child. Reverting to IDLE.');
+          setSpeakButtonState('IDLE');
+        }
+      }, 20000);
+    }
+  });
 
   // 3. Record Control
   btnRecord?.addEventListener('click', () => {
@@ -327,7 +660,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     }
   });
 
-  // 4. Wave Animation Canvas Rendering
+  // 4. Wave Animation Canvas Rendering with Real Frequency Analysis
   if (canvas) {
     const ctx = canvas.getContext('2d');
     if (ctx) {
@@ -345,17 +678,31 @@ function bindMicPanelEvents(panel: HTMLElement): void {
 
         step += 0.08;
 
+        // Retrieve real frequency buckets if currently streaming
+        let freqData: Uint8Array<ArrayBuffer> | null = null;
+        if (micState === 'STREAMING' && analyserNode) {
+          freqData = new Uint8Array(new ArrayBuffer(analyserNode.frequencyBinCount));
+          analyserNode.getByteFrequencyData(freqData);
+        }
+
         for (let i = 0; i < barCount; i++) {
-          let amplitude = 2; // Flat idle line
+          let amplitude = 2; // Flat idle baseline
 
           if (isSpeaking) {
-            // High energy green/white pulse when parent speaks
+            // High energy green pulse when parent holds to speak
             amplitude = 4 + Math.sin(step * 2 + i * 0.4) * 8 + Math.cos(step * 3 - i * 0.2) * 5;
-          } else if (isPlaying) {
-            // Natural sound activity wave when listening
-            const wave1 = Math.sin(step + i * 0.3) * 6;
-            const wave2 = Math.cos(step * 1.5 + i * 0.5) * 4;
-            amplitude = Math.max(2, Math.abs(wave1 + wave2) + (isRecording ? 3 : 1));
+          } else if (micState === 'STREAMING') {
+            if (freqData && freqData.length > 0) {
+              // Real hardware microphone spectrum data
+              const binIdx = Math.min(freqData.length - 1, Math.floor(i * (freqData.length / barCount)));
+              const norm = freqData[binIdx] / 255;
+              amplitude = Math.max(2, norm * (h - 6));
+            } else {
+              // Graceful animated wave while waiting for buffer fill
+              const wave1 = Math.sin(step + i * 0.3) * 5;
+              const wave2 = Math.cos(step * 1.5 + i * 0.5) * 3;
+              amplitude = Math.max(2, Math.abs(wave1 + wave2) + 2);
+            }
           }
 
           const barHeight = Math.min(h - 4, Math.max(3, amplitude * 1.8));
@@ -366,9 +713,9 @@ function bindMicPanelEvents(panel: HTMLElement): void {
             ? '#22c55e'
             : isRecording
             ? '#ef4444'
-            : isPlaying
-            ? 'rgba(255, 255, 255, 0.85)'
-            : 'rgba(255, 255, 255, 0.25)';
+            : micState === 'STREAMING'
+            ? 'rgba(255, 255, 255, 0.9)'
+            : 'rgba(255, 255, 255, 0.2)';
 
           // Draw rounded pill bar
           ctx.beginPath();
@@ -388,6 +735,13 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     if (!document.body.contains(panel)) {
       if (animFrameId) cancelAnimationFrame(animFrameId);
       if (recordInterval) clearInterval(recordInterval);
+      if (confirmationTimeout) clearTimeout(confirmationTimeout);
+      if (speakTimeout) clearTimeout(speakTimeout);
+      parentAudioController.cleanup();
+      unbindDataChannel();
+      unbindConnectionState();
+      window.removeEventListener('nexus-mic-stream', onMicStreamReceived);
+      stopAudioPlayback();
       sidebarState.setFeatureLive('mic', false);
       observer.disconnect();
     }

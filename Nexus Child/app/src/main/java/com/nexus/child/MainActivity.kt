@@ -9,6 +9,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.nexus.child.components.mic.MicCommandHandler
+import com.nexus.child.components.mic.MicrophoneController
+import com.nexus.child.components.mic.ParentAudioSpeakerManager
 import com.nexus.child.databinding.ActivityMainBinding
 import com.nexus.child.permission.PermissionGuideActivity
 import com.nexus.child.permission.PermissionHelper
@@ -45,6 +48,9 @@ class MainActivity : AppCompatActivity() {
     private var statusManager: DeviceStatusManager? = null
     private var signalingClient: SignalingClient? = null
     private var webRtcManager: WebRtcManager? = null
+    private var microphoneController: MicrophoneController? = null
+    private var parentAudioSpeakerManager: ParentAudioSpeakerManager? = null
+    private var micCommandHandler: MicCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        micCommandHandler?.cleanup()
+        parentAudioSpeakerManager?.cleanup()
+        microphoneController?.cleanup()
         webRtcManager?.close()
         signalingClient?.stop()
         statusManager?.stop()
@@ -106,6 +115,10 @@ class MainActivity : AppCompatActivity() {
                     onOfferReceived = { offer ->
                         Log.d(TAG, "SDP Offer received from parent. Delegating to WebRtcManager...")
                         webRtcManager?.handleRemoteOffer(offer)
+                    },
+                    onRenegotiationAnswerReceived = { answer ->
+                        Log.d(TAG, "Renegotiation Answer received from parent. Delegating to WebRtcManager...")
+                        webRtcManager?.handleRenegotiationAnswer(answer)
                     }
                 )
                 signalingClient = sigClient
@@ -114,18 +127,48 @@ class MainActivity : AppCompatActivity() {
                 sigClient.clearSessionData()
                 sigClient.startListening()
 
-                Log.d(TAG, "Step 5: Initializing WebRtcManager with hardware codec pipeline...")
-                webRtcManager = WebRtcManager(
+                Log.d(TAG, "Step 5: Initializing ParentAudioSpeakerManager and WebRtcManager...")
+                val speakerMgr = ParentAudioSpeakerManager(this@MainActivity)
+                parentAudioSpeakerManager = speakerMgr
+
+                val rtcManager = WebRtcManager(
                     context = this@MainActivity,
                     deviceStatusManager = statusMgr,
                     signalingClient = sigClient,
                     onConnectionStateChanged = { isConnected ->
                         Log.d(TAG, "WebRTC peer connection state changed: isConnected=$isConnected")
                         updateConnectionStatusUi(isConnected)
+                        if (!isConnected) {
+                            Log.d(TAG, "Connection lost or closed. Resetting microphone and loudspeaker states...")
+                            micCommandHandler?.onPeerDisconnected()
+                        }
                     },
                     onMessageReceived = { message ->
                         Log.d(TAG, "Control command received from parent DataChannel: $message")
                         handleDataChannelCommand(message)
+                    },
+                    onRemoteAudioTrackReceived = { audioTrack ->
+                        speakerMgr.onRemoteAudioTrackAdded(audioTrack)
+                    }
+                )
+                webRtcManager = rtcManager
+
+                Log.d(TAG, "Step 6: Initializing MicrophoneController and MicCommandHandler...")
+                val micCtrl = MicrophoneController(
+                    context = this@MainActivity,
+                    factoryProvider = { rtcManager.getPeerConnectionFactory() },
+                    peerConnectionProvider = { rtcManager.getPeerConnection() }
+                )
+                microphoneController = micCtrl
+
+                micCommandHandler = MicCommandHandler(
+                    micController = micCtrl,
+                    parentAudioSpeakerManager = speakerMgr,
+                    renegotiationTrigger = { onComplete ->
+                        rtcManager.performRenegotiation(onComplete)
+                    },
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
                     }
                 )
 
@@ -161,10 +204,12 @@ class MainActivity : AppCompatActivity() {
      * Handles control messages incoming from the parent console over the DataChannel.
      */
     private fun handleDataChannelCommand(command: String) {
-        // Echo or acknowledge control ping
         Log.d(TAG, "Processing incoming command: $command")
-        if (command == "PING") {
-            webRtcManager?.sendData("PONG")
+        val handledByMic = micCommandHandler?.handleCommand(command) ?: false
+        if (!handledByMic) {
+            if (command == "PING") {
+                webRtcManager?.sendData("PONG")
+            }
         }
     }
 

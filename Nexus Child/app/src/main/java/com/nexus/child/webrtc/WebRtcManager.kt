@@ -42,7 +42,8 @@ class WebRtcManager(
     private val deviceStatusManager: DeviceStatusManager,
     private val signalingClient: SignalingClient,
     private val onConnectionStateChanged: (isConnected: Boolean) -> Unit,
-    private val onMessageReceived: (message: String) -> Unit
+    private val onMessageReceived: (message: String) -> Unit,
+    private val onRemoteAudioTrackReceived: (audioTrack: org.webrtc.AudioTrack) -> Unit = {}
 ) {
 
     companion object {
@@ -61,6 +62,22 @@ class WebRtcManager(
 
     private val isAnswering = AtomicBoolean(false)
     private val answerSent = AtomicBoolean(false)
+
+    // Renegotiation state flags (used during MIC_ON/MIC_OFF role reversal)
+    private val isRenegotiating = AtomicBoolean(false)
+    private val renegotiationOfferSent = AtomicBoolean(false)
+    private var pendingRenegotiationOfferReadyCallback: (() -> Unit)? = null
+
+    /**
+     * Exposes the active PeerConnection for media track manipulation.
+     */
+    fun getPeerConnection(): PeerConnection? = peerConnection
+
+    /**
+     * Exposes the PeerConnectionFactory for AudioSource and AudioTrack creation.
+     */
+    fun getPeerConnectionFactory(): PeerConnectionFactory? =
+        if (::peerConnectionFactory.isInitialized) peerConnectionFactory else null
 
     init {
         initializePeerConnectionFactory()
@@ -221,6 +238,109 @@ class WebRtcManager(
     }
 
     /**
+     * Initiates WebRTC session renegotiation with temporary role reversal (Child = Offerer).
+     *
+     * Hey friend! Why does Child create the offer here?
+     * Because native Android AudioRecord hardware needs to be added to the PeerConnection
+     * BEFORE generating the SDP offer. This ensures the SDP includes the audio track line (m=audio),
+     * and when Desktop Parent answers, the audio hardware driver initializes smoothly!
+     *
+     * @param onOfferReady Optional callback invoked once the offer is transmitted to Firebase.
+     */
+    fun performRenegotiation(onOfferReady: (() -> Unit)? = null) {
+        scope.launch {
+            val pc = peerConnection
+            if (pc == null) {
+                Log.e(TAG, "Cannot renegotiate: PeerConnection is null")
+                return@launch
+            }
+
+            Log.d(TAG, "Starting role-reversal renegotiation offer creation...")
+            isRenegotiating.set(true)
+            renegotiationOfferSent.set(false)
+            pendingRenegotiationOfferReadyCallback = onOfferReady
+
+            val constraints = MediaConstraints()
+            pc.createOffer(object : SimpleSdpObserver("createRenegotiationOffer") {
+                override fun onCreateSuccess(desc: SessionDescription) {
+                    Log.d(TAG, "Renegotiation offer created. Setting local description...")
+                    pc.setLocalDescription(object : SimpleSdpObserver("setLocalDescRenegotiation") {
+                        override fun onSetSuccess() {
+                            Log.d(TAG, "Local description set for renegotiation. Gathering ICE candidates...")
+                            // In Non-Trickle ICE, if gathering is already complete, transmit immediately
+                            if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE) {
+                                transmitRenegotiationOfferIfReady()
+                            } else {
+                                // Fallback timeout: transmit collected candidates if gathering takes too long
+                                mainHandler.postDelayed({
+                                    if (isRenegotiating.get() && !renegotiationOfferSent.get()) {
+                                        Log.d(TAG, "ICE gathering timeout for renegotiation reached. Transmitting collected SDP offer.")
+                                        transmitRenegotiationOfferIfReady()
+                                    }
+                                }, ICE_GATHERING_FALLBACK_TIMEOUT_MS)
+                            }
+                        }
+
+                        override fun onSetFailure(error: String?) {
+                            Log.e(TAG, "Failed to set local description for renegotiation: $error")
+                            isRenegotiating.set(false)
+                        }
+                    }, desc)
+                }
+
+                override fun onCreateFailure(error: String?) {
+                    Log.e(TAG, "Failed to create renegotiation offer: $error")
+                    isRenegotiating.set(false)
+                }
+            }, constraints)
+        }
+    }
+
+    /**
+     * Transmits the role-reversal SDP renegotiation offer to Firebase at /signaling/{id}/answer.
+     */
+    private fun transmitRenegotiationOfferIfReady() {
+        if (renegotiationOfferSent.getAndSet(true)) {
+            return
+        }
+
+        val pc = peerConnection ?: return
+        val localDesc = pc.localDescription
+
+        if (localDesc != null && localDesc.description.isNotBlank()) {
+            Log.d(TAG, "Transmitting role-reversal renegotiation offer to Firebase (/answer)...")
+            signalingClient.sendRenegotiationOffer(localDesc)
+            val callback = pendingRenegotiationOfferReadyCallback
+            pendingRenegotiationOfferReadyCallback = null
+            callback?.invoke()
+        } else {
+            Log.w(TAG, "Local description was null or blank when trying to transmit renegotiation offer.")
+            renegotiationOfferSent.set(false)
+        }
+    }
+
+    /**
+     * Applies the Parent's SDP Answer received during role-reversal renegotiation.
+     */
+    fun handleRenegotiationAnswer(answer: SessionDescription) {
+        scope.launch {
+            val pc = peerConnection ?: return@launch
+            Log.d(TAG, "Setting parent's renegotiation answer as remote description...")
+            pc.setRemoteDescription(object : SimpleSdpObserver("setRemoteDescRenegotiationAnswer") {
+                override fun onSetSuccess() {
+                    Log.d(TAG, "Parent's renegotiation answer set successfully. Signaling state: ${pc.signalingState()}")
+                    isRenegotiating.set(false)
+                }
+
+                override fun onSetFailure(error: String?) {
+                    Log.e(TAG, "Failed to set remote description for renegotiation answer: $error")
+                    isRenegotiating.set(false)
+                }
+            }, answer)
+        }
+    }
+
+    /**
      * Sends a text message across the established WebRTC DataChannel.
      */
     fun sendData(message: String): Boolean {
@@ -243,8 +363,13 @@ class WebRtcManager(
         override fun onIceGatheringChange(state: PeerConnection.IceGatheringState) {
             Log.d(TAG, "ICE Gathering State changed: $state")
             if (state == PeerConnection.IceGatheringState.COMPLETE) {
-                Log.d(TAG, "Non-Trickle ICE gathering COMPLETE. Transmitting answer...")
-                transmitLocalAnswerIfReady()
+                if (isRenegotiating.get()) {
+                    Log.d(TAG, "Non-Trickle ICE gathering COMPLETE for renegotiation. Transmitting offer...")
+                    transmitRenegotiationOfferIfReady()
+                } else {
+                    Log.d(TAG, "Non-Trickle ICE gathering COMPLETE for answer. Transmitting answer...")
+                    transmitLocalAnswerIfReady()
+                }
             }
         }
 
@@ -295,8 +420,9 @@ class WebRtcManager(
                         telemetryManager?.start()
                         telemetryManager?.onDataChannelOpened()
                     } else if (channel.state() == DataChannel.State.CLOSED) {
-                        Log.d(TAG, "DataChannel closed. Stopping telemetry listeners...")
+                        Log.d(TAG, "DataChannel closed. Stopping telemetry listeners and notifying disconnection...")
                         telemetryManager?.stop()
+                        mainHandler.post { onConnectionStateChanged(false) }
                     }
                 }
 
@@ -316,6 +442,12 @@ class WebRtcManager(
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
             Log.d(TAG, "ICE Connection State: $state")
+            if (state == PeerConnection.IceConnectionState.DISCONNECTED ||
+                state == PeerConnection.IceConnectionState.FAILED ||
+                state == PeerConnection.IceConnectionState.CLOSED) {
+                Log.d(TAG, "ICE connection lost ($state). Notifying disconnection...")
+                mainHandler.post { onConnectionStateChanged(false) }
+            }
         }
 
         override fun onIceConnectionReceivingChange(receiving: Boolean) {}
@@ -328,7 +460,14 @@ class WebRtcManager(
             Log.d(TAG, "Renegotiation needed.")
         }
 
-        override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out org.webrtc.MediaStream>?) {}
+        override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out org.webrtc.MediaStream>?) {
+            val track = receiver?.track()
+            Log.d(TAG, "onAddTrack callback received track: kind=${track?.kind()}, id=${track?.id()}")
+            if (track is org.webrtc.AudioTrack) {
+                Log.d(TAG, "Passing incoming remote AudioTrack to listener for parent voice intercom...")
+                onRemoteAudioTrackReceived(track)
+            }
+        }
     }
 
     /**
@@ -337,6 +476,9 @@ class WebRtcManager(
     fun close() {
         Log.d(TAG, "Closing WebRtcManager and releasing hardware resources...")
         try {
+            isRenegotiating.set(false)
+            renegotiationOfferSent.set(false)
+            pendingRenegotiationOfferReadyCallback = null
             telemetryManager?.stop()
             telemetryManager = null
 
@@ -347,6 +489,7 @@ class WebRtcManager(
             peerConnection = null
 
             eglBase.release()
+            mainHandler.post { onConnectionStateChanged(false) }
         } catch (e: Exception) {
             Log.e(TAG, "Error during WebRtcManager close: ${e.message}", e)
         }

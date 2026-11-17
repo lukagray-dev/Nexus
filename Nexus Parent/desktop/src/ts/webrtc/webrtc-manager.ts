@@ -29,6 +29,7 @@ export class DesktopWebRtcManager {
   private dataChannel: RTCDataChannel | null = null;
   private currentChildId: string | null = null;
   private unsubscribeAnswer: (() => void) | null = null;
+  private micStream: MediaStream | null = null;
 
   // Event callback listeners
   private connectionStateListeners: Set<ConnectionStateListener> = new Set();
@@ -47,6 +48,13 @@ export class DesktopWebRtcManager {
    */
   public getDataChannel(): RTCDataChannel | null {
     return this.dataChannel;
+  }
+
+  /**
+   * Returns the incoming microphone MediaStream if available, or null.
+   */
+  public getMicStream(): MediaStream | null {
+    return this.micStream;
   }
 
   /**
@@ -79,10 +87,10 @@ export class DesktopWebRtcManager {
     const pc = this.peerConnection;
     if (!pc) throw new Error('Failed to create RTCPeerConnection');
 
-    // Step 5: Add receiving transceivers for camera/screen video and mic audio
+    // Step 5: Add receiving transceivers for camera/screen video and bidirectional transceiver for mic audio
     pc.addTransceiver('video', { direction: 'recvonly' });
-    pc.addTransceiver('audio', { direction: 'recvonly' });
-    console.log('[WebRTCManager] Video and Audio transceivers added (recvonly).');
+    pc.addTransceiver('audio', { direction: 'sendrecv' });
+    console.log('[WebRTCManager] Video transceiver (recvonly) and Audio transceiver (sendrecv) added.');
 
     // Step 6: Create the primary control DataChannel
     this.setupDataChannel(pc);
@@ -103,29 +111,61 @@ export class DesktopWebRtcManager {
     console.log('[WebRTCManager] Non-Trickle ICE gathering complete. Transmitting offer...');
     await signalingClient.sendOffer(childId, completedSdp);
 
-    // Step 8: Listen for child's answer on Firebase
+    // Step 8: Listen for child's answer on Firebase and maintain listener for renegotiation
     await new Promise<void>((resolve, reject) => {
+      let initialHandshakeDone = false;
       const timeoutTimer = setTimeout(() => {
-        this.unsubscribeAnswer?.();
-        reject(new Error('Connection timed out waiting for child device response.'));
+        if (!initialHandshakeDone) {
+          this.unsubscribeAnswer?.();
+          reject(new Error('Connection timed out waiting for child device response.'));
+        }
       }, 30000);
 
       this.unsubscribeAnswer = signalingClient.listenForAnswer(childId, async (answer) => {
         try {
-          console.log('[WebRTCManager] Received SDP Answer from child. Applying remote description...');
-          clearTimeout(timeoutTimer);
-
+          // Case 1: Initial Answer Handshake
           if (pc.signalingState === 'have-local-offer') {
+            console.log('[WebRTCManager] Received initial SDP Answer from child. Applying remote description...');
+            clearTimeout(timeoutTimer);
+            initialHandshakeDone = true;
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
             console.log('[WebRTCManager] Remote description set successfully. WebRTC link active!');
-            this.unsubscribeAnswer?.();
             resolve();
-          } else {
-            console.warn('[WebRTCManager] Received answer in unexpected state:', pc.signalingState);
+            return;
           }
+
+          // Case 2: Role-Reversal Renegotiation Offer from Child (e.g. MIC_ON / MIC_OFF)
+          if (answer.type === 'offer' && pc.signalingState === 'stable') {
+            console.log('[WebRTCManager] Received role-reversal renegotiation OFFER from child.');
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            console.log('[WebRTCManager] Remote description set (child offer). Creating parent answer...');
+
+            const parentAnswer = await pc.createAnswer();
+            await pc.setLocalDescription(parentAnswer);
+            console.log('[WebRTCManager] Created and set parent local answer. Gathering ICE...');
+
+            await this.waitForIceGatheringComplete(pc);
+
+            if (pc.localDescription) {
+              await signalingClient.sendRenegotiationAnswer(childId, pc.localDescription);
+              console.log('[WebRTCManager] Sent parent renegotiation answer to Firebase (/offer)');
+            }
+
+            // Acknowledge renegotiation completion over DataChannel so Child can confirm MIC_STARTED
+            if (this.dataChannel && this.dataChannel.readyState === 'open') {
+              this.dataChannel.send('RENEGOTIATION_COMPLETE');
+              console.log('[WebRTCManager] Dispatched RENEGOTIATION_COMPLETE to child via DataChannel.');
+            }
+            return;
+          }
+
+          console.log('[WebRTCManager] Received SDP in state:', pc.signalingState, 'type:', answer.type);
         } catch (err) {
-          clearTimeout(timeoutTimer);
-          reject(err);
+          console.error('[WebRTCManager] Error during signaling message processing:', err);
+          if (!initialHandshakeDone) {
+            clearTimeout(timeoutTimer);
+            reject(err);
+          }
         }
       });
     });
@@ -161,6 +201,14 @@ export class DesktopWebRtcManager {
     pc.ontrack = (event) => {
       console.log(`[WebRTCManager] Remote media track received: ${event.track.kind} (id=${event.track.id})`);
       const stream = event.streams[0] || new MediaStream([event.track]);
+
+      if (event.track.kind === 'audio') {
+        this.micStream = stream;
+        window.dispatchEvent(new CustomEvent('nexus-mic-stream', {
+          detail: { track: event.track, stream }
+        }));
+      }
+
       this.notifyTrackReceived(event.track, stream);
 
       // Dispatch global window event for modular views to bind directly
@@ -249,6 +297,7 @@ export class DesktopWebRtcManager {
     console.log('[WebRTCManager] Disconnecting active session...');
     this.unsubscribeAnswer?.();
     this.unsubscribeAnswer = null;
+    this.micStream = null;
 
     if (this.dataChannel) {
       try {

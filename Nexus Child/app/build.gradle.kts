@@ -66,6 +66,11 @@ android {
             excludes += listOf("META-INF/INDEX.LIST", "META-INF/DEPENDENCIES")
         }
     }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
