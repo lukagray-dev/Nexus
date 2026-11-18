@@ -289,3 +289,218 @@
   height: 13px;
   filter: invert(1);
 }
+
+/* =============================================================================
+   REUSABLE RIGHT-SIDEBAR SUBBAR, CONTROLS & LIST COMPONENTS
+   Pure Black & White industrial theme with zero emojis and high contrast.
+   ============================================================================= */
+
+/* Horizontal subbar below panel header (housing filter tabs or search input) */
+.rs-subbar {
+  padding: 8px 12px;
+  background-color: #121212;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+/* Horizontal pill filter tabs bar */
+.rs-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.rs-filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Filter tab pill button */
+.rs-tab-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1a1a1a;
+  color: #888888;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  outline: none;
+  line-height: 1.4;
+}
+
+.rs-tab-pill:hover {
+  background-color: #242424;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.rs-tab-pill.active {
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 600;
+  border-color: #ffffff;
+}
+
+/* Search bar wrapper with icon */
+.rs-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background-color: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.rs-search-wrap:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
+  background-color: #1c1c1c;
+}
+
+/* Search input element */
+.rs-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: var(--font-family);
+  font-size: 11.5px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.rs-search-input::placeholder {
+  color: #666666;
+}
+
+/* Primary scrollable list container */
+.rs-list-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #121212;
+}
+
+/* Base item row */
+.rs-list-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: #121212;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.rs-list-item:hover {
+  background-color: #181818;
+}
+
+/* Top row inside item card */
+.rs-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Icon badge container */
+.rs-icon-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background-color: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Typography inside items */
+.rs-item-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.rs-item-meta {
+  font-size: 11px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.rs-item-time {
+  font-size: 10.5px;
+  color: #777777;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Multiline preview snippet with text selection enabled */
+.rs-item-snippet {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #bbbbbb;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Compact status badge */
+.rs-badge-small {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #202020;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Empty state layout */
+.rs-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  box-sizing: border-box;
+}
+

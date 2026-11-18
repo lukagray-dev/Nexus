@@ -1,31 +1,124 @@
 /**
  * @file calllog.css
- * @description Call Log Panel styles for Guardian G-Home Right Sidebar.
- * Pure Black & White theme with subtle red for missed calls.
+ * @description Call Log Panel styles for Nexus Parent Right Sidebar.
+ *
+ * Hey friend! This styles the Call Log panel in pure Black & White tactical dark theme:
+ * 1. Categorized chips for SIM slots, HD Voice, Video Call, and location.
+ * 2. Subtle Danger Red indicator only for missed and declined calls.
+ * 3. Expandable technical drawer with high-contrast text and zero browser blue links.
  */
 
 .rs-calllog-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
+/* Call item card styling */
 .call-item {
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  background-color: var(--sidebar-background);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--sidebar-background, #121212);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   transition: background-color 0.12s ease;
 }
 
 .call-item:hover {
-  background-color: #141414;
+  background-color: #181818;
 }
 
+.call-item.is-expanded {
+  background-color: #161616;
+}
+
+/* Red accent for missed or rejected calls */
 .call-missed-badge {
   color: #ef4444;
   border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.08);
 }
 
+/* Metadata chips row */
+.call-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.call-chip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background-color: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a0a0a0;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Real SIM Card Slot Chip */
+.call-chip.sim-chip {
+  color: #ffffff;
+  background-color: #242424;
+  border-color: rgba(255, 255, 255, 0.22);
+  font-weight: 600;
+}
+
+.call-chip.loc-chip {
+  color: #aaaaaa;
+}
+
+.call-chip.feat-chip {
+  color: #ffffff;
+  background-color: #1c1c1c;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Expanded inspection drawer */
+.call-expanded-details {
+  margin-top: 6px;
+  padding: 10px 12px;
+  background-color: #0d0d0d;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.call-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.call-detail-row .detail-label {
+  color: #777777;
+  flex-shrink: 0;
+}
+
+/* Forced pure white value with zero blue formatting */
+.call-detail-row .detail-val {
+  color: #ffffff !important;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-all;
+  text-decoration: none !important;
+}
+
+.call-detail-row .detail-val * {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}

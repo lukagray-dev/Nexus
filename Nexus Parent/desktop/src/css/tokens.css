@@ -80,6 +80,12 @@
   overscroll-behavior: none;
 }
 
+/* Link Reset to prevent browser/WebView2 default blue link colors */
+a, a:visited, a:hover, a:active {
+  color: inherit;
+  text-decoration: none;
+}
+
 /* Root Viewport Structure */
 html, body {
   width: 100%;
@@ -135,6 +141,12 @@ html, body {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   overscroll-behavior: none;
+}
+
+/* Link Reset to prevent browser/WebView2 default blue link colors */
+a, a:visited, a:hover, a:active {
+  color: inherit;
+  text-decoration: none;
 }
 
 ::-webkit-scrollbar {

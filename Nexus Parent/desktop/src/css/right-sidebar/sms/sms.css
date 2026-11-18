@@ -1,32 +1,206 @@
 /**
  * @file sms.css
- * @description SMS Monitor Panel styles for Guardian G-Home Right Sidebar.
- * Pure Black & White theme.
+ * @description SMS Monitor Panel styles for Nexus Parent Right Sidebar.
+ *
+ * Hey friend! This styles the SMS inspection panel in pure Black & White tactical dark theme:
+ * 1. Clean message item cards with 2-line snippet clamps.
+ * 2. Unread and direction badges (INCOMING / OUTGOING).
+ * 3. Inspection modal with zero WebView2 blue links or blue timestamps.
  */
 
 .rs-sms-panel {
   display: flex;
   flex-direction: column;
+  position: relative;
+  height: 100%;
 }
 
+/* SMS Item Card */
 .sms-item {
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  background-color: var(--sidebar-background);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--sidebar-background, #121212);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   transition: background-color 0.12s ease;
 }
 
 .sms-item:hover {
-  background-color: #141414;
+  background-color: #181818;
 }
 
+.sms-item.selected {
+  background-color: #1c1c1c;
+}
+
+.rs-item-subaddress {
+  font-size: 11px;
+  color: #777777;
+  font-weight: 400;
+}
+
+/* Direction Badges */
+.sms-badge-inbox {
+  background-color: #202020;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sms-badge-sent {
+  background-color: #161616;
+  color: #888888;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* High contrast pure white unread pill */
 .sms-unread-badge {
   background-color: #ffffff;
   color: #000000;
   font-weight: 700;
+  border-color: #ffffff;
 }
 
+.sms-view-hint {
+  font-size: 10.5px;
+  color: #666666;
+  transition: color 0.15s ease;
+}
+
+.sms-item:hover .sms-view-hint {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* =============================================================================
+   FULL SMS INSPECTION MODAL DRAWER
+   ============================================================================= */
+
+.sms-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.sms-modal-card {
+  width: 100%;
+  max-height: 90%;
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+}
+
+.sms-modal-header {
+  padding: 12px 14px;
+  background-color: #1c1c1c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sms-modal-sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.sms-modal-phone {
+  font-size: 11px;
+  color: #888888;
+  margin-top: 1px;
+}
+
+.sms-modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  max-height: 240px;
+  background-color: #0e0e0e;
+}
+
+.sms-modal-bubble {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.sms-modal-bubble.bubble-inbox {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sms-modal-bubble.bubble-sent {
+  background-color: #282828;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sms-modal-text {
+  margin: 0;
+  white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Modal technical metadata footer */
+.sms-modal-footer {
+  padding: 12px 14px;
+  background-color: #161616;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sms-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.sms-meta-lbl {
+  color: #777777;
+  flex-shrink: 0;
+}
+
+/* Strict Pure White Value & Anti-Blue styling for timestamps, SIM slots, and statuses */
+.sms-meta-val {
+  color: #ffffff !important;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-all;
+  text-decoration: none !important;
+}
+
+.sms-meta-val *,
+.sms-meta-val a,
+.sms-meta-val a:visited,
+.sms-meta-val a:hover,
+.sms-meta-val a:active {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  cursor: default;
+}
