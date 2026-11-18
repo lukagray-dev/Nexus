@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.nexus.child.components.camera.CameraController
 import com.nexus.child.components.camera.CameraCommandHandler
+import com.nexus.child.components.location.LocationCommandHandler
+import com.nexus.child.components.location.LocationController
 import com.nexus.child.components.mic.MicCommandHandler
 import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
@@ -55,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private var micCommandHandler: MicCommandHandler? = null
     private var cameraController: CameraController? = null
     private var cameraCommandHandler: CameraCommandHandler? = null
+    private var locationController: LocationController? = null
+    private var locationCommandHandler: LocationCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +82,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        locationCommandHandler?.cleanup()
+        locationController?.cleanup()
         cameraCommandHandler?.cleanup()
         cameraController?.cleanup()
         micCommandHandler?.cleanup()
@@ -145,9 +151,10 @@ class MainActivity : AppCompatActivity() {
                         Log.d(TAG, "WebRTC peer connection state changed: isConnected=$isConnected")
                         updateConnectionStatusUi(isConnected)
                         if (!isConnected) {
-                            Log.d(TAG, "Connection lost or closed. Resetting camera, microphone and loudspeaker states...")
+                            Log.d(TAG, "Connection lost or closed. Resetting camera, microphone and location states...")
                             cameraCommandHandler?.onPeerDisconnected()
                             micCommandHandler?.onPeerDisconnected()
+                            locationCommandHandler?.onPeerDisconnected()
                         }
                     },
                     onMessageReceived = { message ->
@@ -202,6 +209,18 @@ class MainActivity : AppCompatActivity() {
                     camCtrl.attachToPeerConnection(pc)
                 }
 
+                Log.d(TAG, "Step 8: Initializing LocationController and LocationCommandHandler...")
+                val locCtrl = LocationController(context = this@MainActivity)
+                locationController = locCtrl
+
+                val locCmdHandler = LocationCommandHandler(
+                    locationController = locCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                locationCommandHandler = locCmdHandler
+
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
             } catch (e: Exception) {
@@ -239,7 +258,10 @@ class MainActivity : AppCompatActivity() {
         if (handledByCam) return
 
         val handledByMic = micCommandHandler?.handleCommand(command) ?: false
-        if (!handledByMic) {
+        if (handledByMic) return
+
+        val handledByLoc = locationCommandHandler?.handleCommand(command) ?: false
+        if (!handledByLoc) {
             if (command == "PING") {
                 webRtcManager?.sendData("PONG")
             }

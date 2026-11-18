@@ -86,6 +86,9 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // Google Play Services Location
+    implementation(libs.play.services.location)
+
     // WebRTC
     implementation(libs.webrtc)
 

@@ -10,6 +10,7 @@ material = "1.12.0"
 constraintlayout = "2.2.0"
 firebaseBom = "34.4.0"
 kotlinxCoroutinesPlayServices = "1.10.2"
+playServicesLocation = "21.3.0"
 webrtc = "123.0.0"
 
 [libraries]
@@ -25,6 +26,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-database = { module = "com.google.firebase:firebase-database" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 webrtc = { module = "com.dafruits:webrtc", version.ref = "webrtc" }
 
 [plugins]
