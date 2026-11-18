@@ -63,15 +63,34 @@ class WebRtcManager(
     private val isAnswering = AtomicBoolean(false)
     private val answerSent = AtomicBoolean(false)
 
+    // Listener for pre-registering media tracks (e.g. Camera VideoTrack) on PeerConnection creation
+    private var onPeerConnectionCreatedListener: ((PeerConnection) -> Unit)? = null
+
     // Renegotiation state flags (used during MIC_ON/MIC_OFF role reversal)
     private val isRenegotiating = AtomicBoolean(false)
     private val renegotiationOfferSent = AtomicBoolean(false)
     private var pendingRenegotiationOfferReadyCallback: (() -> Unit)? = null
 
     /**
+     * Exposes the shared EGL base context used by hardware video encoder/decoder factories.
+     */
+    fun getEglBaseContext(): EglBase.Context? =
+        if (::eglBase.isInitialized) eglBase.eglBaseContext else null
+
+    /**
      * Exposes the active PeerConnection for media track manipulation.
      */
     fun getPeerConnection(): PeerConnection? = peerConnection
+
+    /**
+     * Registers a listener to be notified whenever a PeerConnection is created,
+     * allowing media tracks (such as the camera VideoTrack) to be pre-registered
+     * before SDP answer generation.
+     */
+    fun setOnPeerConnectionCreatedListener(listener: (PeerConnection) -> Unit) {
+        onPeerConnectionCreatedListener = listener
+        peerConnection?.let { listener(it) }
+    }
 
     /**
      * Exposes the PeerConnectionFactory for AudioSource and AudioTrack creation.
@@ -145,6 +164,10 @@ class WebRtcManager(
 
         peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerObserver)
         Log.d(TAG, "PeerConnection instance created.")
+        peerConnection?.let { pc ->
+            Log.d(TAG, "Notifying onPeerConnectionCreated listener for track pre-registration...")
+            onPeerConnectionCreatedListener?.invoke(pc)
+        }
     }
 
     /**

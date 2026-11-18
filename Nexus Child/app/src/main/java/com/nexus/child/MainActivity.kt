@@ -9,6 +9,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.nexus.child.components.camera.CameraController
+import com.nexus.child.components.camera.CameraCommandHandler
 import com.nexus.child.components.mic.MicCommandHandler
 import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
@@ -51,6 +53,8 @@ class MainActivity : AppCompatActivity() {
     private var microphoneController: MicrophoneController? = null
     private var parentAudioSpeakerManager: ParentAudioSpeakerManager? = null
     private var micCommandHandler: MicCommandHandler? = null
+    private var cameraController: CameraController? = null
+    private var cameraCommandHandler: CameraCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +78,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        cameraCommandHandler?.cleanup()
+        cameraController?.cleanup()
         micCommandHandler?.cleanup()
         parentAudioSpeakerManager?.cleanup()
         microphoneController?.cleanup()
@@ -139,7 +145,8 @@ class MainActivity : AppCompatActivity() {
                         Log.d(TAG, "WebRTC peer connection state changed: isConnected=$isConnected")
                         updateConnectionStatusUi(isConnected)
                         if (!isConnected) {
-                            Log.d(TAG, "Connection lost or closed. Resetting microphone and loudspeaker states...")
+                            Log.d(TAG, "Connection lost or closed. Resetting camera, microphone and loudspeaker states...")
+                            cameraCommandHandler?.onPeerDisconnected()
                             micCommandHandler?.onPeerDisconnected()
                         }
                     },
@@ -171,6 +178,29 @@ class MainActivity : AppCompatActivity() {
                         rtcManager.sendData(msg)
                     }
                 )
+
+                Log.d(TAG, "Step 7: Initializing CameraController and CameraCommandHandler...")
+                val camCtrl = CameraController(
+                    context = this@MainActivity,
+                    factoryProvider = { rtcManager.getPeerConnectionFactory() },
+                    peerConnectionProvider = { rtcManager.getPeerConnection() },
+                    eglBaseContextProvider = { rtcManager.getEglBaseContext() }
+                )
+                cameraController = camCtrl
+
+                val camCmdHandler = CameraCommandHandler(
+                    cameraController = camCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                cameraCommandHandler = camCmdHandler
+
+                // Pre-register VideoTrack with PeerConnection whenever created (zero-renegotiation handshake)
+                rtcManager.setOnPeerConnectionCreatedListener { pc ->
+                    Log.d(TAG, "Pre-registering Camera VideoTrack on PeerConnection...")
+                    camCtrl.attachToPeerConnection(pc)
+                }
 
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
@@ -205,6 +235,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun handleDataChannelCommand(command: String) {
         Log.d(TAG, "Processing incoming command: $command")
+        val handledByCam = cameraCommandHandler?.handleCommand(command) ?: false
+        if (handledByCam) return
+
         val handledByMic = micCommandHandler?.handleCommand(command) ?: false
         if (!handledByMic) {
             if (command == "PING") {

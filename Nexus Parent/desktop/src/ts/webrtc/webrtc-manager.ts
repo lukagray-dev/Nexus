@@ -30,6 +30,7 @@ export class DesktopWebRtcManager {
   private currentChildId: string | null = null;
   private unsubscribeAnswer: (() => void) | null = null;
   private micStream: MediaStream | null = null;
+  private cameraStream: MediaStream | null = null;
 
   // Event callback listeners
   private connectionStateListeners: Set<ConnectionStateListener> = new Set();
@@ -55,6 +56,13 @@ export class DesktopWebRtcManager {
    */
   public getMicStream(): MediaStream | null {
     return this.micStream;
+  }
+
+  /**
+   * Returns the incoming camera MediaStream if available, or null.
+   */
+  public getCameraStream(): MediaStream | null {
+    return this.cameraStream;
   }
 
   /**
@@ -207,6 +215,13 @@ export class DesktopWebRtcManager {
         window.dispatchEvent(new CustomEvent('nexus-mic-stream', {
           detail: { track: event.track, stream }
         }));
+      } else if (event.track.kind === 'video') {
+        if (!this.cameraStream || this.cameraStream.getVideoTracks()[0]?.id !== event.track.id) {
+          this.cameraStream = stream;
+        }
+        window.dispatchEvent(new CustomEvent('nexus-camera-stream', {
+          detail: { track: event.track, stream: this.cameraStream }
+        }));
       }
 
       this.notifyTrackReceived(event.track, stream);
@@ -298,6 +313,7 @@ export class DesktopWebRtcManager {
     this.unsubscribeAnswer?.();
     this.unsubscribeAnswer = null;
     this.micStream = null;
+    this.cameraStream = null;
 
     if (this.dataChannel) {
       try {
