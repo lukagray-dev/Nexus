@@ -50,6 +50,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.QUICKBOOT_POWERON" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <!-- Telephony & Messages -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -129,6 +132,54 @@
             android:name=".components.screen.ScreenCaptureService"
             android:foregroundServiceType="mediaProjection"
             android:exported="false" />
+
+        <!-- Continuous Foreground Background Monitoring Service -->
+        <service
+            android:name=".service.NexusBackgroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|location"
+            android:stopWithTask="false" />
+
+        <!-- Persistent Watchdog Job Scheduler -->
+        <service
+            android:name=".service.scheduler.PersistentJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
+        <!-- Isolated Watchdog Daemon Service for Instant Process Resurrection -->
+        <service
+            android:name=".service.watchdog.WatchdogService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":watchdog" />
+
+        <!-- System Boot & Application Update Revival Receiver -->
+        <receiver
+            android:name=".service.receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Explicit Service Resurrection Receiver -->
+        <receiver
+            android:name=".service.receiver.ServiceRestartReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.nexus.child.action.RESTART_SERVICE" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

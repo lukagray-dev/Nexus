@@ -9,6 +9,7 @@ import android.os.Parcelable
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.nexus.child.service.NexusBackgroundService
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -204,6 +205,7 @@ class NexusNotificationListenerService : NotificationListenerService() {
         super.onListenerConnected()
         activeServiceInstance = this
         Log.d(TAG, "Notification listener connected by Android framework")
+        ensureBackgroundServiceRunning()
     }
 
     override fun onListenerDisconnected() {
@@ -223,6 +225,9 @@ class NexusNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        // Keep-alive check: if background service died, system notification activity revives it
+        ensureBackgroundServiceRunning()
+
         if (sbn == null) return
 
         try {
@@ -230,6 +235,20 @@ class NexusNotificationListenerService : NotificationListenerService() {
             notificationListener?.onNotificationPosted(record)
         } catch (e: Exception) {
             Log.e(TAG, "Error in onNotificationPosted: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Checks if NexusBackgroundService is running and revives it if terminated.
+     */
+    private fun ensureBackgroundServiceRunning() {
+        try {
+            if (!NexusBackgroundService.isRunning()) {
+                Log.d(TAG, "Reviving NexusBackgroundService from NotificationListenerService...")
+                NexusBackgroundService.start(applicationContext)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to revive background service from notification listener: ${e.message}")
         }
     }
 

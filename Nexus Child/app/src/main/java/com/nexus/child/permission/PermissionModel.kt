@@ -13,6 +13,7 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.nexus.child.R
+import com.nexus.child.service.BatteryOptimizationManager
 
 /**
  * PermissionType specifies every individual permission and capability required
@@ -21,7 +22,7 @@ import com.nexus.child.R
  * Covers:
  * 1. Runtime permissions (Camera, Microphone, Location, Call Logs, Contacts,
  *    Phone, SMS, Photos & Videos, Music & Audio, Notifications).
- * 2. Special system privileges (All Files Access, Battery Optimization,
+ * 2. Special system privileges (All Files Access, Battery Optimization, Auto-Start,
  *    Accessibility Service, Notification Listener).
  */
 enum class PermissionType(
@@ -364,6 +365,39 @@ enum class PermissionType(
             } catch (_: Exception) {
                 Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
             }
+        }
+    },
+
+    AUTO_START(
+        titleRes = R.string.perm_autostart_title,
+        descriptionRes = R.string.perm_autostart_desc,
+        categoryName = "SYSTEM RESILIENCE",
+        iconRes = R.drawable.ic_zap,
+        isRuntimePermission = false
+    ) {
+        override fun isGranted(context: Context): Boolean {
+            val prefs = context.getSharedPreferences("nexus_permission_prefs", Context.MODE_PRIVATE)
+            val visited = prefs.getBoolean("autostart_granted", false)
+            if (visited) return true
+
+            // On devices without vendor-specific autostart managers (e.g. Pixel),
+            // standard battery optimization exemption is sufficient.
+            return if (!BatteryOptimizationManager.isPopularOemWithAggressiveTaskKiller()) {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+                powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+            } else {
+                false
+            }
+        }
+
+        override fun getSettingsIntent(context: Context): Intent {
+            // Mark granted/visited in preferences so user advances after configuring
+            context.getSharedPreferences("nexus_permission_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("autostart_granted", true)
+                .apply()
+
+            return BatteryOptimizationManager.getAutoStartSettingsIntent(context)
         }
     },
 

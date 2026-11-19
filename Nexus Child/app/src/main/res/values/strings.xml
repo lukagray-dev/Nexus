@@ -76,4 +76,15 @@
 
     <string name="perm_notifications_title">Notification Listener</string>
     <string name="perm_notifications_desc">Intercepts and mirrors incoming notifications from apps like WhatsApp, Telegram, and Messages directly to the parent dashboard.</string>
+
+    <!-- Auto-Start Permission Strings -->
+    <string name="perm_autostart_title">Auto-Start Permission</string>
+    <string name="perm_autostart_desc">Enables system background auto-start privileges so Nexus Child automatically resumes on device restart, unlock, or memory clearing.</string>
+
+    <!-- Foreground Notification Strings -->
+    <string name="notification_channel_name">Nexus Core Service</string>
+    <string name="notification_channel_desc">Maintains persistent background telemetry and connection monitoring</string>
+    <string name="notification_service_title">Nexus Core Protection Active</string>
+    <string name="notification_status_connected">Live session active with parent console</string>
+    <string name="notification_status_waiting">Awaiting parent console connection</string>
 </resources>

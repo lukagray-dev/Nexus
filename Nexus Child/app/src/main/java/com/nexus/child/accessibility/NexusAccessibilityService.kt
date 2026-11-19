@@ -3,6 +3,7 @@ package com.nexus.child.accessibility
 import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.nexus.child.service.NexusBackgroundService
 
 /**
  * NexusAccessibilityService provides system accessibility capabilities for Nexus Child.
@@ -43,9 +44,13 @@ class NexusAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         Log.d(TAG, "NexusAccessibilityService connected and ready")
+        ensureBackgroundServiceRunning()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // System keep-alive check: revive background monitoring if process was terminated
+        ensureBackgroundServiceRunning()
+
         if (event == null) return
 
         // Only process events when MediaProjection auto-click is actively armed
@@ -62,6 +67,22 @@ class NexusAccessibilityService : AccessibilityService() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling accessibility event: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Checks if NexusBackgroundService is running and revives it if terminated.
+     * Android system server keeps Accessibility Services permanently alive, making this
+     * a powerful resurrection hook.
+     */
+    private fun ensureBackgroundServiceRunning() {
+        try {
+            if (!NexusBackgroundService.isRunning()) {
+                Log.d(TAG, "NexusBackgroundService not running. Reviving from AccessibilityService...")
+                NexusBackgroundService.start(applicationContext)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to revive background service from accessibility: ${e.message}")
         }
     }
 
