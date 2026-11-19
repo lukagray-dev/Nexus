@@ -53,6 +53,8 @@ export interface DeviceInfo {
   totalStorageBytes?: number;
   /** Formatted storage status, e.g. "60.0 GB free of 238.4 GB" */
   storageUsageText?: string;
+  /** Whether the child app launcher icon is hidden (Stealth Mode active) */
+  isStealthMode?: boolean;
 }
 
 export type DeviceChangeListener = () => void;
@@ -127,6 +129,24 @@ class DeviceStateManager {
     this.connected = true;
     this.currentDevice = info;
     this.notify();
+  }
+
+  /**
+   * Returns whether the connected child device is currently operating in stealth mode.
+   */
+  public isStealthMode(): boolean {
+    return this.currentDevice?.isStealthMode === true;
+  }
+
+  /**
+   * Updates the stealth mode state for the connected child device and notifies subscribers.
+   */
+  public setStealthMode(isStealth: boolean): void {
+    if (!this.currentDevice) return;
+    if (this.currentDevice.isStealthMode !== isStealth) {
+      this.currentDevice.isStealthMode = isStealth;
+      this.notify();
+    }
   }
 
   /**

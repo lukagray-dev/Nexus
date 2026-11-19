@@ -66,6 +66,9 @@ class WebRtcManager(
     // Listener for pre-registering media tracks (e.g. Camera VideoTrack) on PeerConnection creation
     private var onPeerConnectionCreatedListener: ((PeerConnection) -> Unit)? = null
 
+    // Callback invoked when the WebRTC DataChannel transitions to OPEN
+    var onDataChannelOpened: (() -> Unit)? = null
+
     // Renegotiation state flags (used during MIC_ON/MIC_OFF role reversal)
     private val isRenegotiating = AtomicBoolean(false)
     private val renegotiationOfferSent = AtomicBoolean(false)
@@ -442,6 +445,7 @@ class WebRtcManager(
                         Log.d(TAG, "DataChannel is OPEN. Starting telemetry listeners and dispatching initial snapshot...")
                         telemetryManager?.start()
                         telemetryManager?.onDataChannelOpened()
+                        mainHandler.post { onDataChannelOpened?.invoke() }
                     } else if (channel.state() == DataChannel.State.CLOSED) {
                         Log.d(TAG, "DataChannel closed. Stopping telemetry listeners and notifying disconnection...")
                         telemetryManager?.stop()

@@ -181,6 +181,21 @@
             </intent-filter>
         </receiver>
 
+        <!-- 1x1 Stealth Control Widget Provider -->
+        <receiver
+            android:name=".widget.StealthWidgetProvider"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.nexus.child.TOGGLE_STEALTH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stealth_widget_info" />
+        </receiver>
+
     </application>
 
 </manifest>

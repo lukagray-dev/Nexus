@@ -11,6 +11,7 @@ import { appState } from '../shared/state.js';
 import { sidebarState } from './state.js';
 import { deviceState } from '../shared/device-state.js';
 import { rightSidebarState, type RightSidebarPanelId } from '../right-sidebar/state.js';
+import { initStealthManager } from '../stealth/stealth-manager.js';
 import type { SidebarSection } from './types.js';
 
 // Features that open as inspection & control panels inside the Right Sidebar
@@ -95,6 +96,7 @@ export function initSidebar(): void {
   setupPairDeviceButton();
   setupResizeHandle();
   setupSearch();
+  initStealthManager();
   renderSidebarContent();
 
   // Re-render when sidebar state changes (active selection, search, or section collapse)

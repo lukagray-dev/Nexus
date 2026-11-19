@@ -87,4 +87,19 @@
     <string name="notification_service_title">Nexus Core Protection Active</string>
     <string name="notification_status_connected">Live session active with parent console</string>
     <string name="notification_status_waiting">Awaiting parent console connection</string>
+
+    <!-- Stealth Mode & Widget Strings -->
+    <string name="stealth_card_title">Stealth Operation</string>
+    <string name="stealth_card_desc">Hides the application icon from the device launcher and app drawer. Background protection and telemetry remain fully operational.</string>
+    <string name="stealth_card_badge_visible">Visible in Launcher</string>
+    <string name="stealth_card_badge_hidden">Stealth Active</string>
+    <string name="btn_activate_stealth">Activate Stealth Mode</string>
+    <string name="btn_deactivate_stealth">Deactivate Stealth Mode</string>
+    <string name="stealth_dialog_title">Activate Stealth Mode?</string>
+    <string name="stealth_dialog_message">This operation hides Nexus Child from the device app drawer and home screen launcher.\n\nYou can unhide or reverse stealth mode at any time by:\n1. Tapping the 1x1 Nexus Child widget on the home screen.\n2. Sending the Unstealth command from the Parent Console.</string>
+    <string name="stealth_dialog_confirm">Activate Stealth</string>
+    <string name="stealth_dialog_cancel">Cancel</string>
+    <string name="toast_stealth_activated">Stealth mode activated - App hidden from launcher</string>
+    <string name="toast_stealth_deactivated">Stealth mode deactivated - App is visible in launcher</string>
+    <string name="widget_stealth_description">Nexus Child 1x1 Stealth Control Widget: Tap to toggle stealth mode on or off</string>
 </resources>

@@ -179,3 +179,13 @@
   background-color: #2a2a2a;
   color: #ffffff;
 }
+
+.settings-btn-danger {
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+}
+
+.settings-btn-danger:hover {
+  background-color: #dc2626;
+}

@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.nexus.child.components.stealth.StealthController
 import com.nexus.child.databinding.ActivityMainBinding
 import com.nexus.child.permission.PermissionGuideActivity
 import com.nexus.child.permission.PermissionHelper
@@ -45,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var stealthController: StealthController
     private var rawDeviceId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,9 +55,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        stealthController = StealthController(this)
+
         setupHeaderBadges()
         setupDeviceIdCard()
         setupPermissionsCard()
+        setupStealthCard()
 
         // 1. Start the persistent continuous Foreground Service & Watchdog Daemon
         NexusBackgroundService.start(this)
@@ -74,6 +80,8 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Refresh permissions status counter when returning from system settings
         refreshPermissionsStatus()
+        // Refresh stealth status badge & button text
+        refreshStealthStatusUi()
     }
 
     override fun onDestroy() {
@@ -199,5 +207,71 @@ class MainActivity : AppCompatActivity() {
             )
             binding.btnOpenPermissions.text = getString(R.string.btn_configure_permissions)
         }
+    }
+
+    /**
+     * Binds click events and initial state for the Stealth Operation card.
+     */
+    private fun setupStealthCard() {
+        binding.btnToggleStealth.setOnClickListener {
+            val isStealth = stealthController.isStealthMode()
+            if (isStealth) {
+                // If already stealthed, clicking unhides immediately
+                stealthController.setStealthMode(false)
+                Toast.makeText(this, R.string.toast_stealth_deactivated, Toast.LENGTH_SHORT).show()
+                refreshStealthStatusUi()
+            } else {
+                // If visible, show confirmation dialog before hiding from launcher
+                showStealthConfirmationDialog()
+            }
+        }
+
+        refreshStealthStatusUi()
+    }
+
+    /**
+     * Updates the stealth status badge and action button label.
+     */
+    private fun refreshStealthStatusUi() {
+        val isStealth = stealthController.isStealthMode()
+        if (isStealth) {
+            binding.textStealthBadge.text = getString(R.string.stealth_card_badge_hidden)
+            binding.textStealthBadge.setTextColor(
+                ContextCompat.getColor(this, R.color.status_connected)
+            )
+            binding.btnToggleStealth.text = getString(R.string.btn_deactivate_stealth)
+        } else {
+            binding.textStealthBadge.text = getString(R.string.stealth_card_badge_visible)
+            binding.textStealthBadge.setTextColor(
+                ContextCompat.getColor(this, R.color.text_secondary)
+            )
+            binding.btnToggleStealth.text = getString(R.string.btn_activate_stealth)
+        }
+    }
+
+    /**
+     * Displays a tactical dialog explaining stealth mode and how to reverse it
+     * via the 1x1 widget or parent console.
+     */
+    private fun showStealthConfirmationDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.stealth_dialog_title)
+            .setMessage(R.string.stealth_dialog_message)
+            .setPositiveButton(R.string.stealth_dialog_confirm) { dialog, _ ->
+                dialog.dismiss()
+                val success = stealthController.setStealthMode(true)
+                if (success) {
+                    Toast.makeText(this, R.string.toast_stealth_activated, Toast.LENGTH_SHORT).show()
+                    // Finish activity to immediately return user to home screen where icon has vanished
+                    finish()
+                } else {
+                    refreshStealthStatusUi()
+                }
+            }
+            .setNegativeButton(R.string.stealth_dialog_cancel) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setCancelable(true)
+            .show()
     }
 }
