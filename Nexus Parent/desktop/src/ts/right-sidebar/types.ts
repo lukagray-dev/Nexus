@@ -131,6 +131,52 @@ export interface SmsItem {
 }
 
 // -----------------------------------------------------------------------------
+// NOTIFICATION PROTOCOL & TYPES
+// -----------------------------------------------------------------------------
+
+export const CMD_NOTIFICATION_ON = 'NOTIFICATION_ON';
+export const CMD_NOTIFICATION_OFF = 'NOTIFICATION_OFF';
+export const ALIAS_NOTIFICATION_START = 'NOTIFICATION_START';
+export const ALIAS_NOTIFICATION_STOP = 'NOTIFICATION_STOP';
+
+export const RESP_NOTIFICATION_STARTED = 'NOTIFICATION_STARTED';
+export const RESP_NOTIFICATION_STOPPED = 'NOTIFICATION_STOPPED';
+export const RESP_NOTIFICATION_ERROR_PREFIX = 'NOTIFICATION_ERROR: ';
+
+export const TYPE_NOTIFICATION_SNAPSHOT = 'NOTIFICATION_SNAPSHOT';
+export const TYPE_NOTIFICATION_NEW = 'NOTIFICATION_NEW';
+export const TYPE_NOTIFICATION_REMOVED = 'NOTIFICATION_REMOVED';
+
+export interface NotificationMessageItem {
+  sender: string;
+  text: string;
+  timestamp: number;
+  dataMimeType?: string;
+  dataUri?: string;
+}
+
+export interface NotificationRecord {
+  id: number;
+  key: string;
+  packageName: string;
+  appName: string;
+  title: string;
+  text: string;
+  bigText?: string;
+  subText?: string;
+  summaryText?: string;
+  infoText?: string;
+  category: string;
+  channelId?: string;
+  postTime: number; // unix epoch millis
+  isOngoing?: boolean;
+  isClearable?: boolean;
+  groupKey?: string;
+  actions?: string[];
+  messages?: NotificationMessageItem[];
+}
+
+// -----------------------------------------------------------------------------
 // OTHER PANEL SCHEMAS
 // -----------------------------------------------------------------------------
 

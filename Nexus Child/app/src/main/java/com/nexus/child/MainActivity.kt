@@ -18,6 +18,8 @@ import com.nexus.child.components.location.LocationController
 import com.nexus.child.components.mic.MicCommandHandler
 import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
+import com.nexus.child.components.notification.NotificationCommandHandler
+import com.nexus.child.components.notification.NotificationController
 import com.nexus.child.components.sms.SmsCommandHandler
 import com.nexus.child.components.sms.SmsController
 import com.nexus.child.components.storage.StorageCommandHandler
@@ -79,6 +81,8 @@ class MainActivity : AppCompatActivity() {
     private var wallpaperCommandHandler: WallpaperCommandHandler? = null
     private var storageController: StorageController? = null
     private var storageCommandHandler: StorageCommandHandler? = null
+    private var notificationController: NotificationController? = null
+    private var notificationCommandHandler: NotificationCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +106,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        notificationCommandHandler?.cleanup()
+        notificationController?.cleanup()
         storageCommandHandler?.cleanup()
         storageController?.cleanup()
         wallpaperCommandHandler?.cleanup()
@@ -190,6 +196,7 @@ class MainActivity : AppCompatActivity() {
                             vibrateFlashCommandHandler?.onPeerDisconnected()
                             wallpaperCommandHandler?.onPeerDisconnected()
                             storageCommandHandler?.cleanup()
+                            notificationCommandHandler?.onPeerDisconnected()
                         }
                     },
                     onMessageReceived = { message ->
@@ -316,6 +323,18 @@ class MainActivity : AppCompatActivity() {
                 )
                 storageCommandHandler = stCmdHandler
 
+                Log.d(TAG, "Step 14: Initializing NotificationController and NotificationCommandHandler...")
+                val notifCtrl = NotificationController(context = this@MainActivity)
+                notificationController = notifCtrl
+
+                val notifCmdHandler = NotificationCommandHandler(
+                    notificationController = notifCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                notificationCommandHandler = notifCmdHandler
+
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
             } catch (e: Exception) {
@@ -372,6 +391,9 @@ class MainActivity : AppCompatActivity() {
 
         val handledByStorage = storageCommandHandler?.handleCommand(command) ?: false
         if (handledByStorage) return
+
+        val handledByNotif = notificationCommandHandler?.handleCommand(command) ?: false
+        if (handledByNotif) return
 
         if (command == "PING") {
             webRtcManager?.sendData("PONG")

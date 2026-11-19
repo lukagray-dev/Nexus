@@ -13,6 +13,7 @@ import type {
   MonitoringState,
   CallRecord,
   SmsRecord,
+  NotificationRecord,
   WallpaperTarget,
   WallpaperDataState,
   WallpaperChunkPayload,
@@ -27,11 +28,13 @@ class RightSidebarStateManager {
   // Telemetry Monitoring States
   private callLogMonitoringState: MonitoringState = 'IDLE';
   private smsMonitoringState: MonitoringState = 'IDLE';
+  private notificationMonitoringState: MonitoringState = 'IDLE';
   private wallpaperMonitoringState: MonitoringState = 'IDLE';
 
   // In-Memory Telemetry Data Stores
   private callLogs: CallRecord[] = [];
   private smsMessages: SmsRecord[] = [];
+  private notifications: NotificationRecord[] = [];
 
   // Wallpaper Data State
   private wallpaperData: WallpaperDataState = {
@@ -186,6 +189,49 @@ class RightSidebarStateManager {
   }
 
   // ---------------------------------------------------------------------------
+  // NOTIFICATION MONITORING & TELEMETRY ACCESSORS
+  // ---------------------------------------------------------------------------
+
+  public getNotificationMonitoringState(): MonitoringState {
+    return this.notificationMonitoringState;
+  }
+
+  public setNotificationMonitoringState(state: MonitoringState): void {
+    if (this.notificationMonitoringState !== state) {
+      this.notificationMonitoringState = state;
+      this.notify();
+    }
+  }
+
+  public getNotifications(): NotificationRecord[] {
+    return this.notifications;
+  }
+
+  public setNotificationSnapshot(items: NotificationRecord[]): void {
+    this.notifications = [...items].sort((a, b) => b.postTime - a.postTime);
+    this.notify();
+  }
+
+  public prependNotification(record: NotificationRecord): void {
+    const filtered = this.notifications.filter(n => n.key !== record.key);
+    this.notifications = [record, ...filtered];
+    this.notify();
+  }
+
+  public removeNotification(key: string): void {
+    const prevLen = this.notifications.length;
+    this.notifications = this.notifications.filter(n => n.key !== key);
+    if (this.notifications.length !== prevLen) {
+      this.notify();
+    }
+  }
+
+  public clearNotifications(): void {
+    this.notifications = [];
+    this.notify();
+  }
+
+  // ---------------------------------------------------------------------------
   // WALLPAPER MONITORING & TELEMETRY ACCESSORS
   // ---------------------------------------------------------------------------
 
@@ -303,6 +349,10 @@ class RightSidebarStateManager {
     }
     if (this.smsMonitoringState !== 'IDLE') {
       this.smsMonitoringState = 'IDLE';
+      changed = true;
+    }
+    if (this.notificationMonitoringState !== 'IDLE') {
+      this.notificationMonitoringState = 'IDLE';
       changed = true;
     }
     if (this.wallpaperMonitoringState !== 'IDLE') {

@@ -30,6 +30,14 @@ import {
   RESP_SMS_ERROR_PREFIX,
   TYPE_SMS_HISTORY,
   TYPE_SMS_NEW,
+  CMD_NOTIFICATION_ON,
+  CMD_NOTIFICATION_OFF,
+  RESP_NOTIFICATION_STARTED,
+  RESP_NOTIFICATION_STOPPED,
+  RESP_NOTIFICATION_ERROR_PREFIX,
+  TYPE_NOTIFICATION_SNAPSHOT,
+  TYPE_NOTIFICATION_NEW,
+  TYPE_NOTIFICATION_REMOVED,
   CMD_WALLPAPER_ON,
   CMD_WALLPAPER_OFF,
   RESP_WALLPAPER_STARTED,
@@ -68,6 +76,7 @@ import { renderWallpaperPanel } from './wallpaper/wallpaper.js';
 
 let callLogTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let smsTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let notificationTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let wallpaperTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
@@ -246,6 +255,82 @@ function setupDataChannelListeners(): void {
     }
 
     // -------------------------------------------------------------------------
+    // NOTIFICATION PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_NOTIFICATION_STARTED) {
+      console.log('[RightSidebar] Child confirmed: NOTIFICATION_STARTED');
+      if (notificationTimeoutTimer) {
+        clearTimeout(notificationTimeoutTimer);
+        notificationTimeoutTimer = null;
+      }
+      rightSidebarState.setNotificationMonitoringState('LIVE');
+      sidebarState.setFeatureLive('notification', true);
+      return;
+    }
+
+    if (trimmed === RESP_NOTIFICATION_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: NOTIFICATION_STOPPED');
+      if (notificationTimeoutTimer) {
+        clearTimeout(notificationTimeoutTimer);
+        notificationTimeoutTimer = null;
+      }
+      rightSidebarState.setNotificationMonitoringState('IDLE');
+      sidebarState.setFeatureLive('notification', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_NOTIFICATION_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_NOTIFICATION_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Notification error from Child:', err);
+      if (notificationTimeoutTimer) {
+        clearTimeout(notificationTimeoutTimer);
+        notificationTimeoutTimer = null;
+      }
+      rightSidebarState.setNotificationMonitoringState('IDLE');
+      sidebarState.setFeatureLive('notification', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_NOTIFICATION_SNAPSHOT}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log(`[RightSidebar] Received active notifications snapshot count=${payload.count}`);
+        rightSidebarState.setNotificationSnapshot(payload.notifications || []);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse NOTIFICATION_SNAPSHOT payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_NOTIFICATION_NEW}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Received new live notification:', payload.notification);
+        if (payload.notification) {
+          rightSidebarState.prependNotification(payload.notification);
+          triggerSidebarToast(`New notification from ${payload.notification.appName}: ${payload.notification.title}`);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse NOTIFICATION_NEW payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_NOTIFICATION_REMOVED}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Notification removed:', payload.key);
+        if (payload.key) {
+          rightSidebarState.removeNotification(payload.key);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse NOTIFICATION_REMOVED payload:', e);
+      }
+      return;
+    }
+
+    // -------------------------------------------------------------------------
     // WALLPAPER PROTOCOL RESPONSES
     // -------------------------------------------------------------------------
     if (trimmed === RESP_WALLPAPER_STARTED) {
@@ -372,6 +457,10 @@ function setupDataChannelListeners(): void {
         clearTimeout(smsTimeoutTimer);
         smsTimeoutTimer = null;
       }
+      if (notificationTimeoutTimer) {
+        clearTimeout(notificationTimeoutTimer);
+        notificationTimeoutTimer = null;
+      }
       if (wallpaperTimeoutTimer) {
         clearTimeout(wallpaperTimeoutTimer);
         wallpaperTimeoutTimer = null;
@@ -379,6 +468,7 @@ function setupDataChannelListeners(): void {
       rightSidebarState.resetMonitoringStates();
       sidebarState.setFeatureLive('calllog', false);
       sidebarState.setFeatureLive('sms', false);
+      sidebarState.setFeatureLive('notification', false);
       sidebarState.setFeatureLive('wallpaper', false);
     }
   });
@@ -477,6 +567,17 @@ export function renderRightSidebar(): void {
 
     playBtn?.addEventListener('click', () => {
       handleSmsPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
+  // Synchronize footer button for Notification panel
+  if (activePanelId === 'notification') {
+    const notifState = rightSidebarState.getNotificationMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, notifState, 'Notifications');
+
+    playBtn?.addEventListener('click', () => {
+      handleNotificationPlayPauseClick(playBtn, playIcon, statusSpan);
     });
     return;
   }
@@ -622,6 +723,63 @@ function handleSmsPlayPauseClick(
       if (rightSidebarState.getSmsMonitoringState() === 'STOPPING') {
         rightSidebarState.setSmsMonitoringState('IDLE');
         updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'SMS Messages');
+      }
+    }, 20000);
+  }
+}
+
+/**
+ * Handles Play/Pause click action specifically for Notification monitoring.
+ */
+function handleNotificationPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getNotificationMonitoringState();
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting Notification monitoring...');
+    rightSidebarState.setNotificationMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'Notifications');
+
+    const sent = webrtcManager.sendCommand(CMD_NOTIFICATION_ON);
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting Notification state to IDLE.');
+      rightSidebarState.setNotificationMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Notifications');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    // Safety timeout fallback (20s)
+    if (notificationTimeoutTimer) clearTimeout(notificationTimeoutTimer);
+    notificationTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getNotificationMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for NOTIFICATION_STARTED. Reverting to IDLE.');
+        rightSidebarState.setNotificationMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Notifications');
+        triggerSidebarToast('Notification monitoring request timed out');
+      }
+    }, 20000);
+
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping Notification monitoring...');
+    rightSidebarState.setNotificationMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'Notifications');
+
+    const sent = webrtcManager.sendCommand(CMD_NOTIFICATION_OFF);
+    if (!sent) {
+      rightSidebarState.setNotificationMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Notifications');
+      return;
+    }
+
+    if (notificationTimeoutTimer) clearTimeout(notificationTimeoutTimer);
+    notificationTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getNotificationMonitoringState() === 'STOPPING') {
+        rightSidebarState.setNotificationMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Notifications');
       }
     }, 20000);
   }
