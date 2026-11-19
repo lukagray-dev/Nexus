@@ -151,3 +151,43 @@ Desktop Parent                                                          Android 
 - **`notification.ts`**: Tactical surveillance UI component featuring search filtering, category pills (`All`, `Messages`, `Social`, `System`, `Media`), ongoing task indicators, and full detail inspection drawers.
 - **`notification.css`**: Strict B&W tactical dark theme styling.
 - **`right-sidebar.ts`**: Footer play/pause button state synchronization, loading spinner toggles, and DataChannel protocol event dispatcher.
+
+---
+
+## 5. Future Improvements Plan
+
+The following advanced capabilities are scheduled for subsequent iterations to elevate the notification monitoring engine from passive surveillance to bidirectional control:
+
+### 1. Remote Quick Reply (Two-Way Messaging)
+- **Objective**: Allow the parent to reply directly to incoming chat notifications (WhatsApp, Telegram, Signal, Google Messages, Discord, Slack) from the desktop console.
+- **Protocol Addition**:
+  - **Parent → Child**: `{"command":"NOTIFICATION_REPLY", "key":"<notificationKey>", "actionIndex":0, "text":"<replyMessage>"}`
+  - **Child → Parent**: `NOTIFICATION_REPLY_SUCCESS` or `NOTIFICATION_REPLY_ERROR: <reason>`
+- **Android Execution Strategy**:
+  1. Retrieve the target `StatusBarNotification` using `key`.
+  2. Locate the `Notification.Action` containing a `RemoteInput` (`action.remoteInputs`).
+  3. Bundle the reply string using `RemoteInput.addResultsToIntent()`.
+  4. Dispatch the intent headlessly via `action.actionIntent.send(context, 0, replyIntent)`.
+
+### 2. Remote Notification Dismissal & Mass Cancellation
+- **Objective**: Enable the parent to remotely dismiss intrusive, spam, or inappropriate notifications from the child's status bar, or clear all notifications at once.
+- **Protocol Addition**:
+  - **Parent → Child**: `{"command":"NOTIFICATION_DISMISS", "key":"<notificationKey>"}`
+  - **Parent → Child**: `NOTIFICATION_DISMISS_ALL`
+  - **Child → Parent**: `NOTIFICATION_DISMISSED: <key>` or `NOTIFICATION_ALL_DISMISSED`
+- **Android Execution Strategy**:
+  1. For single dismissal: invoke `NexusNotificationListenerService.cancelNotification(key)`.
+  2. For mass dismissal: invoke `NexusNotificationListenerService.cancelAllNotifications()`.
+  3. The child's OS will automatically fire `onNotificationRemoved` to synchronize the desktop UI.
+
+### 3. Media Session Surveillance (Now Playing & Media Controls)
+- **Objective**: Monitor active music, audio, and video streaming applications (Spotify, YouTube Music, Apple Music, Audible, Podcasts) and provide remote playback control.
+- **Protocol Addition**:
+  - **Child → Parent**: `{"type":"NOTIFICATION_MEDIA_UPDATE", "track":"<title>", "artist":"<artist>", "album":"<album>", "isPlaying":true, "duration":184000, "position":42000}`
+  - **Parent → Child**: `{"command":"MEDIA_CONTROL", "action":"play" | "pause" | "skip_next" | "skip_prev"}`
+- **Android Execution Strategy**:
+  1. Extract `Notification.EXTRA_MEDIA_SESSION` (`MediaSession.Token`) from notifications with `MediaStyle`.
+  2. Instantiate an Android `MediaController` bound to the active session token.
+  3. Register `MediaController.Callback` to stream real-time playback state transitions and metadata.
+  4. Execute remote transport controls using `mediaController.transportControls.play()`, `pause()`, etc.
+
