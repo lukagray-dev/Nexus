@@ -74,3 +74,36 @@
   filter: invert(1);
 }
 
+.vf-action-btn.active-trigger {
+  border-color: #ffffff;
+  background-color: #2e2e2e;
+}
+
+.vf-status-banner {
+  padding: 10px 12px;
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.vf-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  flex-shrink: 0;
+}
+
+.vf-status-dot.error {
+  background-color: #ef4444;
+}
+
+.vf-status-dot.idle {
+  background-color: #888888;
+}
+

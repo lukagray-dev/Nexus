@@ -12,7 +12,11 @@ import type {
   RightSidebarListener,
   MonitoringState,
   CallRecord,
-  SmsRecord
+  SmsRecord,
+  WallpaperTarget,
+  WallpaperDataState,
+  WallpaperChunkPayload,
+  VibrateFlashStatusState
 } from './types.js';
 
 class RightSidebarStateManager {
@@ -23,10 +27,31 @@ class RightSidebarStateManager {
   // Telemetry Monitoring States
   private callLogMonitoringState: MonitoringState = 'IDLE';
   private smsMonitoringState: MonitoringState = 'IDLE';
+  private wallpaperMonitoringState: MonitoringState = 'IDLE';
 
   // In-Memory Telemetry Data Stores
   private callLogs: CallRecord[] = [];
   private smsMessages: SmsRecord[] = [];
+
+  // Wallpaper Data State
+  private wallpaperData: WallpaperDataState = {
+    homeUrl: null,
+    lockUrl: null,
+    isSame: true,
+    currentTarget: 'home',
+    isFetching: false,
+    isPushing: false,
+    pushProgress: 0
+  };
+  private incomingWallpaperChunks: Map<string, { totalChunks: number; chunks: Map<number, string>; isSame: boolean }> = new Map();
+
+  // Vibrate & Flash Status State
+  private vibrateFlashStatus: VibrateFlashStatusState = {
+    lastAction: null,
+    lastSuccess: null,
+    statusMessage: null,
+    timestamp: 0
+  };
 
   /**
    * Returns whether the right sidebar is currently open.
@@ -160,6 +185,113 @@ class RightSidebarStateManager {
     this.notify();
   }
 
+  // ---------------------------------------------------------------------------
+  // WALLPAPER MONITORING & TELEMETRY ACCESSORS
+  // ---------------------------------------------------------------------------
+
+  public getWallpaperMonitoringState(): MonitoringState {
+    return this.wallpaperMonitoringState;
+  }
+
+  public setWallpaperMonitoringState(state: MonitoringState): void {
+    if (this.wallpaperMonitoringState !== state) {
+      this.wallpaperMonitoringState = state;
+      this.notify();
+    }
+  }
+
+  public getWallpaperData(): WallpaperDataState {
+    return { ...this.wallpaperData };
+  }
+
+  public setWallpaperTarget(target: WallpaperTarget): void {
+    if (this.wallpaperData.currentTarget !== target) {
+      this.wallpaperData.currentTarget = target;
+      this.notify();
+    }
+  }
+
+  public setWallpaperFetching(isFetching: boolean): void {
+    this.wallpaperData.isFetching = isFetching;
+    this.notify();
+  }
+
+  public setWallpaperPushing(isPushing: boolean, progress: number): void {
+    this.wallpaperData.isPushing = isPushing;
+    this.wallpaperData.pushProgress = progress;
+    this.notify();
+  }
+
+  public handleIncomingWallpaperChunk(payload: WallpaperChunkPayload): void {
+    const { screen, chunkIndex, totalChunks, data, isSame } = payload;
+    let screenEntry = this.incomingWallpaperChunks.get(screen);
+    if (!screenEntry || screenEntry.totalChunks !== totalChunks) {
+      screenEntry = { totalChunks, chunks: new Map(), isSame };
+      this.incomingWallpaperChunks.set(screen, screenEntry);
+    }
+
+    screenEntry.chunks.set(chunkIndex, data);
+    screenEntry.isSame = isSame;
+
+    // Check if all chunks have arrived
+    if (screenEntry.chunks.size >= totalChunks && totalChunks > 0) {
+      const sortedSlices: string[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        sortedSlices.push(screenEntry.chunks.get(i) || '');
+      }
+      const fullBase64 = sortedSlices.join('');
+      const dataUrl = `data:image/jpeg;base64,${fullBase64}`;
+
+      if (screen === 'home') {
+        this.wallpaperData.homeUrl = dataUrl;
+        if (isSame) {
+          this.wallpaperData.lockUrl = dataUrl;
+        }
+      } else if (screen === 'lock') {
+        this.wallpaperData.lockUrl = dataUrl;
+      }
+      this.wallpaperData.isSame = isSame;
+      this.wallpaperData.isFetching = false;
+      this.incomingWallpaperChunks.delete(screen);
+      this.notify();
+    }
+  }
+
+  public setPushedWallpaperSuccess(target: WallpaperTarget, previewUrl?: string): void {
+    this.wallpaperData.isPushing = false;
+    this.wallpaperData.pushProgress = 100;
+    if (previewUrl) {
+      if (target === 'both') {
+        this.wallpaperData.homeUrl = previewUrl;
+        this.wallpaperData.lockUrl = previewUrl;
+        this.wallpaperData.isSame = true;
+      } else if (target === 'home') {
+        this.wallpaperData.homeUrl = previewUrl;
+      } else if (target === 'lock') {
+        this.wallpaperData.lockUrl = previewUrl;
+      }
+    }
+    this.notify();
+  }
+
+  // ---------------------------------------------------------------------------
+  // VIBRATE & FLASH ACCESSORS
+  // ---------------------------------------------------------------------------
+
+  public getVibrateFlashStatus(): VibrateFlashStatusState {
+    return { ...this.vibrateFlashStatus };
+  }
+
+  public setVibrateFlashStatus(action: string, success: boolean | null, message: string): void {
+    this.vibrateFlashStatus = {
+      lastAction: action,
+      lastSuccess: success,
+      statusMessage: message,
+      timestamp: Date.now()
+    };
+    this.notify();
+  }
+
   /**
    * Resets all monitoring states to IDLE when peer connection drops.
    */
@@ -173,6 +305,16 @@ class RightSidebarStateManager {
       this.smsMonitoringState = 'IDLE';
       changed = true;
     }
+    if (this.wallpaperMonitoringState !== 'IDLE') {
+      this.wallpaperMonitoringState = 'IDLE';
+      changed = true;
+    }
+    if (this.wallpaperData.isFetching || this.wallpaperData.isPushing) {
+      this.wallpaperData.isFetching = false;
+      this.wallpaperData.isPushing = false;
+      changed = true;
+    }
+    this.incomingWallpaperChunks.clear();
     if (changed) {
       this.notify();
     }

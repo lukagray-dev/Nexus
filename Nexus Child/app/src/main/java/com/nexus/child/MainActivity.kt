@@ -20,6 +20,10 @@ import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
 import com.nexus.child.components.sms.SmsCommandHandler
 import com.nexus.child.components.sms.SmsController
+import com.nexus.child.components.vibrateflash.VibrateFlashCommandHandler
+import com.nexus.child.components.vibrateflash.VibrateFlashController
+import com.nexus.child.components.wallpaper.WallpaperCommandHandler
+import com.nexus.child.components.wallpaper.WallpaperController
 import com.nexus.child.databinding.ActivityMainBinding
 import com.nexus.child.permission.PermissionGuideActivity
 import com.nexus.child.permission.PermissionHelper
@@ -67,6 +71,10 @@ class MainActivity : AppCompatActivity() {
     private var callLogCommandHandler: CallLogCommandHandler? = null
     private var smsController: SmsController? = null
     private var smsCommandHandler: SmsCommandHandler? = null
+    private var vibrateFlashController: VibrateFlashController? = null
+    private var vibrateFlashCommandHandler: VibrateFlashCommandHandler? = null
+    private var wallpaperController: WallpaperController? = null
+    private var wallpaperCommandHandler: WallpaperCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +98,10 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        wallpaperCommandHandler?.cleanup()
+        wallpaperController?.cleanup()
+        vibrateFlashCommandHandler?.cleanup()
+        vibrateFlashController?.cleanup()
         smsCommandHandler?.cleanup()
         smsController?.cleanup()
         callLogCommandHandler?.cleanup()
@@ -169,6 +181,8 @@ class MainActivity : AppCompatActivity() {
                             locationCommandHandler?.onPeerDisconnected()
                             callLogCommandHandler?.onPeerDisconnected()
                             smsCommandHandler?.onPeerDisconnected()
+                            vibrateFlashCommandHandler?.onPeerDisconnected()
+                            wallpaperCommandHandler?.onPeerDisconnected()
                         }
                     },
                     onMessageReceived = { message ->
@@ -259,6 +273,30 @@ class MainActivity : AppCompatActivity() {
                 )
                 smsCommandHandler = sCmdHandler
 
+                Log.d(TAG, "Step 11: Initializing VibrateFlashController and VibrateFlashCommandHandler...")
+                val vfCtrl = VibrateFlashController(context = this@MainActivity)
+                vibrateFlashController = vfCtrl
+
+                val vfCmdHandler = VibrateFlashCommandHandler(
+                    controller = vfCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                vibrateFlashCommandHandler = vfCmdHandler
+
+                Log.d(TAG, "Step 12: Initializing WallpaperController and WallpaperCommandHandler...")
+                val wpCtrl = WallpaperController(context = this@MainActivity)
+                wallpaperController = wpCtrl
+
+                val wpCmdHandler = WallpaperCommandHandler(
+                    wallpaperController = wpCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                wallpaperCommandHandler = wpCmdHandler
+
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
             } catch (e: Exception) {
@@ -306,6 +344,12 @@ class MainActivity : AppCompatActivity() {
 
         val handledBySms = smsCommandHandler?.handleCommand(command) ?: false
         if (handledBySms) return
+
+        val handledByVf = vibrateFlashCommandHandler?.handleCommand(command) ?: false
+        if (handledByVf) return
+
+        val handledByWp = wallpaperCommandHandler?.handleCommand(command) ?: false
+        if (handledByWp) return
 
         if (command == "PING") {
             webRtcManager?.sendData("PONG")

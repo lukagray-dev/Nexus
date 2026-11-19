@@ -29,7 +29,21 @@ import {
   RESP_SMS_STOPPED,
   RESP_SMS_ERROR_PREFIX,
   TYPE_SMS_HISTORY,
-  TYPE_SMS_NEW
+  TYPE_SMS_NEW,
+  CMD_WALLPAPER_ON,
+  CMD_WALLPAPER_OFF,
+  RESP_WALLPAPER_STARTED,
+  RESP_WALLPAPER_STOPPED,
+  RESP_WALLPAPER_ERROR_PREFIX,
+  TYPE_WALLPAPER_CHUNK,
+  RESP_WALLPAPER_SET_SUCCESS,
+  RESP_WALLPAPER_SET_ERROR_PREFIX,
+  RESP_VIBRATE_SUCCESS_PREFIX,
+  RESP_VIBRATE_ERROR_PREFIX,
+  RESP_FLASH_SUCCESS_PREFIX,
+  RESP_FLASH_ERROR_PREFIX,
+  RESP_VIBRATE_FLASH_SUCCESS_PREFIX,
+  RESP_VIBRATE_FLASH_ERROR_PREFIX
 } from './types.js';
 import { webrtcManager } from '../webrtc/webrtc-manager.js';
 import { triggerSidebarToast } from './shared.js';
@@ -54,6 +68,7 @@ import { renderWallpaperPanel } from './wallpaper/wallpaper.js';
 
 let callLogTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let smsTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let wallpaperTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   sms: { title: 'SMS Messages', badge: 'Active Sync', render: renderSmsPanel },
@@ -229,6 +244,120 @@ function setupDataChannelListeners(): void {
       }
       return;
     }
+
+    // -------------------------------------------------------------------------
+    // WALLPAPER PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_WALLPAPER_STARTED) {
+      console.log('[RightSidebar] Child confirmed: WALLPAPER_STARTED');
+      if (wallpaperTimeoutTimer) {
+        clearTimeout(wallpaperTimeoutTimer);
+        wallpaperTimeoutTimer = null;
+      }
+      rightSidebarState.setWallpaperMonitoringState('LIVE');
+      sidebarState.setFeatureLive('wallpaper', true);
+      return;
+    }
+
+    if (trimmed === RESP_WALLPAPER_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: WALLPAPER_STOPPED');
+      if (wallpaperTimeoutTimer) {
+        clearTimeout(wallpaperTimeoutTimer);
+        wallpaperTimeoutTimer = null;
+      }
+      rightSidebarState.setWallpaperMonitoringState('IDLE');
+      sidebarState.setFeatureLive('wallpaper', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_WALLPAPER_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_WALLPAPER_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Wallpaper error from Child:', err);
+      if (wallpaperTimeoutTimer) {
+        clearTimeout(wallpaperTimeoutTimer);
+        wallpaperTimeoutTimer = null;
+      }
+      rightSidebarState.setWallpaperMonitoringState('IDLE');
+      sidebarState.setFeatureLive('wallpaper', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_WALLPAPER_CHUNK}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        rightSidebarState.handleIncomingWallpaperChunk(payload);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse WALLPAPER_CHUNK payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed === RESP_WALLPAPER_SET_SUCCESS) {
+      console.log('[RightSidebar] Child confirmed: WALLPAPER_SET_SUCCESS');
+      rightSidebarState.setPushedWallpaperSuccess(rightSidebarState.getWallpaperData().currentTarget);
+      triggerSidebarToast('Wallpaper successfully applied to child device');
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_WALLPAPER_SET_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_WALLPAPER_SET_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Push wallpaper error from Child:', err);
+      rightSidebarState.setWallpaperPushing(false, 0);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    // -------------------------------------------------------------------------
+    // VIBRATE & FLASH PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed.startsWith(RESP_VIBRATE_SUCCESS_PREFIX)) {
+      const pattern = trimmed.slice(RESP_VIBRATE_SUCCESS_PREFIX.length);
+      console.log(`[RightSidebar] Vibration '${pattern}' executed on child`);
+      rightSidebarState.setVibrateFlashStatus(pattern, true, `Vibration '${pattern}' executed on child`);
+      triggerSidebarToast(`Vibration '${pattern}' confirmed by device`);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_VIBRATE_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_VIBRATE_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Vibration error:', err);
+      rightSidebarState.setVibrateFlashStatus('vibrate', false, err);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_FLASH_SUCCESS_PREFIX)) {
+      const action = trimmed.slice(RESP_FLASH_SUCCESS_PREFIX.length);
+      console.log(`[RightSidebar] Flashlight '${action}' executed on child`);
+      rightSidebarState.setVibrateFlashStatus(action, true, `Flashlight '${action}' executed on child`);
+      triggerSidebarToast(`Flashlight '${action}' confirmed by device`);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_FLASH_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_FLASH_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Flashlight error:', err);
+      rightSidebarState.setVibrateFlashStatus('flash', false, err);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_VIBRATE_FLASH_SUCCESS_PREFIX)) {
+      const pattern = trimmed.slice(RESP_VIBRATE_FLASH_SUCCESS_PREFIX.length);
+      console.log(`[RightSidebar] Combined '${pattern}' executed on child`);
+      rightSidebarState.setVibrateFlashStatus(pattern, true, `Combined pattern '${pattern}' executed`);
+      triggerSidebarToast(`Combined pattern '${pattern}' confirmed by device`);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_VIBRATE_FLASH_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_VIBRATE_FLASH_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Combined error:', err);
+      rightSidebarState.setVibrateFlashStatus('combined', false, err);
+      triggerSidebarToast(err);
+      return;
+    }
   });
 
   // Reset monitoring state when WebRTC disconnects
@@ -243,9 +372,14 @@ function setupDataChannelListeners(): void {
         clearTimeout(smsTimeoutTimer);
         smsTimeoutTimer = null;
       }
+      if (wallpaperTimeoutTimer) {
+        clearTimeout(wallpaperTimeoutTimer);
+        wallpaperTimeoutTimer = null;
+      }
       rightSidebarState.resetMonitoringStates();
       sidebarState.setFeatureLive('calllog', false);
       sidebarState.setFeatureLive('sms', false);
+      sidebarState.setFeatureLive('wallpaper', false);
     }
   });
 }
@@ -344,6 +478,27 @@ export function renderRightSidebar(): void {
     playBtn?.addEventListener('click', () => {
       handleSmsPlayPauseClick(playBtn, playIcon, statusSpan);
     });
+    return;
+  }
+
+  // Synchronize footer button for Wallpaper panel
+  if (activePanelId === 'wallpaper') {
+    const wpState = rightSidebarState.getWallpaperMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, wpState, 'Wallpaper');
+
+    playBtn?.addEventListener('click', () => {
+      handleWallpaperPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
+  // Vibrate & Flash Panel - No continuous live monitoring button
+  if (activePanelId === 'vibrateflash') {
+    if (playBtn) playBtn.style.display = 'none';
+    if (statusSpan) {
+      statusSpan.textContent = 'Hardware Link Ready';
+      statusSpan.classList.remove('live');
+    }
     return;
   }
 
@@ -467,6 +622,63 @@ function handleSmsPlayPauseClick(
       if (rightSidebarState.getSmsMonitoringState() === 'STOPPING') {
         rightSidebarState.setSmsMonitoringState('IDLE');
         updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'SMS Messages');
+      }
+    }, 20000);
+  }
+}
+
+/**
+ * Handles Play/Pause click action specifically for Wallpaper monitoring.
+ */
+function handleWallpaperPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getWallpaperMonitoringState();
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting Wallpaper monitoring...');
+    rightSidebarState.setWallpaperMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'Wallpaper');
+
+    const sent = webrtcManager.sendCommand(CMD_WALLPAPER_ON);
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting Wallpaper state to IDLE.');
+      rightSidebarState.setWallpaperMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Wallpaper');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    // Safety timeout fallback (20s)
+    if (wallpaperTimeoutTimer) clearTimeout(wallpaperTimeoutTimer);
+    wallpaperTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getWallpaperMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for WALLPAPER_STARTED. Reverting to IDLE.');
+        rightSidebarState.setWallpaperMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Wallpaper');
+        triggerSidebarToast('Wallpaper monitoring request timed out');
+      }
+    }, 20000);
+
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping Wallpaper monitoring...');
+    rightSidebarState.setWallpaperMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'Wallpaper');
+
+    const sent = webrtcManager.sendCommand(CMD_WALLPAPER_OFF);
+    if (!sent) {
+      rightSidebarState.setWallpaperMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Wallpaper');
+      return;
+    }
+
+    if (wallpaperTimeoutTimer) clearTimeout(wallpaperTimeoutTimer);
+    wallpaperTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getWallpaperMonitoringState() === 'STOPPING') {
+        rightSidebarState.setWallpaperMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Wallpaper');
       }
     }, 20000);
   }

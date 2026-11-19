@@ -174,6 +174,74 @@ export interface AppLockItem {
 }
 
 // -----------------------------------------------------------------------------
+// WALLPAPER PROTOCOL & TYPES
+// -----------------------------------------------------------------------------
+
+export const CMD_WALLPAPER_ON = 'WALLPAPER_ON';
+export const CMD_WALLPAPER_OFF = 'WALLPAPER_OFF';
+export const CMD_WALLPAPER_GET = 'WALLPAPER_GET';
+export const ALIAS_WALLPAPER_START = 'WALLPAPER_START';
+export const ALIAS_WALLPAPER_STOP = 'WALLPAPER_STOP';
+
+export const RESP_WALLPAPER_STARTED = 'WALLPAPER_STARTED';
+export const RESP_WALLPAPER_STOPPED = 'WALLPAPER_STOPPED';
+export const RESP_WALLPAPER_ERROR_PREFIX = 'WALLPAPER_ERROR: ';
+
+export const TYPE_WALLPAPER_CHUNK = 'WALLPAPER_CHUNK';
+export const CMD_PUSH_WALLPAPER_START = 'PUSH_WALLPAPER_START';
+export const CMD_PUSH_WALLPAPER_CHUNK = 'PUSH_WALLPAPER_CHUNK';
+export const RESP_WALLPAPER_SET_SUCCESS = 'WALLPAPER_SET_SUCCESS';
+export const RESP_WALLPAPER_SET_ERROR_PREFIX = 'WALLPAPER_SET_ERROR: ';
+
+export type WallpaperTarget = 'home' | 'lock' | 'both';
+
+export interface WallpaperChunkPayload {
+  type: typeof TYPE_WALLPAPER_CHUNK;
+  screen: 'home' | 'lock';
+  chunkIndex: number;
+  totalChunks: number;
+  data: string;
+  isSame: boolean;
+}
+
+export interface WallpaperDataState {
+  homeUrl: string | null;
+  lockUrl: string | null;
+  isSame: boolean;
+  currentTarget: WallpaperTarget;
+  isFetching: boolean;
+  isPushing: boolean;
+  pushProgress: number; // 0..100
+}
+
+// -----------------------------------------------------------------------------
+// VIBRATE & FLASH PROTOCOL & TYPES
+// -----------------------------------------------------------------------------
+
+export const CMD_VIBRATE_PREFIX = 'VIBRATE:';
+export const CMD_FLASH_PREFIX = 'FLASH:';
+export const CMD_VIBRATE_FLASH_PREFIX = 'VIBRATE_FLASH:';
+export const CMD_STOP_VIBRATE_FLASH = 'STOP_VIBRATE_FLASH';
+
+export const RESP_VIBRATE_SUCCESS_PREFIX = 'VIBRATE_SUCCESS: ';
+export const RESP_VIBRATE_ERROR_PREFIX = 'VIBRATE_ERROR: ';
+export const RESP_FLASH_SUCCESS_PREFIX = 'FLASH_SUCCESS: ';
+export const RESP_FLASH_ERROR_PREFIX = 'FLASH_ERROR: ';
+export const RESP_VIBRATE_FLASH_SUCCESS_PREFIX = 'VIBRATE_FLASH_SUCCESS: ';
+export const RESP_VIBRATE_FLASH_ERROR_PREFIX = 'VIBRATE_FLASH_ERROR: ';
+
+export type VibratePattern = 'short' | 'double' | 'pulse' | 'sos';
+export type FlashAction = 'on' | 'off' | 'strobe' | 'beacon';
+export type CombinedPattern = 'alert' | 'sos' | 'pulse';
+
+export interface VibrateFlashStatusState {
+  lastAction: string | null;
+  lastSuccess: boolean | null;
+  statusMessage: string | null;
+  timestamp: number;
+}
+
+// -----------------------------------------------------------------------------
 // FORMATTING HELPERS
 // -----------------------------------------------------------------------------
 
