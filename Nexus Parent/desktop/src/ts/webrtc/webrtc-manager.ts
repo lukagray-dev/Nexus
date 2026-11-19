@@ -66,6 +66,13 @@ export class DesktopWebRtcManager {
   }
 
   /**
+   * Returns the incoming screen MediaStream if available, or null.
+   */
+  public getScreenStream(): MediaStream | null {
+    return this.cameraStream;
+  }
+
+  /**
    * Initiates the full end-to-end connection pipeline to a target child device:
    * 1. Authenticates with Firebase anonymously.
    * 2. Validates device existence and online status.
@@ -222,6 +229,9 @@ export class DesktopWebRtcManager {
         window.dispatchEvent(new CustomEvent('nexus-camera-stream', {
           detail: { track: event.track, stream: this.cameraStream }
         }));
+        window.dispatchEvent(new CustomEvent('nexus-screen-stream', {
+          detail: { track: event.track, stream: this.cameraStream }
+        }));
       }
 
       this.notifyTrackReceived(event.track, stream);
@@ -254,7 +264,13 @@ export class DesktopWebRtcManager {
     };
 
     dc.onmessage = (event) => {
-      console.log('[WebRTCManager] Incoming message from Child:', event.data);
+      if (typeof event.data === 'string' && event.data.startsWith('OPUS_AUDIO:')) {
+        window.dispatchEvent(new CustomEvent('nexus-screen-audio', {
+          detail: { packet: event.data.slice('OPUS_AUDIO:'.length) }
+        }));
+      } else {
+        console.log('[WebRTCManager] Incoming message from Child:', event.data);
+      }
       this.notifyMessageReceived(event.data);
     };
   }

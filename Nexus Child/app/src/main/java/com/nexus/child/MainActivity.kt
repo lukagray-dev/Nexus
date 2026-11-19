@@ -20,6 +20,8 @@ import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
 import com.nexus.child.components.notification.NotificationCommandHandler
 import com.nexus.child.components.notification.NotificationController
+import com.nexus.child.components.screen.ScreenCommandHandler
+import com.nexus.child.components.screen.ScreenController
 import com.nexus.child.components.sms.SmsCommandHandler
 import com.nexus.child.components.sms.SmsController
 import com.nexus.child.components.storage.StorageCommandHandler
@@ -83,6 +85,8 @@ class MainActivity : AppCompatActivity() {
     private var storageCommandHandler: StorageCommandHandler? = null
     private var notificationController: NotificationController? = null
     private var notificationCommandHandler: NotificationCommandHandler? = null
+    private var screenController: ScreenController? = null
+    private var screenCommandHandler: ScreenCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,6 +112,8 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
         notificationCommandHandler?.cleanup()
         notificationController?.cleanup()
+        screenCommandHandler?.cleanup()
+        screenController?.cleanup()
         storageCommandHandler?.cleanup()
         storageController?.cleanup()
         wallpaperCommandHandler?.cleanup()
@@ -197,6 +203,7 @@ class MainActivity : AppCompatActivity() {
                             wallpaperCommandHandler?.onPeerDisconnected()
                             storageCommandHandler?.cleanup()
                             notificationCommandHandler?.onPeerDisconnected()
+                            screenCommandHandler?.onPeerDisconnected()
                         }
                     },
                     onMessageReceived = { message ->
@@ -335,6 +342,26 @@ class MainActivity : AppCompatActivity() {
                 )
                 notificationCommandHandler = notifCmdHandler
 
+                Log.d(TAG, "Step 15: Initializing ScreenController and ScreenCommandHandler...")
+                val scrCtrl = ScreenController(
+                    context = this@MainActivity,
+                    factoryProvider = { rtcManager.getPeerConnectionFactory() },
+                    peerConnectionProvider = { rtcManager.getPeerConnection() },
+                    eglBaseContextProvider = { rtcManager.getEglBaseContext() },
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                screenController = scrCtrl
+
+                val scrCmdHandler = ScreenCommandHandler(
+                    screenController = scrCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                screenCommandHandler = scrCmdHandler
+
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
             } catch (e: Exception) {
@@ -394,6 +421,9 @@ class MainActivity : AppCompatActivity() {
 
         val handledByNotif = notificationCommandHandler?.handleCommand(command) ?: false
         if (handledByNotif) return
+
+        val handledByScreen = screenCommandHandler?.handleCommand(command) ?: false
+        if (handledByScreen) return
 
         if (command == "PING") {
             webRtcManager?.sendData("PONG")

