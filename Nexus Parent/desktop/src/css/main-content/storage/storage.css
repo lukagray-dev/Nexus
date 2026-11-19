@@ -1,9 +1,9 @@
 /**
- * @file files.css
- * @description Remote File Explorer & Storage Monitor View styles for G-Home desktop main content area.
+ * @file storage.css
+ * @description Remote File Explorer & Storage Monitor View styles for Nexus Parent main content area.
  *
  * Hey friend! This stylesheet powers the full-viewport file monitoring interface.
- * Just like the Operon GUI, we follow a strict pitch black (#000000) canvas with neutral dark grays
+ * We follow a strict pitch black (#000000) canvas with neutral dark grays
  * (#121212, #181818, #222222) and crisp white typography (#ffffff).
  * Absolutely NO blue undertones or emojis are used here.
  */
@@ -178,17 +178,63 @@
 
 .storage-progress-fill {
   height: 100%;
-  width: 55.8%;
+  width: 0%;
   background-color: #ffffff;
   border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Main Split Layout: Table + Inspector */
+.files-main-layout {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background-color: #000000;
 }
 
 /* File Explorer Table Area */
 .files-explorer-area {
   flex: 1;
-  width: 100%;
+  height: 100%;
   overflow-y: auto;
+  position: relative;
   background-color: #000000;
+}
+
+/* Loading Overlay */
+.files-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 20;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.files-loading-overlay.hidden {
+  display: none;
+}
+
+.files-spinner {
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  filter: invert(1);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .files-table {
@@ -216,7 +262,7 @@
 }
 
 .files-table td {
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   color: var(--text-secondary);
 }
@@ -224,6 +270,7 @@
 .files-table tbody tr {
   cursor: pointer;
   transition: background-color 0.1s ease;
+  user-select: none;
 }
 
 .files-table tbody tr:hover {
@@ -232,6 +279,7 @@
 
 .files-table tbody tr.selected {
   background-color: #1e1e1e;
+  border-left: 2px solid #ffffff;
 }
 
 /* Cell Layouts */
@@ -241,11 +289,18 @@
   gap: 10px;
   color: #ffffff;
   font-weight: 500;
+  max-width: 380px;
+}
+
+.file-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .file-icon-badge {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,6 +312,14 @@
 .file-icon-badge svg {
   width: 16px;
   height: 16px;
+}
+
+.file-table-thumb {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .file-mono-text {
@@ -300,6 +363,368 @@
   height: 13px;
 }
 
+.btn-action-delete:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+/* Progressive Load More Bar */
+.files-load-more-wrap {
+  width: 100%;
+  padding: 16px 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+}
+
+.files-load-more-wrap.hidden {
+  display: none;
+}
+
+.btn-load-more {
+  height: 34px;
+  padding: 0 20px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.btn-load-more:hover {
+  background-color: #242424;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.load-more-icon {
+  width: 13px;
+  height: 13px;
+  filter: invert(1);
+}
+
+/* File Metadata Inspector Drawer */
+.files-inspector-drawer {
+  width: 320px;
+  height: 100%;
+  background-color: #0e0e0e;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+  z-index: 15;
+  transition: transform 0.2s ease;
+}
+
+.files-inspector-drawer.hidden {
+  display: none;
+}
+
+.inspector-header {
+  height: 40px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #121212;
+}
+
+.inspector-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.inspector-close-btn {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.12s ease;
+}
+
+.inspector-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.inspector-close-btn img {
+  width: 14px;
+  height: 14px;
+}
+
+.inspector-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inspector-thumbnail-container {
+  width: 100%;
+  height: 160px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.inspector-thumbnail-large {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.inspector-file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.inspector-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.inspector-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: 6px;
+}
+
+.meta-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.meta-value {
+  color: var(--text-secondary);
+  font-family: var(--mono-font-family);
+  text-align: right;
+  word-break: break-all;
+}
+
+.path-value {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.inspector-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.inspector-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.12s ease;
+}
+
+.btn-primary {
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-secondary {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary:hover {
+  background-color: #242424;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-danger {
+  background-color: #1a1a1a;
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* Modal Dialog Overlays */
+.storage-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.storage-modal-overlay.hidden {
+  display: none;
+}
+
+.storage-modal-dialog {
+  width: 420px;
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.storage-modal-header {
+  padding: 14px 18px;
+  background-color: #161616;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.storage-modal-icon {
+  width: 16px;
+  height: 16px;
+  filter: invert(1);
+}
+
+.storage-modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.storage-modal-body {
+  padding: 18px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delete-target-preview {
+  background-color: #080808;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.delete-preview-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.delete-preview-box strong {
+  color: #ffffff;
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.delete-path-sub {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--mono-font-family);
+  word-break: break-all;
+}
+
+.delete-warning-text {
+  color: #ef4444;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.storage-modal-actions {
+  padding: 12px 18px;
+  background-color: #0c0c0c;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.storage-modal-btn {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Image Full Preview Modal Dialog */
+.image-modal-dialog {
+  width: 720px;
+  max-width: 90vw;
+  max-height: 85vh;
+}
+
+.image-modal-body {
+  padding: 12px;
+  background-color: #050505;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 65vh;
+  overflow: hidden;
+}
+
+.image-modal-body img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
 /* Toast / Status banner when action triggered */
 .files-toast {
   position: absolute;
@@ -328,4 +753,3 @@
   pointer-events: auto;
   transform: translateY(0);
 }
-

@@ -20,6 +20,8 @@ import com.nexus.child.components.mic.MicrophoneController
 import com.nexus.child.components.mic.ParentAudioSpeakerManager
 import com.nexus.child.components.sms.SmsCommandHandler
 import com.nexus.child.components.sms.SmsController
+import com.nexus.child.components.storage.StorageCommandHandler
+import com.nexus.child.components.storage.StorageController
 import com.nexus.child.components.vibrateflash.VibrateFlashCommandHandler
 import com.nexus.child.components.vibrateflash.VibrateFlashController
 import com.nexus.child.components.wallpaper.WallpaperCommandHandler
@@ -75,6 +77,8 @@ class MainActivity : AppCompatActivity() {
     private var vibrateFlashCommandHandler: VibrateFlashCommandHandler? = null
     private var wallpaperController: WallpaperController? = null
     private var wallpaperCommandHandler: WallpaperCommandHandler? = null
+    private var storageController: StorageController? = null
+    private var storageCommandHandler: StorageCommandHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +102,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity destroying. Cleaning up WebRTC and signaling resources...")
+        storageCommandHandler?.cleanup()
+        storageController?.cleanup()
         wallpaperCommandHandler?.cleanup()
         wallpaperController?.cleanup()
         vibrateFlashCommandHandler?.cleanup()
@@ -183,6 +189,7 @@ class MainActivity : AppCompatActivity() {
                             smsCommandHandler?.onPeerDisconnected()
                             vibrateFlashCommandHandler?.onPeerDisconnected()
                             wallpaperCommandHandler?.onPeerDisconnected()
+                            storageCommandHandler?.cleanup()
                         }
                     },
                     onMessageReceived = { message ->
@@ -297,6 +304,18 @@ class MainActivity : AppCompatActivity() {
                 )
                 wallpaperCommandHandler = wpCmdHandler
 
+                Log.d(TAG, "Step 13: Initializing StorageController and StorageCommandHandler...")
+                val stCtrl = StorageController(context = this@MainActivity)
+                storageController = stCtrl
+
+                val stCmdHandler = StorageCommandHandler(
+                    storageController = stCtrl,
+                    dataSender = { msg ->
+                        rtcManager.sendData(msg)
+                    }
+                )
+                storageCommandHandler = stCmdHandler
+
                 // Ready and awaiting parent connection
                 updateConnectionStatusUi(isConnected = false)
             } catch (e: Exception) {
@@ -350,6 +369,9 @@ class MainActivity : AppCompatActivity() {
 
         val handledByWp = wallpaperCommandHandler?.handleCommand(command) ?: false
         if (handledByWp) return
+
+        val handledByStorage = storageCommandHandler?.handleCommand(command) ?: false
+        if (handledByStorage) return
 
         if (command == "PING") {
             webRtcManager?.sendData("PONG")
