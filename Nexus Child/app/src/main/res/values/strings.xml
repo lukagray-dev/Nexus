@@ -81,6 +81,10 @@
     <string name="perm_autostart_title">Auto-Start Permission</string>
     <string name="perm_autostart_desc">Enables system background auto-start privileges so Nexus Child automatically resumes on device restart, unlock, or memory clearing.</string>
 
+    <!-- Display Over Other Apps Strings -->
+    <string name="perm_overlay_title">Display Over Other Apps</string>
+    <string name="perm_overlay_desc">Allows background screen streaming prompts and essential security alerts to display even when running in the background or stealth mode.</string>
+
     <!-- Foreground Notification Strings -->
     <string name="notification_channel_name">Nexus Core Service</string>
     <string name="notification_channel_desc">Maintains persistent background telemetry and connection monitoring</string>

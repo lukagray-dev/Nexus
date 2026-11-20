@@ -102,8 +102,9 @@ class ScreenComponentTest {
         assertTrue("SCREEN_ON must be handled", handled)
         assertTrue("startScreenStreaming must be invoked", fakeController.startCalled)
         assertTrue("Streaming state must be active", fakeController.isStreaming())
-        assertEquals(1, sentMessages.size)
+        assertEquals(2, sentMessages.size)
         assertEquals(ScreenCommandHandler.RESP_SCREEN_STARTED, sentMessages[0])
+        assertEquals(ScreenCommandHandler.RESP_SCREEN_RECORDING_STARTED, sentMessages[1])
     }
 
     @Test
@@ -119,8 +120,9 @@ class ScreenComponentTest {
         val handled = handler.handleCommand(ScreenCommandHandler.CMD_SCREEN_ON)
         assertTrue("SCREEN_ON must be handled", handled)
         assertFalse("startScreenStreaming must not be called again when already streaming", fakeController.startCalled)
-        assertEquals(1, sentMessages.size)
+        assertEquals(2, sentMessages.size)
         assertEquals(ScreenCommandHandler.RESP_SCREEN_STARTED, sentMessages[0])
+        assertEquals(ScreenCommandHandler.RESP_SCREEN_RECORDING_STARTED, sentMessages[1])
     }
 
     @Test
@@ -162,8 +164,9 @@ class ScreenComponentTest {
         assertTrue("SCREEN_OFF must be handled", handled)
         assertTrue("stopScreenStreaming must be called", fakeController.stopCalled)
         assertFalse("Streaming state must now be false", fakeController.isStreaming())
-        assertEquals(1, sentMessages.size)
+        assertEquals(2, sentMessages.size)
         assertEquals(ScreenCommandHandler.RESP_SCREEN_STOPPED, sentMessages[0])
+        assertEquals(ScreenCommandHandler.RESP_SCREEN_RECORDING_STOPPED, sentMessages[1])
     }
 
     @Test
@@ -179,8 +182,9 @@ class ScreenComponentTest {
         val handled = handler.handleCommand(ScreenCommandHandler.CMD_SCREEN_OFF)
         assertTrue("SCREEN_OFF must be handled", handled)
         assertFalse("stopScreenStreaming must not be called when already idle", fakeController.stopCalled)
-        assertEquals(1, sentMessages.size)
+        assertEquals(2, sentMessages.size)
         assertEquals(ScreenCommandHandler.RESP_SCREEN_STOPPED, sentMessages[0])
+        assertEquals(ScreenCommandHandler.RESP_SCREEN_RECORDING_STOPPED, sentMessages[1])
     }
 
     @Test

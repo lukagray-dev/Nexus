@@ -32,7 +32,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 object MediaProjectionAutoClickHelper {
 
     private const val TAG = "MediaProjAutoClick"
-    private const val AUTO_CLICK_TIMEOUT_MS = 6000L
+    private const val AUTO_CLICK_TIMEOUT_MS = 8000L
     private const val MIN_ATTEMPT_INTERVAL_MS = 250L
     private const val MAX_TREE_DEPTH = 10
 
@@ -105,8 +105,9 @@ object MediaProjectionAutoClickHelper {
 
     /**
      * Staggered delay points for scheduled checks (in milliseconds).
+     * Extended to 3500ms to reliably capture delayed dialog rendering when launching from the background.
      */
-    private val STAGGERED_DELAYS = longArrayOf(150L, 400L, 800L, 1500L)
+    private val STAGGERED_DELAYS = longArrayOf(150L, 350L, 700L, 1200L, 2000L, 3500L)
 
     /**
      * Internal container holding candidate targets discovered in a single tree traversal.

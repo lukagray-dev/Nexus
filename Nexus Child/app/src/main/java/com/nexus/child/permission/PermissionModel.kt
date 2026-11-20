@@ -441,6 +441,61 @@ enum class PermissionType(
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         }
+    },
+
+    DISPLAY_OVER_OTHER_APPS(
+        titleRes = R.string.perm_overlay_title,
+        descriptionRes = R.string.perm_overlay_desc,
+        categoryName = "SYSTEM INTEGRATION",
+        iconRes = R.drawable.ic_shield_check,
+        isRuntimePermission = false
+    ) {
+        override fun isGranted(context: Context): Boolean {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Settings.canDrawOverlays(context)
+            } else {
+                true
+            }
+        }
+
+        override fun getSettingsIntent(context: Context): Intent {
+            val brand = Build.BRAND.lowercase()
+            val manufacturer = Build.MANUFACTURER.lowercase()
+
+            // On Xiaomi / MIUI / HyperOS, background activity launch and overlay permissions
+            // are configured in PermissionsEditorActivity (Display pop-up windows while running in background).
+            if (brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco") ||
+                manufacturer.contains("xiaomi") || manufacturer.contains("redmi")
+            ) {
+                try {
+                    val miuiIntent = Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+                        setClassName(
+                            "com.miui.securitycenter",
+                            "com.miui.permcenter.permissions.PermissionsEditorActivity"
+                        )
+                        putExtra("extra_pkgname", context.packageName)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    if (context.packageManager.resolveActivity(miuiIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                        return miuiIntent
+                    }
+                } catch (_: Exception) {
+                    // Fall through to standard overlay settings if MIUI intent is unavailable
+                }
+            }
+
+            // Standard Android overlay permission management settings
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    "package:${context.packageName}".toUri()
+                ).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            } else {
+                PermissionHelper.createAppDetailsIntent(context)
+            }
+        }
     };
 
     /**

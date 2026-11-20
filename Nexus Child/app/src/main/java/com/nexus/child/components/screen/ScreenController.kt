@@ -135,9 +135,8 @@ class ScreenController(
         this.pendingStartCallback = onStarted
         this.pendingErrorCallback = onError
 
-        Log.d(TAG, "Starting foreground service and launching TransparentMediaProjectionActivity...")
+        Log.d(TAG, "Launching TransparentMediaProjectionActivity for screen capture authorization...")
         try {
-            ScreenCaptureService.start(context)
             TransparentMediaProjectionActivity.launch(context)
             return true
         } catch (e: Exception) {
@@ -241,10 +240,12 @@ class ScreenController(
             // Step 3: Zero-renegotiation track switching on pre-established video transceiver
             val senders = pc.senders ?: emptyList()
             val existingVideoSender = senders.firstOrNull { it.track()?.kind() == "video" }
+                ?: pc.transceivers?.firstOrNull { it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO }?.sender
 
             if (existingVideoSender != null) {
                 Log.d(TAG, "Attaching Screen VideoTrack to existing video RtpSender (zero renegotiation)...")
                 previousVideoTrack = existingVideoSender.track()
+                previousVideoTrack?.setEnabled(false) // Mute previous camera feed
                 existingVideoSender.setTrack(track, false)
                 rtpSender = existingVideoSender
             } else {
@@ -253,12 +254,21 @@ class ScreenController(
                 rtpSender = sender
             }
 
-            // Step 4: Initialize System Audio Capture on Android 10+ (reusing MediaProjection from capturer)
-            val proj = capturer.mediaProjection
-            if (proj != null) {
-                startSystemAudio(proj)
-            } else {
-                Log.w(TAG, "capturer.mediaProjection is null; internal system audio capture skipped")
+            // Step 4: Asynchronously initialize System Audio Capture on Android 10+
+            // Allows ScreenCapturerAndroid to complete createVirtualDisplay on the helper thread first
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                helper.handler.postDelayed({
+                    try {
+                        val proj = capturer.mediaProjection
+                        if (proj != null && isStreamingActive.get()) {
+                            startSystemAudio(proj)
+                        } else {
+                            Log.w(TAG, "capturer.mediaProjection still null or streaming stopped")
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Deferred system audio initialization failed: ${e.message}")
+                    }
+                }, 300)
             }
 
             isStreamingActive.set(true)

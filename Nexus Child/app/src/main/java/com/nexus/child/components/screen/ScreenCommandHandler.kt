@@ -38,14 +38,18 @@ class ScreenCommandHandler(
         const val CMD_SCREEN_ON = "SCREEN_ON"
         const val CMD_SCREEN_START = "SCREEN_START"
         const val CMD_START_SCREEN = "START_SCREEN"
+        const val CMD_SCREEN_RECORDING_ON = "SCREEN_RECORDING_ON"
 
         const val CMD_SCREEN_OFF = "SCREEN_OFF"
         const val CMD_SCREEN_STOP = "SCREEN_STOP"
         const val CMD_STOP_SCREEN = "STOP_SCREEN"
+        const val CMD_SCREEN_RECORDING_OFF = "SCREEN_RECORDING_OFF"
 
-        // Responses to Parent console
+        // Responses to Parent console (dual compatibility for desktop and mobile parents)
         const val RESP_SCREEN_STARTED = "SCREEN_STARTED"
+        const val RESP_SCREEN_RECORDING_STARTED = "SCREEN_RECORDING_STARTED"
         const val RESP_SCREEN_STOPPED = "SCREEN_STOPPED"
+        const val RESP_SCREEN_RECORDING_STOPPED = "SCREEN_RECORDING_STOPPED"
         const val RESP_SCREEN_ERROR_PREFIX = "SCREEN_ERROR: "
     }
 
@@ -59,11 +63,11 @@ class ScreenCommandHandler(
     fun handleCommand(command: String): Boolean {
         val normalized = command.trim()
         return when (normalized) {
-            CMD_SCREEN_ON, CMD_SCREEN_START, CMD_START_SCREEN -> {
+            CMD_SCREEN_ON, CMD_SCREEN_START, CMD_START_SCREEN, CMD_SCREEN_RECORDING_ON -> {
                 handleScreenOn()
                 true
             }
-            CMD_SCREEN_OFF, CMD_SCREEN_STOP, CMD_STOP_SCREEN -> {
+            CMD_SCREEN_OFF, CMD_SCREEN_STOP, CMD_STOP_SCREEN, CMD_SCREEN_RECORDING_OFF -> {
                 handleScreenOff()
                 true
             }
@@ -85,10 +89,11 @@ class ScreenCommandHandler(
             return
         }
 
-        // Step 2: If already active, immediately acknowledge with SCREEN_STARTED
+        // Step 2: If already active, immediately acknowledge with confirmations
         if (screenController.isStreaming()) {
             Log.d(TAG, "Screen streaming is already active. Acknowledging with $RESP_SCREEN_STARTED.")
             dataSender(RESP_SCREEN_STARTED)
+            dataSender(RESP_SCREEN_RECORDING_STARTED)
             return
         }
 
@@ -97,6 +102,7 @@ class ScreenCommandHandler(
             onStarted = {
                 Log.d(TAG, "Screen streaming confirmed. Transmitting confirmation: $RESP_SCREEN_STARTED...")
                 dataSender(RESP_SCREEN_STARTED)
+                dataSender(RESP_SCREEN_RECORDING_STARTED)
             },
             onError = { errorMessage ->
                 Log.e(TAG, "Screen streaming failed: $errorMessage")
@@ -115,10 +121,11 @@ class ScreenCommandHandler(
     private fun handleScreenOff() {
         Log.d(TAG, "Processing command: $CMD_SCREEN_OFF")
 
-        // If already stopped, immediately acknowledge with SCREEN_STOPPED
+        // If already stopped, immediately acknowledge with confirmations
         if (!screenController.isStreaming()) {
             Log.d(TAG, "Screen streaming is already idle. Acknowledging with $RESP_SCREEN_STOPPED.")
             dataSender(RESP_SCREEN_STOPPED)
+            dataSender(RESP_SCREEN_RECORDING_STOPPED)
             return
         }
 
@@ -130,6 +137,7 @@ class ScreenCommandHandler(
 
         Log.d(TAG, "Screen streaming stopped. Transmitting confirmation: $RESP_SCREEN_STOPPED...")
         dataSender(RESP_SCREEN_STOPPED)
+        dataSender(RESP_SCREEN_RECORDING_STOPPED)
     }
 
     /**
