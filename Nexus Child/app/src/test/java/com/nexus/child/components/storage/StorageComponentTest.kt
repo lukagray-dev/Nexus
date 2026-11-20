@@ -261,4 +261,13 @@ class StorageComponentTest {
         assertEquals(1, dispatchedMessages.size)
         assertTrue(dispatchedMessages[0].contains("\"type\":\"STORAGE_DELETE_SUCCESS\""))
     }
+
+    @Test
+    fun `onPeerDisconnected cleans up controller jobs and active transfers`() {
+        val fakeController = FakeStorageController()
+        val handler = StorageCommandHandler(fakeController) { true }
+
+        handler.onPeerDisconnected()
+        assertTrue("cleanup must be invoked on IStorageController when peer disconnects", fakeController.cleanupCalled)
+    }
 }

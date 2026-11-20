@@ -167,21 +167,18 @@ class MicrophoneController(
 
     /**
      * Stops microphone streaming and releases native hardware resources in the exact safe sequence.
+     * Always cleans up any allocated tracks, sources, or senders regardless of streaming state flag.
      *
      * @return true if track was removed successfully; false if it wasn't running.
      */
     @Synchronized
     override fun stopMicrophone(): Boolean {
-        Log.d(TAG, "stopMicrophone() invoked. Current streaming state: ${isStreaming.get()}")
+        Log.d(TAG, "stopMicrophone() invoked. Current streaming state: ${isStreaming.get()}, track=${audioTrack != null}, source=${audioSource != null}")
 
-        if (!isStreaming.get()) {
-            Log.w(TAG, "Microphone is not currently active. Nothing to stop.")
-            return false
-        }
-
+        val wasActive = isStreaming.get() || audioTrack != null || audioSource != null || rtpSender != null
         stopMicrophoneInternal()
         Log.d(TAG, "Microphone stopped and hardware resources cleanly released.")
-        return true
+        return wasActive
     }
 
     /**

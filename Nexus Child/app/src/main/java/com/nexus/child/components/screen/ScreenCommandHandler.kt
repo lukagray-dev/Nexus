@@ -142,14 +142,12 @@ class ScreenCommandHandler(
 
     /**
      * Fail-safe disconnection callback invoked when WebRTC connection or DataChannel drops.
-     * Automatically stops screen capture and audio recording so device resources are freed.
+     * Automatically stops screen capture, cancels any pending authorizations, and dismisses
+     * the foreground service notification so device resources are completely freed.
      */
     fun onPeerDisconnected() {
-        Log.d(TAG, "Peer disconnected. Executing fail-safe screen streaming teardown...")
-        if (screenController.isStreaming()) {
-            Log.d(TAG, "Screen capture was actively running during disconnect. Stopping...")
-            screenController.stopScreenStreaming()
-        }
+        Log.d(TAG, "Peer disconnected. Executing unconditional fail-safe screen streaming teardown...")
+        screenController.stopScreenStreaming()
     }
 
     /**

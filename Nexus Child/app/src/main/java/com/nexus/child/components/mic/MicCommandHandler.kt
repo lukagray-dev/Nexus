@@ -227,18 +227,10 @@ class MicCommandHandler(
      * so the child's microphone does not remain running and loudspeaker does not stay at max volume.
      */
     fun onPeerDisconnected() {
-        Log.d(TAG, "Peer disconnected. Executing fail-safe audio and microphone teardown...")
+        Log.d(TAG, "Peer disconnected. Executing unconditional fail-safe audio and microphone teardown...")
         pendingRenegotiationCallback = null
-
-        if (micController.isActive()) {
-            Log.d(TAG, "Child microphone was actively streaming during disconnect. Stopping hardware...")
-            micController.stopMicrophone()
-        }
-
-        if (parentAudioSpeakerManager.isMaxVolumeActive()) {
-            Log.d(TAG, "Loudspeaker max volume boost was active during disconnect. Restoring normal volume...")
-            parentAudioSpeakerManager.restoreNormalVolume()
-        }
+        micController.stopMicrophone()
+        parentAudioSpeakerManager.restoreNormalVolume()
     }
 
     /**

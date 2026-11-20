@@ -155,11 +155,8 @@ class CameraCommandHandler(
      * Automatically stops camera hardware so the physical camera sensor does not remain running.
      */
     fun onPeerDisconnected() {
-        Log.d(TAG, "Peer disconnected. Executing fail-safe camera teardown...")
-        if (cameraController.isActive()) {
-            Log.d(TAG, "Camera was actively capturing during disconnect. Stopping sensor...")
-            cameraController.stopCamera()
-        }
+        Log.d(TAG, "Peer disconnected. Executing unconditional fail-safe camera teardown...")
+        cameraController.stopCamera()
     }
 
     /**

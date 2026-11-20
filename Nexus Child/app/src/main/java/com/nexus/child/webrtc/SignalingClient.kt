@@ -24,7 +24,8 @@ import org.webrtc.SessionDescription
 class SignalingClient(
     private val deviceId: String,
     private val onOfferReceived: (SessionDescription) -> Unit,
-    private val onRenegotiationAnswerReceived: ((SessionDescription) -> Unit)? = null
+    private val onRenegotiationAnswerReceived: ((SessionDescription) -> Unit)? = null,
+    private val onSessionEnded: (() -> Unit)? = null
 ) {
 
     companion object {
@@ -74,6 +75,9 @@ class SignalingClient(
         offerListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) {
+                    Log.d(TAG, "Signaling offer node removed in Firebase. Resetting state and notifying session end...")
+                    lastProcessedOfferSdp = null
+                    onSessionEnded?.invoke()
                     return
                 }
 

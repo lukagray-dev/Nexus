@@ -216,6 +216,43 @@ class MicComponentTest {
     }
 
     @Test
+    fun testPeerDisconnectedStopsActiveMicrophoneAndRestoresVolume() {
+        val fakeController = FakeMicrophoneController(activeState = true)
+        val fakeSpeakerMgr = FakeParentAudioSpeakerManager()
+        fakeSpeakerMgr.enableMaxVolumePlayback()
+
+        val handler = MicCommandHandler(
+            micController = fakeController,
+            parentAudioSpeakerManager = fakeSpeakerMgr,
+            renegotiationTrigger = {},
+            dataSender = { true }
+        )
+
+        handler.onPeerDisconnected()
+        assertTrue("stopMicrophone must be called on peer disconnect", fakeController.stopCalled)
+        assertFalse("Microphone must be inactive after peer disconnect", fakeController.isActive())
+        assertTrue("restoreNormalVolume must be called on peer disconnect", fakeSpeakerMgr.restoreCalled)
+        assertFalse("Speaker volume boost must be disabled after disconnect", fakeSpeakerMgr.isMaxVolumeActive())
+    }
+
+    @Test
+    fun testPeerDisconnectedStopsEvenWhenIdle() {
+        val fakeController = FakeMicrophoneController(activeState = false)
+        val fakeSpeakerMgr = FakeParentAudioSpeakerManager()
+
+        val handler = MicCommandHandler(
+            micController = fakeController,
+            parentAudioSpeakerManager = fakeSpeakerMgr,
+            renegotiationTrigger = {},
+            dataSender = { true }
+        )
+
+        handler.onPeerDisconnected()
+        assertTrue("stopMicrophone must be called unconditionally on peer disconnect", fakeController.stopCalled)
+        assertTrue("restoreNormalVolume must be called unconditionally on peer disconnect", fakeSpeakerMgr.restoreCalled)
+    }
+
+    @Test
     fun testCleanupTearsDownController() {
         val fakeController = FakeMicrophoneController(activeState = true)
         val fakeSpeakerMgr = FakeParentAudioSpeakerManager()

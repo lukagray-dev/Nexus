@@ -15,6 +15,7 @@ import { initSidebar } from './left-sidebar/sidebar.js';
 import { initMainContent } from './main-content/main-content.js';
 import { initRightSidebar } from './right-sidebar/right-sidebar.js';
 import { initSettings } from './settings/settings.js';
+import { deviceState } from './shared/device-state.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   console.log('[Nexus Parent UI] DOM ready. Booting components...');
@@ -33,6 +34,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Initialize settings dialog listeners
   initSettings();
+
+  // Ensures active WebRTC session, DataChannel, and media streams are torn down cleanly when window closes
+  window.addEventListener('beforeunload', () => {
+    deviceState.disconnect();
+  });
 
   console.log('[Nexus Parent UI] Initialized successfully.');
 });

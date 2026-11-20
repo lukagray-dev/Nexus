@@ -308,6 +308,15 @@ class StorageCommandHandler(
         return match?.groupValues?.get(1)?.toLongOrNull()
     }
 
+    /**
+     * Fail-safe disconnection callback invoked when WebRTC connection or DataChannel drops.
+     * Immediately aborts any in-flight 64KB file streaming transfers and background thumbnail scans.
+     */
+    fun onPeerDisconnected() {
+        Log.d(TAG, "Peer disconnected. Cancelling in-flight file transfers and directory scans...")
+        cleanup()
+    }
+
     fun cleanup() {
         storageController.cleanup()
     }

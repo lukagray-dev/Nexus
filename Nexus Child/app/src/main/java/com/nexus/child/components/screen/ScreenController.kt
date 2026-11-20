@@ -156,12 +156,21 @@ class ScreenController(
     @Synchronized
     private fun handleMediaProjectionGranted(resultCode: Int, data: Intent) {
         Log.d(TAG, "Initializing screen capture pipeline with authorized token...")
+
+        // Guard: If streaming start was cancelled or peer disconnected before permission was granted, abort immediately!
+        if (pendingStartCallback == null) {
+            Log.w(TAG, "Screen streaming start was cancelled or peer disconnected prior to permission grant. Dismissing FGS...")
+            ScreenCaptureService.stop(context)
+            return
+        }
+
         val factory = factoryProvider()
         val pc = peerConnectionProvider()
 
-        if (factory == null || pc == null) {
-            val err = "WebRTC PeerConnectionFactory or PeerConnection unavailable"
+        if (factory == null || pc == null || pc.connectionState() == PeerConnection.PeerConnectionState.CLOSED) {
+            val err = "WebRTC PeerConnectionFactory or PeerConnection unavailable or closed"
             Log.e(TAG, err)
+            ScreenCaptureService.stop(context)
             pendingErrorCallback?.invoke(err)
             clearPendingCallbacks()
             return
@@ -352,6 +361,12 @@ class ScreenController(
      */
     @Synchronized
     override fun stopScreenStreaming(): Boolean {
+        // Step 0: Always cancel in-flight startup callbacks so late permission grants abort immediately
+        clearPendingCallbacks()
+
+        // Step 0b: Always ensure the MediaProjection foreground service notification is dismissed
+        ScreenCaptureService.stop(context)
+
         if (!isStreamingActive.getAndSet(false)) {
             Log.d(TAG, "Screen streaming is already idle")
             return false

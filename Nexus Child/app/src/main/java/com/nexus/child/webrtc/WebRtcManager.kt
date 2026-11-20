@@ -178,10 +178,10 @@ class WebRtcManager(
      */
     fun handleRemoteOffer(offer: SessionDescription) {
         scope.launch {
-            Log.d(TAG, "Handling incoming remote offer. Current signaling state...")
-            if (peerConnection == null) {
-                createPeerConnection()
-            }
+            Log.d(TAG, "Handling incoming remote offer. Creating fresh PeerConnection for new session...")
+            // Always recreate a fresh PeerConnection instance when receiving a new initial Offer from parent.
+            // This cleanly flushes stale ICE credentials, disposes dead transceivers, and pre-registers camera tracks.
+            createPeerConnection()
 
             val pc = peerConnection ?: return@launch
             answerSent.set(false)
@@ -423,6 +423,7 @@ class WebRtcManager(
                     Log.d(TAG, "WebRTC peer connection lost or closed ($newState). Stopping telemetry...")
                     telemetryManager?.stop()
                     deviceStatusManager.setStatus(DeviceStatusManager.STATUS_ONLINE_WAITING)
+                    closePeerConnection()
                     mainHandler.post { onConnectionStateChanged(false) }
                 }
                 PeerConnection.PeerConnectionState.CONNECTING -> {
@@ -472,7 +473,8 @@ class WebRtcManager(
             if (state == PeerConnection.IceConnectionState.DISCONNECTED ||
                 state == PeerConnection.IceConnectionState.FAILED ||
                 state == PeerConnection.IceConnectionState.CLOSED) {
-                Log.d(TAG, "ICE connection lost ($state). Notifying disconnection...")
+                Log.d(TAG, "ICE connection lost ($state). Closing PeerConnection and notifying disconnection...")
+                closePeerConnection()
                 mainHandler.post { onConnectionStateChanged(false) }
             }
         }
@@ -498,22 +500,50 @@ class WebRtcManager(
     }
 
     /**
+     * Explicitly closes and disposes the active PeerConnection instance and DataChannel.
+     *
+     * Hey friend! Why is calling peerConnection.close() critical for microphone teardown?
+     * Because in WebRTC's native C++ architecture, as long as a PeerConnection holds an audio
+     * transceiver, VoiceMediaChannel remains alive in WebRtcVoiceEngine. Without SDP renegotiation
+     * (which is impossible once a peer disconnects), WebRtcVoiceEngine will NEVER call
+     * AudioDeviceModule.StopRecording()!
+     * By explicitly closing and disposing the PeerConnection, WebRTC tears down all internal
+     * audio channels, which prompts AudioDeviceModule to stop recording and release Android's
+     * native AudioRecord hardware driver. The green mic indicator dot turns off immediately!
+     */
+    fun closePeerConnection() {
+        Log.d(TAG, "closePeerConnection() invoked. Disposing PeerConnection to release audio hardware...")
+        try {
+            dataChannel?.close()
+        } catch (_: Exception) {}
+        dataChannel = null
+
+        try {
+            peerConnection?.close()
+            peerConnection?.dispose()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error disposing PeerConnection: ${e.message}")
+        } finally {
+            peerConnection = null
+            answerSent.set(false)
+            isAnswering.set(false)
+            isRenegotiating.set(false)
+            renegotiationOfferSent.set(false)
+            pendingRenegotiationOfferReadyCallback = null
+        }
+        Log.d(TAG, "PeerConnection closed and native hardware channels destroyed.")
+    }
+
+    /**
      * Closes the connection and cleans up resources.
      */
     fun close() {
         Log.d(TAG, "Closing WebRtcManager and releasing hardware resources...")
         try {
-            isRenegotiating.set(false)
-            renegotiationOfferSent.set(false)
-            pendingRenegotiationOfferReadyCallback = null
             telemetryManager?.stop()
             telemetryManager = null
 
-            dataChannel?.close()
-            dataChannel = null
-
-            peerConnection?.dispose()
-            peerConnection = null
+            closePeerConnection()
 
             eglBase.release()
             mainHandler.post { onConnectionStateChanged(false) }

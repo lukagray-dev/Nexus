@@ -245,6 +245,19 @@ class CameraComponentTest {
     }
 
     @Test
+    fun testPeerDisconnectedStopsEvenWhenIdleOrOpening() {
+        val fakeController = FakeCameraController(activeState = false)
+        val handler = CameraCommandHandler(
+            cameraController = fakeController,
+            dataSender = { true }
+        )
+
+        handler.onPeerDisconnected()
+        assertTrue("stopCamera must be called unconditionally on peer disconnect", fakeController.stopCalled)
+        assertFalse("Camera must remain inactive after peer disconnect", fakeController.isActive())
+    }
+
+    @Test
     fun testUnrelatedCommandReturnsFalse() {
         val fakeController = FakeCameraController()
         val handler = CameraCommandHandler(

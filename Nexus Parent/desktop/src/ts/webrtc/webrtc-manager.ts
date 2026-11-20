@@ -331,6 +331,16 @@ export class DesktopWebRtcManager {
     this.micStream = null;
     this.cameraStream = null;
 
+    // Dispatches proactive DISCONNECT command over DataChannel so Child executes immediate hardware teardown
+    if (this.dataChannel && this.dataChannel.readyState === 'open') {
+      try {
+        this.dataChannel.send('DISCONNECT');
+        console.log('[WebRTCManager] Dispatched proactive DISCONNECT command to Child');
+      } catch (e) {
+        console.warn('[WebRTCManager] Error sending DISCONNECT command:', e);
+      }
+    }
+
     if (this.dataChannel) {
       try {
         this.dataChannel.close();

@@ -203,6 +203,21 @@ class ScreenComponentTest {
     }
 
     @Test
+    fun testFailSafePeerDisconnectionStopsEvenWhenIdleOrPendingConsent() {
+        val fakeController = FakeScreenController(hasAccessibility = true, streamingState = false)
+        val sentMessages = mutableListOf<String>()
+
+        val handler = ScreenCommandHandler(
+            screenController = fakeController,
+            dataSender = { msg -> sentMessages.add(msg); true }
+        )
+
+        handler.onPeerDisconnected()
+        assertTrue("stopScreenStreaming must be called unconditionally on peer disconnect to abort pending dialogs", fakeController.stopCalled)
+        assertFalse("Streaming must remain inactive after disconnect", fakeController.isStreaming())
+    }
+
+    @Test
     fun testCleanupDelegatesToController() {
         val fakeController = FakeScreenController(hasAccessibility = true, streamingState = true)
         val handler = ScreenCommandHandler(
