@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.util.Log
 import com.nexus.child.service.NexusBackgroundService
 import com.nexus.child.service.receiver.UnlockReceiver
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * WatchdogService runs as a standalone daemon in an isolated process (:watchdog).
@@ -51,6 +52,7 @@ class WatchdogService : Service() {
     private val localBinder = WatchdogBinder()
     private var unlockReceiver: UnlockReceiver? = null
     private var isBoundToMain = false
+    private val isBindingInProgress = AtomicBoolean(false)
 
     inner class WatchdogBinder : Binder() {
         fun getService(): WatchdogService = this@WatchdogService
@@ -59,17 +61,20 @@ class WatchdogService : Service() {
     private val mainServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             isBoundToMain = true
+            isBindingInProgress.set(false)
             Log.d(TAG, "Successfully bound to NexusBackgroundService from :watchdog process")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             isBoundToMain = false
+            isBindingInProgress.set(false)
             Log.w(TAG, "NexusBackgroundService disconnected (process was killed)! Resurrecting now...")
             resurrectMainService()
         }
 
         override fun onBindingDied(name: ComponentName?) {
             isBoundToMain = false
+            isBindingInProgress.set(false)
             Log.w(TAG, "Binding to NexusBackgroundService died! Resurrecting now...")
             resurrectMainService()
         }
@@ -88,7 +93,7 @@ class WatchdogService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "WatchdogService onStartCommand (startId=$startId)")
-        if (!isBoundToMain) {
+        if (!isBoundToMain && !isBindingInProgress.get()) {
             bindToMainService()
         }
         return START_STICKY
@@ -105,13 +110,22 @@ class WatchdogService : Service() {
 
     /**
      * Binds to NexusBackgroundService to monitor its Linux process lifecycle via Binder IPC.
+     * Guarded by isBindingInProgress to prevent repeated IPC binding storms.
      */
     private fun bindToMainService() {
+        if (isBoundToMain || isBindingInProgress.getAndSet(true)) {
+            Log.d(TAG, "Binding to NexusBackgroundService already active or in progress. Skipping redundant bind call.")
+            return
+        }
         try {
             val intent = Intent(this, NexusBackgroundService::class.java)
             val success = bindService(intent, mainServiceConnection, Context.BIND_AUTO_CREATE)
             Log.d(TAG, "bindService to NexusBackgroundService dispatched (success=$success)")
+            if (!success) {
+                isBindingInProgress.set(false)
+            }
         } catch (e: Exception) {
+            isBindingInProgress.set(false)
             Log.e(TAG, "Error binding to NexusBackgroundService: ${e.message}", e)
         }
     }
@@ -120,6 +134,7 @@ class WatchdogService : Service() {
      * Safely unbinds from NexusBackgroundService.
      */
     private fun safeUnbind() {
+        isBindingInProgress.set(false)
         if (isBoundToMain) {
             try {
                 unbindService(mainServiceConnection)

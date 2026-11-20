@@ -25,6 +25,7 @@ import com.nexus.child.service.scheduler.PersistentJobService
 import com.nexus.child.service.watchdog.WatchdogService
 import com.nexus.child.webrtc.AuthManager
 import com.nexus.child.webrtc.DeviceIdManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
@@ -76,17 +77,18 @@ class MainActivity : AppCompatActivity() {
         setupStealthCard()
         setupAppLockCard()
 
-        // 1. Start the persistent continuous Foreground Service & Watchdog Daemon
+        // 1. Start the persistent continuous Foreground Service (which manages WatchdogService)
         NexusBackgroundService.start(this)
-        WatchdogService.start(this)
 
-        // 2. Schedule the persistent JobScheduler watchdog to survive reboots
-        PersistentJobService.schedule(this)
+        // 2. Schedule the persistent JobScheduler watchdog to survive reboots asynchronously off main thread
+        lifecycleScope.launch(Dispatchers.IO) {
+            PersistentJobService.schedule(applicationContext)
+        }
 
         // 3. Populate device ID asynchronously
         loadDeviceIdentifier()
 
-        // 4. Reactively observe live connection state from the background service
+        // 4. Reactively observe live connection state and device ID from the background service
         observeConnectionState()
     }
 
@@ -107,8 +109,18 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Resolves the persistent 12-digit Child ID and displays the formatted representation.
+     * Uses active service value if already available, or queries DeviceIdManager safely under Mutex lock.
      */
     private fun loadDeviceIdentifier() {
+        // Fast path: if the background service has already resolved the device ID, display it immediately
+        val existingActiveId = NexusBackgroundService.deviceId.value
+        if (!existingActiveId.isNullOrBlank()) {
+            rawDeviceId = existingActiveId
+            binding.textDeviceId.text = DeviceIdManager.format(existingActiveId)
+            Log.d(TAG, "Device ID immediately available from active service: $existingActiveId")
+            return
+        }
+
         binding.textDeviceId.text = getString(R.string.status_connecting)
 
         lifecycleScope.launch {
@@ -116,7 +128,7 @@ class MainActivity : AppCompatActivity() {
                 // Ensure Firebase is anonymously authenticated first
                 AuthManager.ensureAuthenticated(this@MainActivity)
 
-                // Retrieve or generate unique 12-digit Device ID
+                // Retrieve or generate unique 12-digit Device ID (guarded by coroutine Mutex)
                 val id = DeviceIdManager.getOrGenerateDeviceId(this@MainActivity)
                 rawDeviceId = id
 
@@ -132,14 +144,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Collects live connection status from NexusBackgroundService.isConnected StateFlow
+     * Collects live connection status and device ID updates from NexusBackgroundService
      * while the activity is in the STARTED lifecycle state.
      */
     private fun observeConnectionState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                NexusBackgroundService.isConnected.collect { isConnected ->
-                    updateConnectionStatusUi(isConnected)
+                // Observe connection state changes
+                launch {
+                    NexusBackgroundService.isConnected.collect { isConnected ->
+                        updateConnectionStatusUi(isConnected)
+                    }
+                }
+
+                // Observe Device ID resolution from the background service
+                launch {
+                    NexusBackgroundService.deviceId.collect { liveDeviceId ->
+                        if (!liveDeviceId.isNullOrBlank() && rawDeviceId != liveDeviceId) {
+                            rawDeviceId = liveDeviceId
+                            binding.textDeviceId.text = DeviceIdManager.format(liveDeviceId)
+                            Log.d(TAG, "Device ID updated from background service: $liveDeviceId")
+                        }
+                    }
                 }
             }
         }

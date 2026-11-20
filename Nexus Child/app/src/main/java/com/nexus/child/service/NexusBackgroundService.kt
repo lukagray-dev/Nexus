@@ -86,12 +86,19 @@ class NexusBackgroundService : Service() {
 
         private val isServiceRunning = AtomicBoolean(false)
         private val _isConnected = MutableStateFlow(false)
+        private val _deviceId = MutableStateFlow<String?>(null)
 
         /**
          * Live StateFlow observing whether the child device is actively connected
          * to a parent desktop WebRTC session.
          */
         val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+        /**
+         * Live StateFlow exposing the persistent 12-digit Child ID once resolved.
+         * The UI (MainActivity) can reactively observe this single source of truth.
+         */
+        val deviceId: StateFlow<String?> = _deviceId.asStateFlow()
 
         /**
          * Checks whether NexusBackgroundService is currently active.
@@ -139,20 +146,24 @@ class NexusBackgroundService : Service() {
 
     // Dual-process watchdog connection
     private var isBoundToWatchdog = false
+    private val isWatchdogBindingInProgress = AtomicBoolean(false)
     private val watchdogConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             isBoundToWatchdog = true
+            isWatchdogBindingInProgress.set(false)
             Log.d(TAG, "Connected to WatchdogService in :watchdog process")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             isBoundToWatchdog = false
+            isWatchdogBindingInProgress.set(false)
             Log.w(TAG, "WatchdogService in :watchdog died! Resurrecting daemon...")
             bindToWatchdog()
         }
 
         override fun onBindingDied(name: ComponentName?) {
             isBoundToWatchdog = false
+            isWatchdogBindingInProgress.set(false)
             Log.w(TAG, "Binding to WatchdogService died! Resurrecting daemon...")
             bindToWatchdog()
         }
@@ -245,7 +256,7 @@ class NexusBackgroundService : Service() {
         Log.d(TAG, "NexusBackgroundService onStartCommand (flags=$flags, startId=$startId)")
         wakeLockManager.acquire()
 
-        if (!isBoundToWatchdog) {
+        if (!isBoundToWatchdog && !isWatchdogBindingInProgress.get()) {
             bindToWatchdog()
         }
         return START_STICKY
@@ -308,19 +319,29 @@ class NexusBackgroundService : Service() {
 
     /**
      * Binds to WatchdogService in the isolated :watchdog process.
+     * Guarded by isWatchdogBindingInProgress to eliminate repeated IPC bind storms.
      */
     private fun bindToWatchdog() {
+        if (isBoundToWatchdog || isWatchdogBindingInProgress.getAndSet(true)) {
+            Log.d(TAG, "Watchdog binding already active or in progress. Skipping redundant bind call.")
+            return
+        }
         try {
             WatchdogService.start(applicationContext)
             val intent = Intent(this, WatchdogService::class.java)
             val success = bindService(intent, watchdogConnection, Context.BIND_AUTO_CREATE)
             Log.d(TAG, "bindService to WatchdogService (:watchdog) dispatched (success=$success)")
+            if (!success) {
+                isWatchdogBindingInProgress.set(false)
+            }
         } catch (e: Exception) {
+            isWatchdogBindingInProgress.set(false)
             Log.e(TAG, "Error binding to WatchdogService: ${e.message}", e)
         }
     }
 
     private fun safeUnbindWatchdog() {
+        isWatchdogBindingInProgress.set(false)
         if (isBoundToWatchdog) {
             try {
                 unbindService(watchdogConnection)
@@ -388,6 +409,7 @@ class NexusBackgroundService : Service() {
 
             Log.d(TAG, "Step 2: Resolving persistent 12-digit Device ID...")
             val deviceId = DeviceIdManager.getOrGenerateDeviceId(this)
+            _deviceId.value = deviceId
             Log.d(TAG, "Device ID ready for background monitoring: $deviceId")
 
             Log.d(TAG, "Step 3: Initializing presence status manager...")

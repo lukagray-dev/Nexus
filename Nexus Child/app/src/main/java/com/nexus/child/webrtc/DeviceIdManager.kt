@@ -7,6 +7,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.security.SecureRandom
@@ -34,7 +36,20 @@ object DeviceIdManager {
 
     @Volatile
     private var cachedId: String? = null
-    private val lock = Any()
+
+    /**
+     * Coroutine Mutex protecting device ID resolution and first-time generation.
+     *
+     * Hey friend! Why do we use a Mutex here instead of Java synchronized?
+     * Because generating an ID requires talking to Firebase Realtime Database across the network,
+     * which is a suspending coroutine function (await()).
+     * Java's synchronized block cannot hold a lock across suspension points.
+     * With Mutex.withLock, if both MainActivity and NexusBackgroundService boot at the exact same
+     * millisecond on fresh install, the first one acquires the lock and generates the ID.
+     * The second one suspends safely, and once the lock is released, sees the cached/persisted ID
+     * immediately! This completely prevents duplicate ID generation.
+     */
+    private val mutex = Mutex()
 
     /**
      * Thread-safe cryptographic random generator wrapped for Kotlin idiomatic calls.
@@ -49,29 +64,38 @@ object DeviceIdManager {
      * @return The 12-digit raw numeric device ID string.
      */
     suspend fun getOrGenerateDeviceId(context: Context): String = withContext(Dispatchers.IO) {
-        // Fast path: return in-memory cached ID if already initialized
+        // Fast lock-free path: return in-memory cached ID if already initialized
         cachedId?.let { return@withContext it }
 
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        // Slow path / first-time initialization: protected by coroutine Mutex
+        mutex.withLock {
+            // Re-check in-memory cache after acquiring mutex lock
+            cachedId?.let { return@withLock it }
 
-        // Check persistent local storage
-        val existingId = prefs.getString(KEY_DEVICE_ID, null)
-        if (!existingId.isNullOrBlank()) {
-            Log.d(TAG, "Loaded existing Device ID from SharedPreferences: $existingId")
-            synchronized(lock) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+            // Re-check persistent local storage under mutex lock
+            val existingId = prefs.getString(KEY_DEVICE_ID, null)
+            if (!existingId.isNullOrBlank()) {
+                Log.d(TAG, "Loaded existing Device ID from SharedPreferences: $existingId")
                 cachedId = existingId
+                return@withLock existingId
             }
-            return@withContext existingId
-        }
 
-        // Slow path: generate a new unique 12-digit ID against Firebase
-        Log.d(TAG, "No existing Device ID found. Generating a new unique 12-digit ID...")
-        val newId = generateUniqueIdAgainstFirebase(prefs)
+            // Slowest path: generate a new unique 12-digit ID against Firebase
+            Log.d(TAG, "No existing Device ID found. Generating a new unique 12-digit ID under mutex lock...")
+            val newId = generateUniqueIdAgainstFirebase(prefs)
 
-        synchronized(lock) {
             cachedId = newId
+            return@withLock newId
         }
-        return@withContext newId
+    }
+
+    /**
+     * Clears in-memory cache for deterministic testing.
+     */
+    internal fun resetCacheForTesting() {
+        cachedId = null
     }
 
     /**
