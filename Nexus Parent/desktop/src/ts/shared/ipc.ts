@@ -107,3 +107,36 @@ export async function invokeCommand<T = any>(command: string, args?: Record<stri
   console.warn(`[IPC] Command "${command}" called outside of Tauri environment.`);
   return null;
 }
+
+/**
+ * Open an external web URL using the system browser via Tauri or window.open fallback.
+ */
+export async function openExternalUrl(url: string): Promise<void> {
+  const normalized = url.trim();
+  if (!normalized) return;
+
+  const invoke = window.__TAURI__?.core?.invoke;
+  if (invoke) {
+    try {
+      await invoke('plugin:opener|open_url', { url: normalized });
+      return;
+    } catch {
+      try {
+        await invoke('open_external_url', { url: normalized });
+        return;
+      } catch {
+        // Fallback to standard web open
+      }
+    }
+  }
+
+  window.open(normalized, '_blank');
+}
+
+/**
+ * Exits the native application process cleanly.
+ */
+export async function exitApplication(): Promise<void> {
+  await closeWindow();
+}
+

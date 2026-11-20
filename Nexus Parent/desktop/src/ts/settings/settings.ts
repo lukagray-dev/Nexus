@@ -6,18 +6,22 @@
  * STUN/TURN WebRTC signaling servers, auto-reconnect behavior, and stealth mode preferences.
  */
 
+import { showToast } from '../shared/toast.js';
+
 /**
  * Initializes settings triggers from sidebar and titlebar menu.
  */
 export function initSettings(): void {
   const sidebarBtn = document.getElementById('btn-sidebar-settings');
-  sidebarBtn?.addEventListener('click', () => {
-    openSettingsDialog();
+  sidebarBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showToast('Settings coming soon');
   });
 
   const menuBtn = document.getElementById('menu-item-settings');
-  menuBtn?.addEventListener('click', () => {
-    openSettingsDialog();
+  menuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showToast('Settings coming soon');
   });
 }
 

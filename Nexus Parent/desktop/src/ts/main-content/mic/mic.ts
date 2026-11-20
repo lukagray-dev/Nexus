@@ -12,7 +12,6 @@
  *  2. Real-Time Web Audio API Frequency Visualizer:
  *     - 36-bar canvas spectrum analyzing live audio PCM buffers from the child device
  *  3. Hold to Speak button (Push-to-talk intercom)
- *  4. Record button (audio clip recording)
  */
 
 import { sidebarState } from '../../left-sidebar/state.js';
@@ -170,13 +169,6 @@ export function renderMicPanel(): HTMLElement {
         <img id="mic-speak-wave" class="mic-speak-wave" src="assets/icons/animations/wave.svg" alt="" style="display: none;" />
         <span id="mic-speak-label">Speak</span>
       </button>
-
-      <!-- 3. Record Button -->
-      <button id="btn-mic-record" class="mic-btn-record" title="Record audio clip">
-        <span class="record-dot"></span>
-        <span id="mic-record-label">Record</span>
-        <span id="mic-record-timer" class="record-timer" style="display: none;">00:00</span>
-      </button>
     </div>
   `;
 
@@ -223,9 +215,6 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   const micSpeakIcon = panel.querySelector<HTMLImageElement>('#mic-speak-icon');
   const micSpeakWave = panel.querySelector<HTMLImageElement>('#mic-speak-wave');
   const micSpeakLabel = panel.querySelector<HTMLElement>('#mic-speak-label');
-  const btnRecord = panel.querySelector<HTMLButtonElement>('#btn-mic-record');
-  const recordLabel = panel.querySelector<HTMLElement>('#mic-record-label');
-  const recordTimer = panel.querySelector<HTMLElement>('#mic-record-timer');
   const btnClose = panel.querySelector<HTMLButtonElement>('#btn-panel-close');
 
   if (!header) return;
@@ -234,9 +223,6 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   let micState: MicButtonState = 'IDLE';
   let speakState: SpeakButtonState = 'IDLE';
   let isSpeaking = false;
-  let isRecording = false;
-  let recordSeconds = 0;
-  let recordInterval: ReturnType<typeof setInterval> | null = null;
   let animFrameId: number | null = null;
   let confirmationTimeout: ReturnType<typeof setTimeout> | null = null;
   let speakTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -641,36 +627,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     }
   });
 
-  // 3. Record Control
-  btnRecord?.addEventListener('click', () => {
-    isRecording = !isRecording;
-
-    if (isRecording) {
-      btnRecord.classList.add('is-recording');
-      if (recordLabel) recordLabel.style.display = 'none';
-      if (recordTimer) {
-        recordTimer.style.display = 'inline';
-        recordTimer.textContent = '00:00';
-      }
-      recordSeconds = 0;
-      recordInterval = setInterval(() => {
-        recordSeconds++;
-        const mins = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
-        const secs = String(recordSeconds % 60).padStart(2, '0');
-        if (recordTimer) recordTimer.textContent = `${mins}:${secs}`;
-      }, 1000);
-    } else {
-      btnRecord.classList.remove('is-recording');
-      if (recordInterval) {
-        clearInterval(recordInterval);
-        recordInterval = null;
-      }
-      if (recordLabel) recordLabel.style.display = 'inline';
-      if (recordTimer) recordTimer.style.display = 'none';
-    }
-  });
-
-  // 4. Wave Animation Canvas Rendering with Real Frequency Analysis
+  // 3. Wave Animation Canvas Rendering with Real Frequency Analysis
   if (canvas) {
     const ctx = canvas.getContext('2d');
     if (ctx) {
@@ -721,8 +678,6 @@ function bindMicPanelEvents(panel: HTMLElement): void {
 
           ctx.fillStyle = isSpeaking
             ? '#22c55e'
-            : isRecording
-            ? '#ef4444'
             : micState === 'STREAMING'
             ? 'rgba(255, 255, 255, 0.9)'
             : 'rgba(255, 255, 255, 0.2)';
@@ -744,7 +699,6 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   const observer = new MutationObserver(() => {
     if (!document.body.contains(panel)) {
       if (animFrameId) cancelAnimationFrame(animFrameId);
-      if (recordInterval) clearInterval(recordInterval);
       if (confirmationTimeout) clearTimeout(confirmationTimeout);
       if (speakTimeout) clearTimeout(speakTimeout);
       parentAudioController.cleanup();

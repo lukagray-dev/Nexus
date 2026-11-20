@@ -188,3 +188,46 @@ button.is-loading img {
   filter: none !important;
 }
 
+/* =============================================================================
+   GLOBAL FLOATING FEEDBACK TOAST
+   ============================================================================= */
+.app-global-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background-color: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 99999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-global-toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.app-global-toast .toast-icon {
+  width: 15px;
+  height: 15px;
+  filter: invert(1);
+}
+
+.app-global-toast .toast-text {
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: -0.1px;
+}
+
+

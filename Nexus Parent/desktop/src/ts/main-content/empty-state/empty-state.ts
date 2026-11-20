@@ -24,7 +24,7 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
     <!-- Card Brand & Icon Header -->
     <div class="connect-card-header">
       <div class="connect-brand-icon">
-        <img src="assets/icons/main-content/empty-state/smartphone.svg" alt="" />
+        <img src="assets/logo/nexus-child.svg" alt="Nexus Child Logo" />
       </div>
       <h1 class="connect-card-title">Connect Child Device</h1>
       <p class="connect-card-subtitle">

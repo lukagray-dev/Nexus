@@ -79,9 +79,9 @@
 }
 
 .connect-brand-icon img {
-  width: 26px;
-  height: 26px;
-  filter: invert(1);
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 .connect-card-title {

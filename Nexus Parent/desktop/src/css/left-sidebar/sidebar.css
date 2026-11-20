@@ -414,20 +414,22 @@
   border: 1px solid transparent;
   border-radius: 5px;
   padding: 0 8px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  opacity: 0.55;
   font-family: var(--font-family);
   font-size: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
   outline: none;
 }
 
 .btn-sidebar-settings:hover {
   background-color: var(--surface-hover);
-  color: var(--text-primary);
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 /* Right Resize Handle - Pure White on hover & resize */

@@ -123,13 +123,6 @@ export function renderScreenView(): HTMLElement {
               <span id="screen-rotate-degrees" class="feed-btn-label">0°</span>
             </button>
 
-            <!-- Record Clip Button -->
-            <button id="btn-screen-record" class="feed-control-btn feed-record-btn" title="Record Screen">
-              <span class="feed-record-dot"></span>
-              <span id="screen-record-label" class="feed-btn-label">Record</span>
-              <span id="screen-record-timer" class="feed-record-timer" style="display: none;">00:00</span>
-            </button>
-
             <!-- Fullscreen Button -->
             <button id="btn-screen-fullscreen" class="feed-control-btn" title="Toggle Fullscreen">
               <img src="assets/icons/main-content/maximize-2.svg" alt="" />
@@ -163,9 +156,6 @@ function bindScreenEvents(container: HTMLElement): void {
   const rotateBtn = container.querySelector<HTMLButtonElement>('#btn-screen-rotate');
   const rotateLabel = container.querySelector<HTMLElement>('#screen-rotate-degrees');
   const surface = container.querySelector<HTMLElement>('#screen-feed-surface');
-  const recordBtn = container.querySelector<HTMLButtonElement>('#btn-screen-record');
-  const recordLabel = container.querySelector<HTMLElement>('#screen-record-label');
-  const recordTimer = container.querySelector<HTMLElement>('#screen-record-timer');
   const fullscreenBtn = container.querySelector<HTMLButtonElement>('#btn-screen-fullscreen');
   const viewportArea = container.querySelector<HTMLElement>('.feed-viewport-area');
 
@@ -188,13 +178,6 @@ function bindScreenEvents(container: HTMLElement): void {
   // DVR Manager and Opus Audio Player singletons for this view
   const dvrManager = new ScreenDvrManager();
   const opusAudioPlayer = new OpusAudioPlayer();
-
-  // Clip Recording state
-  let isRecordingClip = false;
-  let clipRecorder: MediaRecorder | null = null;
-  let clipChunks: Blob[] = [];
-  let clipSeconds = 0;
-  let clipInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Updates Play/Pause button visual state, overlays, and sidebar indicators.
@@ -492,73 +475,7 @@ function bindScreenEvents(container: HTMLElement): void {
     rotateBtn.setAttribute('title', `Rotate feed (${(currentRotation + 90) % 360}°)`);
   });
 
-  // 6. Video Clip Recording
-  recordBtn?.addEventListener('click', () => {
-    if (screenState !== 'STREAMING') {
-      console.warn('[Screen] Cannot record clip: Screen is not streaming.');
-      return;
-    }
-
-    if (!isRecordingClip) {
-      const stream = webrtcManager.getScreenStream();
-      if (!stream) return;
-
-      try {
-        clipChunks = [];
-        clipRecorder = new MediaRecorder(stream);
-        clipRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) clipChunks.push(e.data);
-        };
-        clipRecorder.onstop = () => {
-          if (clipChunks.length > 0) {
-            const blob = new Blob(clipChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `nexus-screen-${new Date().toISOString().replace(/[:.]/g, '-')}.webm`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }
-        };
-
-        clipRecorder.start();
-        isRecordingClip = true;
-
-        recordBtn.classList.add('is-recording');
-        if (recordLabel) recordLabel.style.display = 'none';
-        if (recordTimer) {
-          recordTimer.style.display = 'inline';
-          recordTimer.textContent = '00:00';
-        }
-
-        clipSeconds = 0;
-        clipInterval = setInterval(() => {
-          clipSeconds++;
-          const mins = String(Math.floor(clipSeconds / 60)).padStart(2, '0');
-          const secs = String(clipSeconds % 60).padStart(2, '0');
-          if (recordTimer) recordTimer.textContent = `${mins}:${secs}`;
-        }, 1000);
-      } catch (err) {
-        console.error('[Screen] Failed to start clip recording:', err);
-      }
-    } else {
-      isRecordingClip = false;
-      if (clipInterval) {
-        clearInterval(clipInterval);
-        clipInterval = null;
-      }
-      if (clipRecorder && clipRecorder.state !== 'inactive') {
-        clipRecorder.stop();
-      }
-      clipRecorder = null;
-
-      recordBtn.classList.remove('is-recording');
-      if (recordLabel) recordLabel.style.display = 'inline';
-      if (recordTimer) recordTimer.style.display = 'none';
-    }
-  });
-
-  // 7. Fullscreen Toggle
+  // 6. Fullscreen Toggle
   fullscreenBtn?.addEventListener('click', () => {
     if (!document.fullscreenElement) {
       viewportArea?.requestFullscreen().catch(() => {});
@@ -632,11 +549,6 @@ function bindScreenEvents(container: HTMLElement): void {
         clearTimeout(confirmationTimeout);
         confirmationTimeout = null;
       }
-      if (clipInterval) {
-        clearInterval(clipInterval);
-        clipInterval = null;
-      }
-      isRecordingClip = false;
       dvrManager.stop();
       opusAudioPlayer.reset();
       setScreenState('IDLE');
@@ -647,7 +559,6 @@ function bindScreenEvents(container: HTMLElement): void {
   const observer = new MutationObserver(() => {
     if (!document.body.contains(container)) {
       if (confirmationTimeout) clearTimeout(confirmationTimeout);
-      if (clipInterval) clearInterval(clipInterval);
       dvrManager.stop();
       opusAudioPlayer.stop();
       unbindDataChannel();

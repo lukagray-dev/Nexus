@@ -129,13 +129,6 @@ export function renderCameraView(): HTMLElement {
               <span id="camera-lens-name" class="feed-btn-label">Rear</span>
             </button>
 
-            <!-- Record Clip Button -->
-            <button id="btn-camera-record" class="feed-control-btn feed-record-btn" title="Record Clip">
-              <span class="feed-record-dot"></span>
-              <span id="camera-record-label" class="feed-btn-label">Record</span>
-              <span id="camera-record-timer" class="feed-record-timer" style="display: none;">00:00</span>
-            </button>
-
             <!-- Fullscreen Button -->
             <button id="btn-camera-fullscreen" class="feed-control-btn" title="Toggle Fullscreen">
               <img src="assets/icons/main-content/maximize-2.svg" alt="" />
@@ -172,9 +165,6 @@ function bindCameraEvents(container: HTMLElement): void {
   const lensBtn = container.querySelector<HTMLButtonElement>('#btn-camera-lens');
   const lensIcon = container.querySelector<HTMLImageElement>('#camera-lens-icon');
   const lensLabel = container.querySelector<HTMLElement>('#camera-lens-name');
-  const recordBtn = container.querySelector<HTMLButtonElement>('#btn-camera-record');
-  const recordLabel = container.querySelector<HTMLElement>('#camera-record-label');
-  const recordTimer = container.querySelector<HTMLElement>('#camera-record-timer');
   const fullscreenBtn = container.querySelector<HTMLButtonElement>('#btn-camera-fullscreen');
   const viewportArea = container.querySelector<HTMLElement>('.feed-viewport-area');
 
@@ -199,13 +189,6 @@ function bindCameraEvents(container: HTMLElement): void {
 
   // DVR Manager singleton for this view instance
   const dvrManager = new CameraDvrManager();
-
-  // Clip Recording state
-  let isRecordingClip = false;
-  let clipRecorder: MediaRecorder | null = null;
-  let clipChunks: Blob[] = [];
-  let clipSeconds = 0;
-  let clipInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Updates Play/Pause button visual state and controls bar.
@@ -567,75 +550,7 @@ function bindCameraEvents(container: HTMLElement): void {
     rotateBtn.setAttribute('title', `Rotate feed (${(currentRotation + 90) % 360}°)`);
   });
 
-  // 7. Video Clip Recording
-  recordBtn?.addEventListener('click', () => {
-    if (cameraState !== 'STREAMING') {
-      console.warn('[Camera] Cannot record clip: Camera is not streaming.');
-      return;
-    }
-
-    if (!isRecordingClip) {
-      // Start recording
-      const stream = webrtcManager.getCameraStream();
-      if (!stream) return;
-
-      try {
-        clipChunks = [];
-        clipRecorder = new MediaRecorder(stream);
-        clipRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) clipChunks.push(e.data);
-        };
-        clipRecorder.onstop = () => {
-          if (clipChunks.length > 0) {
-            const blob = new Blob(clipChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `nexus-camera-${new Date().toISOString().replace(/[:.]/g, '-')}.webm`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }
-        };
-
-        clipRecorder.start();
-        isRecordingClip = true;
-
-        recordBtn.classList.add('is-recording');
-        if (recordLabel) recordLabel.style.display = 'none';
-        if (recordTimer) {
-          recordTimer.style.display = 'inline';
-          recordTimer.textContent = '00:00';
-        }
-
-        clipSeconds = 0;
-        clipInterval = setInterval(() => {
-          clipSeconds++;
-          const mins = String(Math.floor(clipSeconds / 60)).padStart(2, '0');
-          const secs = String(clipSeconds % 60).padStart(2, '0');
-          if (recordTimer) recordTimer.textContent = `${mins}:${secs}`;
-        }, 1000);
-      } catch (err) {
-        console.error('[Camera] Failed to start clip recording:', err);
-      }
-    } else {
-      // Stop recording
-      isRecordingClip = false;
-      if (clipInterval) {
-        clearInterval(clipInterval);
-        clipInterval = null;
-      }
-      if (clipRecorder && clipRecorder.state !== 'inactive') {
-        clipRecorder.stop();
-      }
-      clipRecorder = null;
-
-      recordBtn.classList.remove('is-recording');
-      if (recordLabel) recordLabel.style.display = 'inline';
-      if (recordTimer) recordTimer.style.display = 'none';
-    }
-  });
-
-  // 8. Fullscreen Toggle
+  // 7. Fullscreen Toggle
   fullscreenBtn?.addEventListener('click', () => {
     if (!document.fullscreenElement) {
       viewportArea?.requestFullscreen().catch(() => {});
@@ -718,11 +633,6 @@ function bindCameraEvents(container: HTMLElement): void {
         clearTimeout(lensTimeout);
         lensTimeout = null;
       }
-      if (clipInterval) {
-        clearInterval(clipInterval);
-        clipInterval = null;
-      }
-      isRecordingClip = false;
       dvrManager.stop();
       setCameraState('IDLE');
       setLensButtonState(false, 'Rear');
@@ -734,7 +644,6 @@ function bindCameraEvents(container: HTMLElement): void {
     if (!document.body.contains(container)) {
       if (confirmationTimeout) clearTimeout(confirmationTimeout);
       if (lensTimeout) clearTimeout(lensTimeout);
-      if (clipInterval) clearInterval(clipInterval);
       dvrManager.stop();
       unbindDataChannel();
       unbindConnectionState();

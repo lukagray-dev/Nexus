@@ -3,12 +3,21 @@
  * @description Titlebar dropdown menus controller for Nexus Parent.
  *
  * Hey friend! This module implements top menu interactions:
- * reactive state subscription, hover-switching when active, outside-click dismissal,
- * and keyboard navigation.
+ * - Reactive state subscription, hover-switching when active, outside-click dismissal.
+ * - File menu actions (Pair Child Device, Settings, Exit).
+ * - Help menu options mirroring Operon (Documentation, Check for update, Report bug,
+ *   About modal, Follow creator, See repo).
  */
 
-import { closeWindow } from '../shared/ipc.js';
+import { closeWindow, openExternalUrl } from '../shared/ipc.js';
 import { appState } from '../shared/state.js';
+import { showToast } from '../shared/toast.js';
+import { openAboutDialog } from './about.js';
+
+export const DOCUMENTATION_URL = 'https://github.com/lukagray-dev/Nexus/tree/main/docs';
+export const REPORT_BUG_URL = 'https://github.com/lukagray-dev/Nexus/issues';
+export const FOLLOW_CREATOR_URL = 'https://www.instagram.com/lukagray.official/';
+export const REPOSITORY_URL = 'https://github.com/lukagray-dev/Nexus';
 
 /**
  * Sets up titlebar dropdown menus and their interactive event listeners.
@@ -70,11 +79,19 @@ export function setupMenus(): void {
  * Connects standard system menu item actions.
  */
 function setupMenuActions(): void {
-  // File -> Close Window
-  document.getElementById('menu-item-close-window')?.addEventListener('click', (e) => {
+  // File -> Pair Child Device
+  document.getElementById('menu-item-pair-device')?.addEventListener('click', (e) => {
     e.stopPropagation();
     appState.setActiveMenu(null);
-    closeWindow();
+    const pairBtn = document.getElementById('btn-sidebar-pair');
+    pairBtn?.click();
+  });
+
+  // File -> Settings (shows coming soon toast)
+  document.getElementById('menu-item-settings')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    showToast('Settings coming soon');
   });
 
   // File -> Exit
@@ -84,16 +101,45 @@ function setupMenuActions(): void {
     closeWindow();
   });
 
-  // Interactive handler for other menu items
-  const menuItems = document.querySelectorAll<HTMLElement>('.dropdown-item');
-  menuItems.forEach((item) => {
-    if (item.id !== 'menu-item-close-window' && item.id !== 'menu-item-exit') {
-      item.addEventListener('click', (e) => {
-        e.stopPropagation();
-        appState.setActiveMenu(null);
-        const actionLabel = item.querySelector('span')?.textContent || item.id;
-        console.log(`[Menu Action] Triggered: ${actionLabel}`);
-      });
-    }
+  // Help -> Documentation
+  document.getElementById('menu-item-documentation')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    openExternalUrl(DOCUMENTATION_URL);
+  });
+
+  // Help -> Check for update
+  document.getElementById('menu-item-check-update')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    showToast('You are running the latest version of Nexus Parent (v0.1.0).');
+  });
+
+  // Help -> Report bug
+  document.getElementById('menu-item-report-bug')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    openExternalUrl(REPORT_BUG_URL);
+  });
+
+  // Help -> About
+  document.getElementById('menu-item-about')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    openAboutDialog();
+  });
+
+  // Help -> Follow creator
+  document.getElementById('menu-item-follow-creator')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    openExternalUrl(FOLLOW_CREATOR_URL);
+  });
+
+  // Help -> See repo
+  document.getElementById('menu-item-see-repo')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appState.setActiveMenu(null);
+    openExternalUrl(REPOSITORY_URL);
   });
 }

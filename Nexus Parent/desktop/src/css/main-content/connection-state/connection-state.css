@@ -208,9 +208,9 @@
 }
 
 .empty-hero-icon-ring img {
-  width: 28px;
-  height: 28px;
-  filter: invert(1);
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .empty-hero-title {
