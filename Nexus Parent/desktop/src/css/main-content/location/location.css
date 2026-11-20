@@ -336,8 +336,10 @@
   filter: invert(68%) sepia(52%) saturate(543%) hue-rotate(92deg) brightness(96%) contrast(89%) !important;
 }
 
-.control-pill-btn.is-loading img {
+.control-pill-btn.is-loading img,
+.control-pill-btn img[src*="loading.svg"] {
   animation: spinner-spin 1s linear infinite;
+  filter: none !important;
 }
 
 @keyframes spinner-spin {

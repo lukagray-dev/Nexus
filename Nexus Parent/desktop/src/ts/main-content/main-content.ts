@@ -14,16 +14,35 @@ import { sidebarState } from '../left-sidebar/state.js';
 import { deviceState } from '../shared/device-state.js';
 import { renderPairingScreen } from './empty-state/empty-state.js';
 import { renderConnectedEmptyState } from './connection-state/connection-state.js';
-import { renderCameraView } from './camera/camera.js';
-import { renderScreenView } from './screen/screen.js';
-import { renderLocationView } from './location/location.js';
+import { renderCameraView, onCameraViewActivated } from './camera/camera.js';
+import { renderScreenView, onScreenViewActivated } from './screen/screen.js';
+import { renderLocationView, onLocationViewActivated } from './location/location.js';
 import { renderStorageView } from './storage/storage.js';
 import { renderMicView, syncMicOverlay } from './mic/mic.js';
 
-// Cache active view state so we only re-render the view when the selected feature actually changes
+// Cache active view instances so media streams (Camera, Screen, Location, Storage)
+// continue running seamlessly in the background when shifting between tabs!
+const viewCache = new Map<string, HTMLElement>();
+
 let currentActiveFeatureId: string | null | undefined = undefined;
 let currentConnectedStatus: boolean | undefined = undefined;
-let currentViewElement: HTMLElement | null = null;
+
+/**
+ * Removes cached feature views when the device disconnects so that
+ * a new pairing starts with a completely pristine state.
+ */
+function clearFeatureViews(contentPane: HTMLElement): void {
+  for (const [key, element] of viewCache.entries()) {
+    if (key !== 'empty' && element.parentElement === contentPane) {
+      contentPane.removeChild(element);
+    }
+  }
+  for (const key of Array.from(viewCache.keys())) {
+    if (key !== 'empty') {
+      viewCache.delete(key);
+    }
+  }
+}
 
 /**
  * Initializes the main content area router.
@@ -46,19 +65,35 @@ export function initMainContent(): void {
     }
   });
 
-  // Listen to device connection changes: only re-render if in empty state and connection status changed
+  // Listen to device connection changes: only re-render if in empty state or when disconnected
   deviceState.subscribe(() => {
+    const isConnected = deviceState.isConnected();
     if (!sidebarState.getActiveFeatureId()) {
-      const isConnected = deviceState.isConnected();
       if (isConnected !== currentConnectedStatus) {
+        if (!isConnected) {
+          clearFeatureViews(contentPane);
+        }
         updateContentView(true);
       }
+    } else if (!isConnected) {
+      // If a feature was active when the device disconnected, clean up views and return to pairing
+      clearFeatureViews(contentPane);
+      sidebarState.setActiveFeatureId(null);
+      updateContentView(true);
     }
   });
 }
 
 /**
  * Updates the content pane to display the active feature view or empty state.
+ *
+ * Hey friend! To prevent media and data streams from stopping when shifting panels:
+ * 1. Initialized views are preserved in viewCache.
+ * 2. Inactive views are hidden with display: 'none' rather than being removed from the DOM.
+ * 3. Active streams (Camera WebRTC video + DVR, Screen video + internal Opus audio, Location GPS tracking)
+ *    remain 100% active and recording in the background!
+ * 4. When returning to an active view, display: 'flex' is restored and the activation hook ensures
+ *    hardware video rendering and layout bounds recalibrate with 0ms lag!
  *
  * @param force If true, forces a complete re-render even if activeFeatureId hasn't changed
  */
@@ -68,6 +103,13 @@ export function updateContentView(force = false): void {
 
   const activeId = sidebarState.getActiveFeatureId();
   const isConnected = deviceState.isConnected();
+
+  // Map activeId to consistent cache key ('files' maps to 'storage')
+  const targetKey = !activeId
+    ? 'empty'
+    : activeId === 'files'
+    ? 'storage'
+    : activeId;
 
   // Check if underlying view actually changed
   const needsViewUpdate =
@@ -79,26 +121,25 @@ export function updateContentView(force = false): void {
     currentActiveFeatureId = activeId;
     currentConnectedStatus = isConnected;
 
-    // Remove existing view element cleanly while preserving the floating mic panel if attached
-    if (currentViewElement && currentViewElement.parentElement === contentPane) {
-      contentPane.removeChild(currentViewElement);
-    } else {
-      // Remove any children that are not the floating mic panel
-      const existingChildren = Array.from(contentPane.children);
-      for (const child of existingChildren) {
-        if (child.id !== 'mic-floating-panel') {
-          contentPane.removeChild(child);
-        }
+    // Handle Empty State (Phase 1 Pairing Screen vs Phase 2 Connected Dashboard)
+    if (targetKey === 'empty') {
+      const existingEmpty = viewCache.get('empty');
+      if (existingEmpty && existingEmpty.parentElement === contentPane) {
+        contentPane.removeChild(existingEmpty);
       }
-    }
+      const newEmpty = renderEmptyStateContainer();
+      viewCache.set('empty', newEmpty);
 
-    let viewElement: HTMLElement;
-
-    if (!activeId) {
-      // Render Empty State (Phase 1 Pairing or Phase 2 Connected Dashboard)
-      viewElement = renderEmptyStateContainer();
-    } else {
-      switch (activeId) {
+      const micPanel = document.getElementById('mic-floating-panel');
+      if (micPanel && micPanel.parentElement === contentPane) {
+        contentPane.insertBefore(newEmpty, micPanel);
+      } else {
+        contentPane.appendChild(newEmpty);
+      }
+    } else if (!viewCache.has(targetKey)) {
+      // First time loading this feature view: instantiate it and append to contentPane
+      let viewElement: HTMLElement;
+      switch (targetKey) {
         case 'camera':
           viewElement = renderCameraView();
           break;
@@ -112,23 +153,39 @@ export function updateContentView(force = false): void {
           viewElement = renderLocationView();
           break;
         case 'storage':
-        case 'files':
           viewElement = renderStorageView();
           break;
         default:
-          viewElement = renderStagedPlaceholder(activeId || 'unknown');
+          viewElement = renderStagedPlaceholder(targetKey);
           break;
+      }
+
+      viewCache.set(targetKey, viewElement);
+
+      const micPanel = document.getElementById('mic-floating-panel');
+      if (micPanel && micPanel.parentElement === contentPane) {
+        contentPane.insertBefore(viewElement, micPanel);
+      } else {
+        contentPane.appendChild(viewElement);
       }
     }
 
-    currentViewElement = viewElement;
+    // Toggle display visibility across all cached views
+    for (const [key, element] of viewCache.entries()) {
+      if (key === targetKey) {
+        element.style.display = 'flex';
+      } else {
+        element.style.display = 'none';
+      }
+    }
 
-    // Insert view behind mic panel if mic panel is present, or append
-    const micPanel = document.getElementById('mic-floating-panel');
-    if (micPanel && micPanel.parentElement === contentPane) {
-      contentPane.insertBefore(viewElement, micPanel);
-    } else {
-      contentPane.appendChild(viewElement);
+    // Fire view activation hooks so video surfaces and Leaflet maps refresh immediately
+    if (targetKey === 'camera') {
+      onCameraViewActivated();
+    } else if (targetKey === 'screen') {
+      onScreenViewActivated();
+    } else if (targetKey === 'location') {
+      onLocationViewActivated();
     }
   }
 

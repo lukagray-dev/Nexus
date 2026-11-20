@@ -35,6 +35,24 @@ import {
 } from './types.js';
 import { CameraDvrManager } from './camera-dvr.js';
 
+// Module-level activation hook callback for smooth resumption on tab switch
+let onCameraActivatedCallback: (() => void) | null = null;
+
+/**
+ * Hey friend! This activation hook is called whenever the user switches back
+ * to the Camera tab in the main content router. It ensures:
+ * 1. The video surface geometry updates to fit the active viewport.
+ * 2. If the camera was actively streaming in the background, live video
+ *    playback resumes smoothly without any frame stutter or black frames.
+ */
+export function onCameraViewActivated(): void {
+  if (onCameraActivatedCallback) {
+    requestAnimationFrame(() => {
+      onCameraActivatedCallback?.();
+    });
+  }
+}
+
 /**
  * Creates and returns the full-area Camera Feed DOM element.
  */
@@ -515,6 +533,18 @@ function bindCameraEvents(container: HTMLElement): void {
   // Initialize initial surface geometry and observe viewport dimensions
   updateSurfaceGeometry();
 
+  // Register activation callback so tab switching smoothly resumes video playback & updates surface bounds
+  onCameraActivatedCallback = () => {
+    updateSurfaceGeometry();
+    if (cameraState === 'STREAMING') {
+      const stream = webrtcManager.getCameraStream();
+      if (stream && liveVideo.srcObject !== stream) {
+        liveVideo.srcObject = stream;
+      }
+      liveVideo.play().catch(() => {});
+    }
+  };
+
   const resizeObserver = new ResizeObserver(() => {
     updateSurfaceGeometry();
   });
@@ -712,6 +742,7 @@ function bindCameraEvents(container: HTMLElement): void {
       document.removeEventListener('fullscreenchange', onFullscreenChange);
       window.removeEventListener('nexus-camera-stream', onCameraStreamReceived);
       sidebarState.setFeatureLive('camera', false);
+      onCameraActivatedCallback = null;
       observer.disconnect();
     }
   });

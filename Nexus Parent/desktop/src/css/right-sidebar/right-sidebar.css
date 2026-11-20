@@ -290,6 +290,11 @@
   filter: invert(1);
 }
 
+.rs-play-btn.is-loading img,
+.rs-play-btn img[src*="loading.svg"] {
+  filter: none !important;
+}
+
 /* =============================================================================
    REUSABLE RIGHT-SIDEBAR SUBBAR, CONTROLS & LIST COMPONENTS
    Pure Black & White industrial theme with zero emojis and high contrast.

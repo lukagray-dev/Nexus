@@ -196,9 +196,11 @@
   cursor: wait;
 }
 
-.mic-btn-icon.is-loading img {
+.mic-btn-icon.is-loading img,
+.mic-btn-icon img[src*="loading.svg"] {
   width: 14px;
   height: 14px;
+  filter: none !important;
 }
 
 /* Speak Button (Intercom) */
@@ -239,9 +241,11 @@
   cursor: wait;
 }
 
-.mic-btn-speak.is-loading img.mic-speak-icon {
+.mic-btn-speak.is-loading img.mic-speak-icon,
+.mic-btn-speak img[src*="loading.svg"] {
   width: 14px;
   height: 14px;
+  filter: none !important;
 }
 
 /* Active Speaking State */

@@ -176,3 +176,15 @@ a, a:visited, a:hover, a:active {
 ::-webkit-scrollbar-corner {
   background-color: transparent;
 }
+
+/* =============================================================================
+   UNIVERSAL LOADING SPINNER RULES
+   Ensures loading.svg is ALWAYS rendered in crisp white across all buttons & panels
+   ============================================================================= */
+img[src*="loading.svg"],
+.is-loading img,
+.files-spinner,
+button.is-loading img {
+  filter: none !important;
+}
+

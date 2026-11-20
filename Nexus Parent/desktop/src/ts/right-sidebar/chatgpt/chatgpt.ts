@@ -1,54 +1,29 @@
 /**
- * @file ai.ts
- * @description AI Apps Activity Monitor Panel component for Guardian G-Home Right Sidebar.
+ * @file chatgpt.ts
+ * @description ChatGPT Monitor Panel component for Nexus Parent Right Sidebar.
  *
- * Hey friend! This panel displays intercepted AI prompt queries and chatbot
- * interactions (ChatGPT, Claude, Gemini) submitted by the child.
+ * Hey friend! ChatGPT monitoring is currently under active development.
+ * This component displays a clean, industrial "Coming Soon" placeholder view.
  */
-
-import type { AiPromptItem } from '../types.js';
-
-const INITIAL_AI_PROMPTS: AiPromptItem[] = [
-  { ai: 'ChatGPT', prompt: 'Explain the difference between mitosis and meiosis simply for 9th grade', time: '10:45 AM' },
-  { ai: 'Claude', prompt: 'Write an outline for an essay on renewable energy adoption challenges', time: 'Yesterday' },
-  { ai: 'Gemini', prompt: 'Solve this equation: 3x^2 - 12x + 9 = 0 step by step', time: 'Nov 09' }
-];
 
 /**
- * Creates and returns the AI Apps Activity panel element.
+ * Creates and returns the ChatGPT Monitor panel element.
  */
-export function renderAiPanel(): HTMLElement {
+export function renderChatGptPanel(): HTMLElement {
   const container = document.createElement('div');
-  container.className = 'rs-body rs-ai-panel';
+  container.className = 'rs-body rs-empty-placeholder';
 
   container.innerHTML = `
-    <!-- Header Subbar -->
-    <div class="rs-subbar">
-      <div class="ai-telemetry-text">
-        AI PROMPTS & BOT ACTIVITY AUDIT
-      </div>
+    <div class="rs-empty-icon">
+      <img src="assets/icons/right-sidebar/chatgpt/bot.svg" alt="" />
     </div>
-
-    <!-- Prompts List -->
-    <div id="ai-list" class="rs-list-container">
-      ${INITIAL_AI_PROMPTS.map(p => `
-        <div class="rs-list-item ai-item">
-          <div class="rs-item-top">
-            <span class="rs-badge-small ai-model-badge">${p.ai}</span>
-            <span class="rs-item-time">${p.time}</span>
-          </div>
-          <div class="rs-item-title ai-prompt-title">"${p.prompt}"</div>
-          <div class="rs-item-meta">
-            <span>Interactive Chat Session</span>
-          </div>
-        </div>
-      `).join('')}
+    <div class="rs-empty-title">Coming Soon</div>
+    <div class="rs-empty-desc">
+      ChatGPT prompt and activity monitoring is currently under active development and will be available in an upcoming update.
     </div>
   `;
 
   return container;
 }
 
-
-export const renderChatGptPanel = renderAiPanel;
-
+export const renderAiPanel = renderChatGptPanel;

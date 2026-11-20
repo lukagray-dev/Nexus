@@ -252,8 +252,10 @@
   to { transform: rotate(360deg); }
 }
 
-.feed-control-btn.is-loading img {
+.feed-control-btn.is-loading img,
+.feed-control-btn img[src*="loading.svg"] {
   animation: feed-btn-spin 1s linear infinite;
+  filter: none !important;
 }
 
 .feed-live-text {

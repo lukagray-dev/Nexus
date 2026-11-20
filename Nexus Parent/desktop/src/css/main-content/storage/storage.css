@@ -229,7 +229,7 @@
   width: 24px;
   height: 24px;
   animation: spin 1s linear infinite;
-  filter: invert(1);
+  filter: none !important;
 }
 
 @keyframes spin {

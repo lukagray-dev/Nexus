@@ -35,6 +35,24 @@ import {
 import { ScreenDvrManager } from './screen-dvr.js';
 import { OpusAudioPlayer } from './opus-audio-player.js';
 
+// Module-level activation hook callback for smooth resumption on tab switch
+let onScreenActivatedCallback: (() => void) | null = null;
+
+/**
+ * Hey friend! This activation hook is called whenever the user switches back
+ * to the Screen tab in the main content router. It ensures:
+ * 1. The screen video surface geometry updates to fit the active viewport.
+ * 2. If the screen was actively streaming in the background, live video
+ *    playback resumes smoothly without any frame stutter or black frames.
+ */
+export function onScreenViewActivated(): void {
+  if (onScreenActivatedCallback) {
+    requestAnimationFrame(() => {
+      onScreenActivatedCallback?.();
+    });
+  }
+}
+
 /**
  * Creates and returns the full-area Screen Feed DOM element.
  */
@@ -440,6 +458,18 @@ function bindScreenEvents(container: HTMLElement): void {
 
   updateSurfaceGeometry();
 
+  // Register activation callback so tab switching smoothly resumes video playback & updates surface bounds
+  onScreenActivatedCallback = () => {
+    updateSurfaceGeometry();
+    if (screenState === 'STREAMING') {
+      const stream = webrtcManager.getScreenStream();
+      if (stream && liveVideo.srcObject !== stream) {
+        liveVideo.srcObject = stream;
+      }
+      liveVideo.play().catch(() => {});
+    }
+  };
+
   const resizeObserver = new ResizeObserver(() => {
     updateSurfaceGeometry();
   });
@@ -627,6 +657,7 @@ function bindScreenEvents(container: HTMLElement): void {
       window.removeEventListener('nexus-screen-stream', onScreenStreamReceived);
       window.removeEventListener('nexus-screen-audio', onScreenAudioPacket);
       sidebarState.setFeatureLive('screen', false);
+      onScreenActivatedCallback = null;
       observer.disconnect();
     }
   });

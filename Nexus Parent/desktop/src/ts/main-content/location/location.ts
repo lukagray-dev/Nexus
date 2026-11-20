@@ -51,6 +51,21 @@ let globalTrackingState: LocationTrackingState = 'IDLE';
 let globalLatestTelemetry: LocationTelemetryData | null = null;
 
 /**
+ * Hey friend! Leaflet calculates container pixel boundaries dynamically.
+ * When the Location tab was hidden in the background (display: none), its pixel
+ * dimensions were temporarily 0x0.
+ *
+ * Calling this hook upon tab activation triggers map.invalidateSize(), telling
+ * Leaflet to immediately recalculate map tiles, center the camera, and render
+ * all marker pins crisp and distortion-free!
+ */
+export function onLocationViewActivated(): void {
+  requestAnimationFrame(() => {
+    globalLocationMapManager.invalidateSize();
+  });
+}
+
+/**
  * Creates and returns the full-area Location Tracking DOM element.
  */
 export function renderLocationView(): HTMLElement {
@@ -181,6 +196,7 @@ export function renderLocationView(): HTMLElement {
     switch (state) {
       case 'IDLE':
         playIcon.src = 'assets/icons/main-content/play.svg';
+        playIcon.style.filter = 'invert(1)';
         playLabel.textContent = 'Start Live Tracking';
         playPauseBtn.classList.remove('is-loading', 'active');
         playPauseBtn.removeAttribute('disabled');
@@ -193,6 +209,7 @@ export function renderLocationView(): HTMLElement {
 
       case 'STARTING':
         playIcon.src = 'assets/icons/animations/loading.svg';
+        playIcon.style.filter = 'none';
         playLabel.textContent = 'Starting GPS...';
         playPauseBtn.classList.add('is-loading');
         playPauseBtn.classList.remove('active');
@@ -203,6 +220,7 @@ export function renderLocationView(): HTMLElement {
 
       case 'TRACKING':
         playIcon.src = 'assets/icons/main-content/pause.svg';
+        playIcon.style.filter = 'invert(1)';
         playLabel.textContent = 'Stop Tracking';
         playPauseBtn.classList.remove('is-loading');
         playPauseBtn.classList.add('active');
@@ -216,6 +234,7 @@ export function renderLocationView(): HTMLElement {
 
       case 'STOPPING':
         playIcon.src = 'assets/icons/animations/loading.svg';
+        playIcon.style.filter = 'none';
         playLabel.textContent = 'Stopping GPS...';
         playPauseBtn.classList.add('is-loading');
         playPauseBtn.setAttribute('disabled', 'true');

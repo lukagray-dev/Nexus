@@ -30,36 +30,48 @@ let audioContext: AudioContext | null = null;
 let analyserNode: AnalyserNode | null = null;
 let audioSourceNode: MediaStreamAudioSourceNode | null = null;
 
+// Module-level tracking of active mic streaming state so overlay synchronization
+// knows whether to preserve the live indicator when minimized
+let globalMicState: MicButtonState = 'IDLE';
+
 export type MicButtonState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
 export type SpeakButtonState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
 
 /**
  * Synchronizes the floating Mic overlay with the current content container.
  * If sidebarState.getIsMicOpen() is true, the small floating panel is attached
- * on top of whichever view is currently active.
- * If false, the panel is removed from the DOM.
+ * and displayed on top of whichever view is currently active.
+ *
+ * Hey friend! When closed (isOpen = false):
+ * - The panel is hidden via CSS (display: 'none') rather than removed from the DOM.
+ * - This prevents the MutationObserver from firing, so background audio playback
+ *   and WebRTC listeners continue uninterrupted!
+ * - If currently streaming, the sidebar LIVE indicator stays active!
  */
 export function syncMicOverlay(container: HTMLElement): void {
   const isOpen = sidebarState.getIsMicOpen();
 
+  // Get or create the floating panel element
+  const panel = getOrCreateMicPanel();
+
+  // Ensure panel is attached to the target container
+  if (panel.parentElement !== container) {
+    container.appendChild(panel);
+  }
+
   if (!isOpen) {
-    sidebarState.setFeatureLive('mic', false);
-    if (activePanelInstance && activePanelInstance.parentElement) {
-      activePanelInstance.parentElement.removeChild(activePanelInstance);
+    // Hide panel from view without removing it from the DOM
+    panel.style.display = 'none';
+
+    // Only turn off the live sidebar indicator if we are NOT actively streaming
+    if (globalMicState !== 'STREAMING') {
+      sidebarState.setFeatureLive('mic', false);
     }
     return;
   }
 
-  // Get or create the floating panel element
-  const panel = getOrCreateMicPanel();
-
-  // If already attached to this container, nothing to do
-  if (panel.parentElement === container) {
-    return;
-  }
-
-  // Attach to container
-  container.appendChild(panel);
+  // Panel is open: make it visible
+  panel.style.display = 'flex';
 
   panel.style.right = 'auto';
   panel.style.bottom = 'auto';
@@ -291,6 +303,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
    */
   function setButtonState(state: MicButtonState): void {
     micState = state;
+    globalMicState = state;
     if (!btnPlay || !playIcon) return;
 
     switch (state) {
@@ -399,14 +412,11 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     analyserNode = null;
   }
 
-  // Close button hides overlay and turns off live state
+  // Close button minimizes overlay without stopping active background audio stream
   btnClose?.addEventListener('click', () => {
-    if (micState === 'STREAMING') {
-      webrtcManager.sendCommand('MIC_OFF');
-    }
-    stopAudioPlayback();
-    setButtonState('IDLE');
-    sidebarState.setFeatureLive('mic', false);
+    // Hey friend! Closing the floating mic panel should ONLY minimize the overlay!
+    // The active audio stream continues playing seamlessly in the background,
+    // and the sidebar LIVE badge remains active until the user explicitly pauses.
     sidebarState.setMicOpen(false);
   });
 
@@ -742,6 +752,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
       unbindConnectionState();
       window.removeEventListener('nexus-mic-stream', onMicStreamReceived);
       stopAudioPlayback();
+      globalMicState = 'IDLE';
       sidebarState.setFeatureLive('mic', false);
       observer.disconnect();
     }

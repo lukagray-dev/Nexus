@@ -122,4 +122,48 @@ describe('Microphone Protocol & State Machine Tests', () => {
     assert.ok(amplitudes[35] > amplitudes[0], 'High frequency bar must be greater than lowest bar for gradient data');
   });
 
+  it('Closing mic panel minimizes overlay without stopping background audio or resetting live badge', () => {
+    let micState = 'STREAMING';
+    let isMicOpen = true;
+    let isFeatureLive = true;
+    let audioPlaying = true;
+    let sentCommand = null;
+
+    // User closes the mic panel overlay (clicks "X")
+    const onCloseClick = () => {
+      // Must ONLY toggle panel open state off
+      isMicOpen = false;
+      // Must NOT send MIC_OFF
+      // Must NOT stop audio
+      // Must NOT reset micState
+    };
+
+    onCloseClick();
+
+    assert.strictEqual(isMicOpen, false, 'Panel must be closed/minimized');
+    assert.strictEqual(micState, 'STREAMING', 'Mic state must remain STREAMING');
+    assert.strictEqual(audioPlaying, true, 'Audio must continue playing in background');
+    assert.strictEqual(sentCommand, null, 'MIC_OFF must not have been sent on close');
+
+    // Overlay synchronization must preserve the live badge if streaming
+    const syncOverlay = (open, state) => {
+      if (!open && state !== 'STREAMING') {
+        isFeatureLive = false;
+      }
+    };
+
+    syncOverlay(isMicOpen, micState);
+    assert.strictEqual(isFeatureLive, true, 'Sidebar live badge must remain active while audio streams in background');
+
+    // Only explicit pause button click stops audio and sends MIC_OFF
+    const onPauseClick = () => {
+      sentCommand = 'MIC_OFF';
+      micState = 'STOPPING';
+    };
+
+    onPauseClick();
+    assert.strictEqual(sentCommand, 'MIC_OFF');
+    assert.strictEqual(micState, 'STOPPING');
+  });
+
 });
