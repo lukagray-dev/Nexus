@@ -94,6 +94,24 @@
             android:label="@string/permissions_card_title"
             android:theme="@style/Theme.NexusChild" />
 
+        <!-- App Lock Security Gatekeeper Activity -->
+        <activity
+            android:name=".components.applock.AppLockActivity"
+            android:exported="false"
+            android:label="@string/app_lock_locked_title"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:theme="@style/Theme.NexusChild" />
+
+        <!-- App Lock Configuration Activity -->
+        <activity
+            android:name=".components.applock.AppLockSetupActivity"
+            android:exported="false"
+            android:label="@string/app_lock_setup_title"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:theme="@style/Theme.NexusChild" />
+
         <!-- Native Notification Interception Service -->
         <service
             android:name=".components.notification.NexusNotificationListenerService"

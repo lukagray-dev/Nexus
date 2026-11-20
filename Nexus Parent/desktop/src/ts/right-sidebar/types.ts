@@ -241,6 +241,36 @@ export interface WellbeingAppItem {
   percent: number;
 }
 
+// -----------------------------------------------------------------------------
+// APP LOCK PROTOCOL & TYPES
+// -----------------------------------------------------------------------------
+
+export const CMD_APPLOCK_ON = 'APPLOCK_ON';
+export const CMD_APPLOCK_OFF = 'APPLOCK_OFF';
+export const RESP_APPLOCK_STARTED = 'APPLOCK_STARTED';
+export const RESP_APPLOCK_STOPPED = 'APPLOCK_STOPPED';
+export const RESP_APPLOCK_ERROR_PREFIX = 'APPLOCK_ERROR: ';
+
+export const TYPE_APPLOCK_SNAPSHOT = 'APPLOCK_SNAPSHOT';
+export const TYPE_APPLOCK_NEW = 'APPLOCK_NEW';
+
+export const CMD_APPLOCK_TOGGLE = 'APPLOCK_TOGGLE';
+export const CMD_APPLOCK_SET_PIN = 'APPLOCK_SET_PIN';
+export const CMD_APPLOCK_CLEAR = 'APPLOCK_CLEAR';
+export const CMD_APPLOCK_GET_STATUS = 'APPLOCK_GET_STATUS';
+
+export const RESP_APPLOCK_STATUS = 'APPLOCK_STATUS';
+export const RESP_APPLOCK_PIN_CHANGED = 'APPLOCK_PIN_CHANGED';
+
+export interface AppLockRecord {
+  id: string;
+  timestamp: number;
+  pinCorrect: boolean;
+  failedAttempts: number;
+  isLockedOut: boolean;
+  selfie?: string | null;
+}
+
 export interface AppLockItem {
   name: string;
   pkg: string;

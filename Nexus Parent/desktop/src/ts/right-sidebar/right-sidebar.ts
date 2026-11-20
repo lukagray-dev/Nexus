@@ -58,7 +58,16 @@ import {
   RESP_FLASH_SUCCESS_PREFIX,
   RESP_FLASH_ERROR_PREFIX,
   RESP_VIBRATE_FLASH_SUCCESS_PREFIX,
-  RESP_VIBRATE_FLASH_ERROR_PREFIX
+  RESP_VIBRATE_FLASH_ERROR_PREFIX,
+  CMD_APPLOCK_ON,
+  CMD_APPLOCK_OFF,
+  RESP_APPLOCK_STARTED,
+  RESP_APPLOCK_STOPPED,
+  RESP_APPLOCK_ERROR_PREFIX,
+  TYPE_APPLOCK_SNAPSHOT,
+  TYPE_APPLOCK_NEW,
+  RESP_APPLOCK_STATUS,
+  RESP_APPLOCK_PIN_CHANGED
 } from './types.js';
 import { webrtcManager } from '../webrtc/webrtc-manager.js';
 import { triggerSidebarToast } from './shared.js';
@@ -86,6 +95,7 @@ let smsTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let notificationTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let wallpaperTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let keyboardTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let appLockTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   sms: { title: 'SMS Messages', badge: 'Active Sync', render: renderSmsPanel },
@@ -515,6 +525,96 @@ function setupDataChannelListeners(): void {
       triggerSidebarToast(err);
       return;
     }
+
+    // -------------------------------------------------------------------------
+    // APP LOCK PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_APPLOCK_STARTED) {
+      console.log('[RightSidebar] Child confirmed: APPLOCK_STARTED');
+      if (appLockTimeoutTimer) {
+        clearTimeout(appLockTimeoutTimer);
+        appLockTimeoutTimer = null;
+      }
+      rightSidebarState.setAppLockMonitoringState('LIVE');
+      sidebarState.setFeatureLive('applock', true);
+      return;
+    }
+
+    if (trimmed === RESP_APPLOCK_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: APPLOCK_STOPPED');
+      if (appLockTimeoutTimer) {
+        clearTimeout(appLockTimeoutTimer);
+        appLockTimeoutTimer = null;
+      }
+      rightSidebarState.setAppLockMonitoringState('IDLE');
+      sidebarState.setFeatureLive('applock', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_APPLOCK_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_APPLOCK_ERROR_PREFIX.length);
+      console.error('[RightSidebar] AppLock error from Child:', err);
+      if (appLockTimeoutTimer) {
+        clearTimeout(appLockTimeoutTimer);
+        appLockTimeoutTimer = null;
+      }
+      rightSidebarState.setAppLockMonitoringState('IDLE');
+      sidebarState.setFeatureLive('applock', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_APPLOCK_SNAPSHOT}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log(`[RightSidebar] Received AppLock snapshot chunk [${payload.chunkIndex + 1}/${payload.totalChunks}] count=${payload.count}`);
+        if (payload.chunkIndex === 0) {
+          rightSidebarState.setAppLockSnapshot(payload.records || []);
+        } else {
+          rightSidebarState.appendAppLockChunk(payload.records || []);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse APPLOCK_SNAPSHOT payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_APPLOCK_NEW}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Received live AppLock unlock attempt:', payload.record);
+        if (payload.record) {
+          rightSidebarState.prependAppLockRecord(payload.record);
+          const outcome = payload.record.pinCorrect ? 'Successful unlock' : (payload.record.isLockedOut ? 'Device locked out (60s)' : 'Wrong PIN attempt');
+          triggerSidebarToast(`App Lock: ${outcome}`);
+        }
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse APPLOCK_NEW payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${RESP_APPLOCK_STATUS}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log('[RightSidebar] Received AppLock status telemetry:', payload);
+        rightSidebarState.setAppLockEnabled(!!payload.enabled);
+        rightSidebarState.setAppLockLockedOut(!!payload.isLockedOut);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse APPLOCK_STATUS payload:', e);
+      }
+      return;
+    }
+
+    if (trimmed.startsWith(`${RESP_APPLOCK_PIN_CHANGED}:`)) {
+      const result = trimmed.slice(`${RESP_APPLOCK_PIN_CHANGED}:`.length);
+      if (result === 'SUCCESS') {
+        triggerSidebarToast('PIN updated successfully on device');
+      } else {
+        triggerSidebarToast(result);
+      }
+      return;
+    }
   });
 
   // Reset monitoring state when WebRTC disconnects
@@ -541,12 +641,17 @@ function setupDataChannelListeners(): void {
         clearTimeout(keyboardTimeoutTimer);
         keyboardTimeoutTimer = null;
       }
+      if (appLockTimeoutTimer) {
+        clearTimeout(appLockTimeoutTimer);
+        appLockTimeoutTimer = null;
+      }
       rightSidebarState.resetMonitoringStates();
       sidebarState.setFeatureLive('calllog', false);
       sidebarState.setFeatureLive('sms', false);
       sidebarState.setFeatureLive('notification', false);
       sidebarState.setFeatureLive('wallpaper', false);
       sidebarState.setFeatureLive('keyboard', false);
+      sidebarState.setFeatureLive('applock', false);
     }
   });
 }
@@ -677,6 +782,17 @@ export function renderRightSidebar(): void {
 
     playBtn?.addEventListener('click', () => {
       handleKeyboardPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
+  // Synchronize footer button for App Lock panel
+  if (activePanelId === 'applock') {
+    const lockState = rightSidebarState.getAppLockMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, lockState, 'App Lock');
+
+    playBtn?.addEventListener('click', () => {
+      handleAppLockPlayPauseClick(playBtn, playIcon, statusSpan);
     });
     return;
   }
@@ -985,6 +1101,62 @@ function handleKeyboardPlayPauseClick(
         updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Keyboard Audit');
       }
     }, 20000);
+  }
+}
+
+/**
+ * Handles Play/Pause click action specifically for App Lock monitoring.
+ */
+function handleAppLockPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getAppLockMonitoringState();
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting App Lock live monitoring...');
+    rightSidebarState.setAppLockMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'App Lock');
+
+    const sent = webrtcManager.sendCommand(CMD_APPLOCK_ON);
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting AppLock state to IDLE.');
+      rightSidebarState.setAppLockMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'App Lock');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    if (appLockTimeoutTimer) clearTimeout(appLockTimeoutTimer);
+    appLockTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getAppLockMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for APPLOCK_STARTED. Reverting to IDLE.');
+        rightSidebarState.setAppLockMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'App Lock');
+        triggerSidebarToast('App Lock request timed out');
+      }
+    }, 20000);
+
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping App Lock live monitoring...');
+    rightSidebarState.setAppLockMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'App Lock');
+
+    const sent = webrtcManager.sendCommand(CMD_APPLOCK_OFF);
+    if (!sent) {
+      rightSidebarState.setAppLockMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'App Lock');
+      return;
+    }
+
+    if (appLockTimeoutTimer) clearTimeout(appLockTimeoutTimer);
+    appLockTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getAppLockMonitoringState() === 'STOPPING') {
+        rightSidebarState.setAppLockMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'App Lock');
+      }
+    }, 10000);
   }
 }
 

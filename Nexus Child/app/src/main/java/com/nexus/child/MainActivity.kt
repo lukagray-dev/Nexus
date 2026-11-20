@@ -12,6 +12,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.nexus.child.components.applock.AppLockActivity
+import com.nexus.child.components.applock.AppLockManager
+import com.nexus.child.components.applock.AppLockSetupActivity
 import com.nexus.child.components.stealth.StealthController
 import com.nexus.child.databinding.ActivityMainBinding
 import com.nexus.child.permission.PermissionGuideActivity
@@ -52,6 +55,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Security Gatekeeper: Check if App Lock is active before rendering UI
+        val skipLockCheck = intent.getBooleanExtra(AppLockActivity.EXTRA_SKIP_LOCK_CHECK, false)
+        if (!skipLockCheck && AppLockManager.isAppLockEnabled(this) && !AppLockManager.isSessionUnlocked()) {
+            Log.d(TAG, "App Lock is enabled and session locked; redirecting to AppLockActivity")
+            AppLockActivity.start(this)
+            finish()
+            return
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -61,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         setupDeviceIdCard()
         setupPermissionsCard()
         setupStealthCard()
+        setupAppLockCard()
 
         // 1. Start the persistent continuous Foreground Service & Watchdog Daemon
         NexusBackgroundService.start(this)
@@ -82,6 +96,8 @@ class MainActivity : AppCompatActivity() {
         refreshPermissionsStatus()
         // Refresh stealth status badge & button text
         refreshStealthStatusUi()
+        // Refresh App Lock status badge & button text
+        refreshAppLockStatusUi()
     }
 
     override fun onDestroy() {
@@ -273,5 +289,41 @@ class MainActivity : AppCompatActivity() {
             }
             .setCancelable(true)
             .show()
+    }
+
+    /**
+     * Binds click events and initial state for the App Lock Security card.
+     */
+    private fun setupAppLockCard() {
+        binding.btnConfigureAppLock.setOnClickListener {
+            AppLockSetupActivity.start(this)
+        }
+        refreshAppLockStatusUi()
+    }
+
+    /**
+     * Updates the App Lock status badge and button label based on active configuration.
+     */
+    private fun refreshAppLockStatusUi() {
+        val isEnabled = AppLockManager.isAppLockEnabled(this)
+        val hasPin = AppLockManager.hasPinSet(this)
+
+        if (isEnabled) {
+            binding.textAppLockBadge.text = getString(R.string.app_lock_card_badge_enabled)
+            binding.textAppLockBadge.setTextColor(
+                ContextCompat.getColor(this, R.color.status_connected)
+            )
+            binding.btnConfigureAppLock.text = getString(R.string.btn_manage_app_lock)
+        } else {
+            binding.textAppLockBadge.text = getString(R.string.app_lock_card_badge_disabled)
+            binding.textAppLockBadge.setTextColor(
+                ContextCompat.getColor(this, R.color.text_secondary)
+            )
+            binding.btnConfigureAppLock.text = if (hasPin) {
+                getString(R.string.btn_manage_app_lock)
+            } else {
+                getString(R.string.btn_configure_app_lock)
+            }
+        }
     }
 }
