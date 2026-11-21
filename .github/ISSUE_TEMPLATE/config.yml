@@ -1,0 +1,11 @@
+# GitHub Issue Chooser Configuration for Nexus
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: Security Vulnerability Reporting
+    url: mailto:heylukagray@gmail.com
+    about: Please report security vulnerabilities privately. Do not open public issues for security exploits or privacy bypasses.
+  - name: Architecture & Implementation Specifications
+    url: https://github.com/lukagray-dev/Nexus/tree/master/docs
+    about: Read deep architectural guides covering WebRTC, Process Revival, App Lock, Storage Explorer, and Surveillance specs.

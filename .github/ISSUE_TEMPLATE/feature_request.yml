@@ -1,0 +1,60 @@
+# ==============================================================================
+# Nexus - Feature Request Issue Template
+# ==============================================================================
+
+name: Feature Request / Capability Proposal
+description: Propose a new surveillance capability, hardware actuator, or architectural improvement for Nexus.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping shape the future of **Nexus**!
+        
+        > **Design Philosophy Note:**
+        > Nexus enforces a strict **zero-cloud surveillance** architecture, **strict monochrome B&W UI**, and **absolute no-emoji policy**. Proposed features must respect hardware efficiency and end-to-end P2P encryption.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Target Subsystem
+      description: Select the primary area this feature proposal targets.
+      options:
+        - "Live Surveillance (Camera / Screen / Mic / Location)"
+        - "Forensic Telemetry (SMS / Calls / Notifications / Keylogger / Storage / App Lock)"
+        - "Device Actuation (Wallpaper / Torch / Vibrator / Stealth)"
+        - "Desktop UI & Visualization (Tauri v2 / TypeScript)"
+        - "Android Client & Process Revival (Kotlin / Background Service)"
+        - "Transport & WebRTC Pipeline"
+        - "Developer Infrastructure & Tooling"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement / Motivation
+      description: Is your feature request related to a specific limitation, family safety need, or operational challenge?
+      placeholder: "A clear description of what workflow or monitoring challenge you are experiencing..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & Behavior
+      description: Describe how the capability should function from the parent's console and on the child's device.
+      placeholder: "Provide a detailed overview of the proposed feature, DataChannel commands, and user interaction..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: privacy_impact
+    attributes:
+      label: Privacy & Performance Considerations
+      description: How does this capability preserve battery life and adhere to the zero-cloud direct P2P data policy?
+      placeholder: "e.g., Streams over ordered DataChannel, displacement filters applied, no remote cloud database logging..."
+    validations:
+      required: false

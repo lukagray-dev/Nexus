@@ -1,0 +1,64 @@
+# ==============================================================================
+# Nexus - Documentation Improvement Issue Template
+# ==============================================================================
+
+name: Documentation Improvement
+description: Suggest improvements, report errors, or request additions to Nexus documentation.
+title: "[Docs]: "
+labels: ["documentation", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Accurate, clear, and comprehensive documentation is a core value of the **Nexus** project.
+        Thank you for helping us maintain production-grade architecture guides!
+
+  - type: dropdown
+    id: doc_area
+    attributes:
+      label: Documentation Area
+      description: Select the document or section that needs improvement.
+      options:
+        - "README.md (Architecture Mindmap / Specifications)"
+        - "docs/WEBRTC-ARCHITECTURE.md & WEBRTC-IMPLEMENTATION.md"
+        - "docs/BACKGROUND-SERVICE-REVIVAL-IMPLEMENTATION.md (5-Tier Revival)"
+        - "docs/CAMERA-IMPLEMENTATION.md & SCREEN-IMPLEMENTATION.md (DVR Specs)"
+        - "docs/MICROPHONE-IMPLEMENTATION.md (Voice Intercom Specs)"
+        - "docs/LOCATION-IMPLEMENTATION.md (Tactical GPS Tracking)"
+        - "docs/SMS-CALLLOG-IMPLEMENTATION.md & NOTIFICATION-MONITORING-IMPLEMENTATION.md"
+        - "docs/KEYBOARD-MONITORING-IMPLEMENTATION.md & STORAGE-IMPLEMENTATION.md"
+        - "docs/APPLOCK-SECURITY-IMPLEMENTATION.md & STEALTH-MODE-IMPLEMENTATION.md"
+        - "docs/WALLPAPER-VIBRATEFLASH-IMPLEMENTATION.md"
+        - "docs/FOLDER-STRUCTURE.md & UI-PREFERENCES.md"
+        - "CONTRIBUTING.md / Development Guide"
+        - "Other / New Specification Request"
+    validations:
+      required: true
+
+  - type: input
+    id: doc_link
+    attributes:
+      label: File Path or Section
+      description: Provide the specific file path or section requiring changes.
+      placeholder: "e.g., docs/WEBRTC-ARCHITECTURE.md#non-trickle-ice"
+    validations:
+      required: false
+
+  - type: textarea
+    id: issue_description
+    attributes:
+      label: Description of the Gap or Error
+      description: What is inaccurate, missing, confusing, or out of date?
+      placeholder: "Describe what information is missing or unclear..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_change
+    attributes:
+      label: Proposed Content / Correction
+      description: How should the documentation be updated or rephrased?
+      placeholder: "Provide suggested corrections or additions..."
+    validations:
+      required: false

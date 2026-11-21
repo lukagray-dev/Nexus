@@ -1,0 +1,109 @@
+# ==============================================================================
+# Nexus - Bug Report Issue Template
+# ==============================================================================
+# Captures environment details, reproduction steps, logs, and subsystem scopes.
+# ==============================================================================
+
+name: Bug Report
+description: File a bug report or unexpected runtime behavior in Nexus.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve **Nexus**!
+        
+        > **Important Security Notice:**
+        > If you have discovered a security vulnerability (such as an encryption bypass or privilege escalation), please do **NOT** submit it here. Report it privately via maintainer email.
+        >
+        > **Never include private 12-digit Pairing PINs, Firebase API keys, or child telemetry in public logs.**
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Subsystem / Domain
+      description: Select the part of Nexus where the issue occurred.
+      options:
+        - "Nexus Parent (Desktop Tauri v2 Application)"
+        - "Nexus Child (Android Background Service & Daemon)"
+        - "WebRTC Camera Feed & DVR"
+        - "WebRTC Screen Mirror & System Audio"
+        - "Microphone & Push-to-Talk Voice Intercom"
+        - "Tactical Geolocation & Hybrid Map"
+        - "SMS & Call Log Surveillance"
+        - "Push Notification Interceptor"
+        - "Keystroke Auditor & Accessibility"
+        - "Storage Explorer & File Download"
+        - "App Lock & Silent Selfie Capture"
+        - "Stealth Mode & 1x1 Emergency Widget"
+        - "Wallpaper Control & Hardware Actuators"
+        - "Process Revival & OEM Battery Management"
+        - "Signaling & Fast Non-Trickle ICE"
+        - "Other / Build & Scripting"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Nexus Version / Build Commit
+      description: Provide the version tag (e.g. `v0.1.0-alpha`) or Git commit hash.
+      placeholder: "e.g., v0.1.0-alpha or commit a1b2c3d"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os_desktop
+    attributes:
+      label: Desktop Operating System
+      description: Select the OS hosting the Nexus Parent desktop console.
+      options:
+        - "Windows 11"
+        - "Windows 10"
+        - "Linux (Ubuntu / Debian / Fedora)"
+        - "macOS"
+        - "Not Applicable (Android-only issue)"
+    validations:
+      required: true
+
+  - type: input
+    id: android_device
+    attributes:
+      label: Child Android Device Model & OS
+      description: Provide the Android version and manufacturer skin (e.g. Samsung OneUI, Xiaomi HyperOS, Pixel).
+      placeholder: "e.g., Samsung Galaxy S23 (Android 14 / OneUI 6.1) or Xiaomi Redmi Note 12 (HyperOS)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step description of how to reproduce the issue.
+      placeholder: |
+        1. Connect Parent Console to Child Device using 12-digit PIN
+        2. Navigate to 'Monitor Camera'
+        3. Click 'Play' to activate camera feed
+        4. See error or unexpected behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A concise description of what you expected to happen.
+      placeholder: "Camera stream should transition from loading spinner to active video stream within 1-2 seconds..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs & Output
+      description: Paste console logs, adb logcat output, or terminal stack traces (sanitize sensitive IDs).
+      render: shell
+    validations:
+      required: false

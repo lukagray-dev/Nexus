@@ -1,0 +1,229 @@
+name: Pre-Release
+
+# Triggers manually via workflow_dispatch on master/main
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Pre-release version tag (e.g., v0.1.0-alpha, v0.1.0-alpha.1). Leave empty to auto-increment from latest alpha tag.'
+        required: false
+        type: string
+        default: ''
+      release_title:
+        description: 'Release title (defaults to Nexus {version})'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  version:
+    name: Determine Pre-Release Version Tag
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump.outputs.NEW_TAG }}
+      release_title: ${{ steps.bump.outputs.RELEASE_TITLE }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next alpha version tag
+        id: bump
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const manualVersion = '${{ inputs.version }}'.trim();
+            const manualTitle = '${{ inputs.release_title }}'.trim();
+
+            let targetTag = manualVersion;
+
+            if (!targetTag) {
+              const { data: tags } = await github.rest.repos.listTags({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+
+              // Match patterns like v0.1.0-alpha or v0.1.0-alpha.1
+              const alphaRegex = /^v\d+\.\d+\.\d+-alpha(\.\d+)?$/;
+              const alphaTags = tags
+                .map(t => t.name)
+                .filter(name => alphaRegex.test(name));
+
+              if (alphaTags.length === 0) {
+                targetTag = 'v0.1.0-alpha';
+              } else {
+                const latestTag = alphaTags[0];
+                const match = latestTag.match(/^v(\d+)\.(\d+)\.(\d+)-alpha(?:\.(\d+))?$/);
+                if (match) {
+                  const major = match[1];
+                  const minor = match[2];
+                  const patch = match[3];
+                  const subIndex = match[4] ? parseInt(match[4], 10) + 1 : 1;
+                  targetTag = `v${major}.${minor}.${patch}-alpha.${subIndex}`;
+                } else {
+                  targetTag = 'v0.1.0-alpha.1';
+                }
+              }
+              console.log(`Latest alpha tag found: ${alphaTags[0] || 'none'}`);
+            }
+
+            const title = manualTitle || `Nexus ${targetTag}`;
+            console.log(`Resolved pre-release tag: ${targetTag}`);
+            console.log(`Resolved release title: ${title}`);
+
+            core.setOutput('NEW_TAG', targetTag);
+            core.setOutput('RELEASE_TITLE', title);
+
+  build-desktop:
+    name: Build Nexus Parent Desktop (Windows)
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache cargo registry + target dir
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "Nexus Parent/desktop/src-tauri -> target"
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Desktop Static Frontend
+        shell: powershell
+        run: |
+          cd "Nexus Parent/desktop"
+          npm install
+          npm run build
+
+      - name: Build Desktop Release Binary
+        shell: powershell
+        run: |
+          cd "Nexus Parent/desktop/src-tauri"
+          cargo build --release
+
+      - name: Package Desktop Artifacts
+        shell: powershell
+        run: |
+          $tag = "${{ needs.version.outputs.new_tag }}"
+          mkdir -p artifacts
+          
+          $bin = "Nexus Parent/desktop/src-tauri/target/release/nexus-parent.exe"
+          if (Test-Path $bin) {
+              $dest = "artifacts/nexus-parent-$tag-windows-x86_64.exe"
+              Copy-Item $bin $dest
+              Write-Host "Packaged Desktop binary to $dest"
+          } else {
+              Write-Error "Desktop binary not found at $bin!"
+              exit 1
+          }
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-desktop-binaries
+          path: artifacts/*
+          if-no-files-found: error
+
+  build-android:
+    name: Build Nexus Child Mobile Client (Android)
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Prepare Root Environment Stub
+        run: |
+          touch .env
+          echo 'apiKey="pre-release-build"' >> .env
+          echo 'projectId="nexus-pre-release"' >> .env
+          echo 'databaseURL="https://nexus-pre-release.firebaseio.com"' >> .env
+
+      - name: Build Android Debug APK
+        working-directory: "Nexus Child"
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Package Android Artifact
+        run: |
+          TAG="${{ needs.version.outputs.new_tag }}"
+          mkdir -p android_artifacts
+          cp "Nexus Child/app/build/outputs/apk/debug/app-debug.apk" "android_artifacts/nexus-child-${TAG}.apk"
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-android-binaries
+          path: android_artifacts/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Pre-Release
+    needs: [version, build-desktop, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Desktop Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nexus-desktop-binaries
+          path: dist
+
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nexus-android-binaries
+          path: dist
+
+      - name: Delete existing release/tag if re-running
+        run: |
+          gh release delete ${{ needs.version.outputs.new_tag }} --yes --cleanup-tag || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and Push Git Tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.version.outputs.new_tag }}
+          git push origin ${{ needs.version.outputs.new_tag }}
+
+      - name: Publish GitHub Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.new_tag }}
+          name: ${{ needs.version.outputs.release_title }}
+          prerelease: true
+          make_latest: false
+          generate_release_notes: true
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
