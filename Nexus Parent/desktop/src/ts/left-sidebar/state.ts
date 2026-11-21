@@ -49,10 +49,19 @@ class SidebarStateManager {
 
   public setFeatureLive(featureId: string, isLive: boolean): void {
     const wasLive = this.liveFeatures.has(featureId);
-    if (isLive && !wasLive) {
-      this.liveFeatures.add(featureId);
-      this.notify();
-    } else if (!isLive && wasLive) {
+    if (isLive) {
+      // Hardware fail-safe: Camera and Screen surveillance share the underlying WebRTC video transceiver.
+      // They are mutually exclusive feeds. If one becomes live, ensure the other is cleared.
+      if (featureId === 'camera') {
+        this.liveFeatures.delete('screen');
+      } else if (featureId === 'screen') {
+        this.liveFeatures.delete('camera');
+      }
+      if (!wasLive) {
+        this.liveFeatures.add(featureId);
+        this.notify();
+      }
+    } else if (wasLive) {
       this.liveFeatures.delete(featureId);
       this.notify();
     }

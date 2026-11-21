@@ -22,6 +22,7 @@
 
 import { sidebarState } from '../../left-sidebar/state.js';
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { showToast } from '../../shared/toast.js';
 import {
   type CameraState,
   type CameraLens,
@@ -37,6 +38,20 @@ import { CameraDvrManager } from './camera-dvr.js';
 
 // Module-level activation hook callback for smooth resumption on tab switch
 let onCameraActivatedCallback: (() => void) | null = null;
+
+// Module-level deactivation callback so other coordinators (e.g. Screen Feed) can cleanly reset camera
+let onCameraStopCallback: ((sendOffCommand?: boolean) => void) | null = null;
+
+/**
+ * Public helper to stop and reset the camera feed from other view coordinators.
+ * Hey friend! When the user clicks Play on Screen Feed, this is called so
+ * camera surveillance yields the single WebRTC video transceiver immediately!
+ *
+ * @param sendOffCommand Whether to dispatch CAMERA_OFF over DataChannel (defaults to true)
+ */
+export function stopCameraFeed(sendOffCommand = true): void {
+  onCameraStopCallback?.(sendOffCommand);
+}
 
 /**
  * Hey friend! This activation hook is called whenever the user switches back
@@ -190,6 +205,30 @@ function bindCameraEvents(container: HTMLElement): void {
   // DVR Manager singleton for this view instance
   const dvrManager = new CameraDvrManager();
 
+  // Register module-level stop hook so outside callers (e.g. Screen Feed) can cleanly reset camera
+  onCameraStopCallback = (sendOffCommand = true) => {
+    if (cameraState !== 'IDLE') {
+      console.log(`[Camera] External stop requested (sendOff=${sendOffCommand}, currentState=${cameraState})`);
+      if (sendOffCommand && (cameraState === 'STREAMING' || cameraState === 'STARTING')) {
+        webrtcManager.sendCommand(CMD_CAMERA_OFF);
+      }
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      if (lensTimeout) {
+        clearTimeout(lensTimeout);
+        lensTimeout = null;
+      }
+      setCameraState('IDLE');
+    }
+  };
+
+  // Register with WebRTC manager feed coordinator
+  const unregisterDeactivator = webrtcManager.registerFeedDeactivator('camera', (sendOffCommand = true) => {
+    onCameraStopCallback?.(sendOffCommand);
+  });
+
   /**
    * Updates Play/Pause button visual state and controls bar.
    */
@@ -206,6 +245,11 @@ function bindCameraEvents(container: HTMLElement): void {
         if (pausedOverlay) pausedOverlay.style.display = 'flex';
         if (liveBadgeGroup) liveBadgeGroup.style.display = 'none';
         sidebarState.setFeatureLive('camera', false);
+
+        // Hey friend! When camera stops, release active video type lock if we held it
+        if (webrtcManager.getActiveVideoType() === 'camera') {
+          webrtcManager.setActiveVideoType(null);
+        }
 
         // Clear video surfaces
         liveVideo.srcObject = null;
@@ -340,11 +384,25 @@ function bindCameraEvents(container: HTMLElement): void {
   playPauseBtn.addEventListener('click', () => {
     if (cameraState === 'IDLE') {
       console.log('[Camera] Play clicked: Sending CAMERA_ON command...');
+
+      // Hey friend! Mutual exclusivity guard:
+      // The child device uses a single WebRTC video transceiver for both Camera and Screen.
+      // If Screen monitoring was running, we must cleanly deactivate it first so Screen frames
+      // never leak into the Camera video element!
+      if (sidebarState.isFeatureLive('screen') || webrtcManager.getActiveVideoType() === 'screen') {
+        console.log('[Camera] Screen stream is currently active. Deactivating screen to switch to camera...');
+        webrtcManager.deactivateFeed('screen', true);
+        showToast('Screen feed paused to switch to camera');
+      }
+
+      // Claim the active video type for camera so incoming video packets route strictly here
+      webrtcManager.setActiveVideoType('camera');
       setCameraState('STARTING');
 
       const sent = webrtcManager.sendCommand(CMD_CAMERA_ON);
       if (!sent) {
         console.warn('[Camera] Cannot send CAMERA_ON: DataChannel is not open.');
+        webrtcManager.setActiveVideoType(null);
         setCameraState('IDLE');
         return;
       }
@@ -570,12 +628,37 @@ function bindCameraEvents(container: HTMLElement): void {
         clearTimeout(confirmationTimeout);
         confirmationTimeout = null;
       }
-      setCameraState('STREAMING');
+      // Hey friend! Only activate streaming if camera is actually expecting to start.
+      // If the user cancelled or switched to screen monitoring while in flight, ignore or mute.
+      if (cameraState === 'STARTING') {
+        webrtcManager.setActiveVideoType('camera');
+        setCameraState('STREAMING');
+      } else if (webrtcManager.getActiveVideoType() !== 'camera') {
+        console.log('[Camera] CAMERA_STARTED arrived but active video is not camera. Sending CAMERA_OFF to mute.');
+        webrtcManager.sendCommand(CMD_CAMERA_OFF);
+      }
     } else if (message === RESP_CAMERA_STOPPED) {
       console.log('[Camera] Confirmation received: CAMERA_STOPPED. Deactivating stream and play button...');
       if (confirmationTimeout) {
         clearTimeout(confirmationTimeout);
         confirmationTimeout = null;
+      }
+      if (webrtcManager.getActiveVideoType() === 'camera') {
+        webrtcManager.setActiveVideoType(null);
+      }
+      setCameraState('IDLE');
+    } else if (message === 'SCREEN_STARTED' || message === 'SCREEN_RECORDING_STARTED') {
+      // Hey friend! Child confirmed screen monitoring has started!
+      // Because WebRTC shares a single video transceiver, Camera MUST immediately reset to IDLE
+      // so it never renders incoming screen frames on the camera surface!
+      console.log('[Camera] Child confirmed SCREEN_STARTED. Reverting camera view to IDLE to avoid cross-feed frame leak.');
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      if (lensTimeout) {
+        clearTimeout(lensTimeout);
+        lensTimeout = null;
       }
       setCameraState('IDLE');
     } else if (message.startsWith(RESP_CAMERA_SWITCHED_PREFIX)) {
@@ -647,11 +730,13 @@ function bindCameraEvents(container: HTMLElement): void {
       dvrManager.stop();
       unbindDataChannel();
       unbindConnectionState();
+      unregisterDeactivator();
       resizeObserver.disconnect();
       document.removeEventListener('fullscreenchange', onFullscreenChange);
       window.removeEventListener('nexus-camera-stream', onCameraStreamReceived);
       sidebarState.setFeatureLive('camera', false);
       onCameraActivatedCallback = null;
+      onCameraStopCallback = null;
       observer.disconnect();
     }
   });

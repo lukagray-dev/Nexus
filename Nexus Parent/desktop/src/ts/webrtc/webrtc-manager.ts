@@ -21,18 +21,111 @@ export type ConnectionStateListener = (state: RTCPeerConnectionState) => void;
 export type MessageListener = (message: string) => void;
 export type TrackListener = (track: MediaStreamTrack, stream: MediaStream) => void;
 
+/**
+ * Supported hardware video feed categories in Nexus Parent.
+ * Hey friend! Because the child device shares a single WebRTC video transceiver
+ * across both feeds (zero SDP renegotiation architecture), these feeds are strictly
+ * mutually exclusive. Only one can be actively routing frames at any time!
+ */
+export type VideoFeedType = 'camera' | 'screen';
+
 export class DesktopWebRtcManager {
   private peerConnection: RTCPeerConnection | null = null;
   private dataChannel: RTCDataChannel | null = null;
   private currentChildId: string | null = null;
   private unsubscribeAnswer: (() => void) | null = null;
   private micStream: MediaStream | null = null;
+
+  // Cached hardware media streams for camera and screen
   private cameraStream: MediaStream | null = null;
+  private screenStream: MediaStream | null = null;
+  private rawVideoStream: MediaStream | null = null;
+
+  // Tracks which video feed is currently authorized to receive frames ('camera' | 'screen' | null)
+  private activeVideoType: VideoFeedType | null = null;
+
+  // Registry of deactivation callbacks allowing camera and screen to cleanly yield to each other
+  private feedDeactivators: Map<VideoFeedType, (sendOffCommand?: boolean) => void> = new Map();
 
   // Event callback listeners
   private connectionStateListeners: Set<ConnectionStateListener> = new Set();
   private messageListeners: Set<MessageListener> = new Set();
   private trackListeners: Set<TrackListener> = new Set();
+
+  /**
+   * Registers a deactivation handler for a specific video feed ('camera' | 'screen').
+   * Hey friend! When the user hits Play on Screen while Camera is playing,
+   * the screen module calls deactivateFeed('camera') so camera cleanly shuts down first!
+   *
+   * @param feed The video feed type to register
+   * @param deactivator The callback that sets the feed to IDLE and clears its surfaces
+   * @returns Cleanup unsubscribe function
+   */
+  public registerFeedDeactivator(feed: VideoFeedType, deactivator: (sendOffCommand?: boolean) => void): () => void {
+    this.feedDeactivators.set(feed, deactivator);
+    return () => {
+      this.feedDeactivators.delete(feed);
+    };
+  }
+
+  /**
+   * Triggers the registered deactivation handler for a given video feed.
+   *
+   * @param feed The feed to deactivate ('camera' | 'screen')
+   * @param sendOffCommand Whether to dispatch the off command over DataChannel (default: true)
+   */
+  public deactivateFeed(feed: VideoFeedType, sendOffCommand = true): void {
+    const deactivator = this.feedDeactivators.get(feed);
+    if (deactivator) {
+      console.log(`[WebRTCManager] Deactivating video feed via coordinator: ${feed} (sendOffCommand=${sendOffCommand})`);
+      deactivator(sendOffCommand);
+    }
+  }
+
+  /**
+   * Updates the active video feed type ('camera' | 'screen' | null).
+   *
+   * Hey friend! Here is why this router method is essential:
+   * The Android child attaches both Camera2 and ScreenCapturer tracks to the same
+   * video RtpSender on the connection. By gating getCameraStream() and getScreenStream()
+   * behind this activeVideoType check:
+   * - Camera page only ever gets frames when 'camera' is active.
+   * - Screen page only ever gets frames when 'screen' is active.
+   * - When switching, neither page can EVER show the other's video frames!
+   */
+  public setActiveVideoType(type: VideoFeedType | null): void {
+    if (this.activeVideoType === type) return;
+    console.log(`[WebRTCManager] Switching active video feed type: ${this.activeVideoType} -> ${type}`);
+    this.activeVideoType = type;
+
+    if (type === 'camera') {
+      this.cameraStream = this.rawVideoStream;
+      this.screenStream = null;
+      if (this.cameraStream && this.cameraStream.getVideoTracks().length > 0) {
+        window.dispatchEvent(new CustomEvent('nexus-camera-stream', {
+          detail: { track: this.cameraStream.getVideoTracks()[0], stream: this.cameraStream }
+        }));
+      }
+    } else if (type === 'screen') {
+      this.screenStream = this.rawVideoStream;
+      this.cameraStream = null;
+      if (this.screenStream && this.screenStream.getVideoTracks().length > 0) {
+        window.dispatchEvent(new CustomEvent('nexus-screen-stream', {
+          detail: { track: this.screenStream.getVideoTracks()[0], stream: this.screenStream }
+        }));
+      }
+    } else {
+      this.cameraStream = null;
+      this.screenStream = null;
+    }
+  }
+
+  /**
+   * Returns the currently active video feed type ('camera' | 'screen' | null).
+   */
+  public getActiveVideoType(): VideoFeedType | null {
+    return this.activeVideoType;
+  }
 
   /**
    * Returns the active RTCPeerConnection instance, or null if disconnected.
@@ -56,17 +149,23 @@ export class DesktopWebRtcManager {
   }
 
   /**
-   * Returns the incoming camera MediaStream if available, or null.
+   * Returns the incoming camera MediaStream IF camera monitoring is actively authorized, or null.
    */
   public getCameraStream(): MediaStream | null {
+    if (this.activeVideoType !== 'camera') {
+      return null;
+    }
     return this.cameraStream;
   }
 
   /**
-   * Returns the incoming screen MediaStream if available, or null.
+   * Returns the incoming screen MediaStream IF screen monitoring is actively authorized, or null.
    */
   public getScreenStream(): MediaStream | null {
-    return this.cameraStream;
+    if (this.activeVideoType !== 'screen') {
+      return null;
+    }
+    return this.screenStream;
   }
 
   /**
@@ -243,15 +342,27 @@ export class DesktopWebRtcManager {
           detail: { track: event.track, stream }
         }));
       } else if (event.track.kind === 'video') {
-        if (!this.cameraStream || this.cameraStream.getVideoTracks()[0]?.id !== event.track.id) {
+        // Hey friend! Always cache the incoming raw hardware stream from the single video transceiver
+        this.rawVideoStream = stream;
+
+        // Route strictly to the authorized active video feed to prevent cross-view frame leakage
+        if (this.activeVideoType === 'camera') {
           this.cameraStream = stream;
+          this.screenStream = null;
+          window.dispatchEvent(new CustomEvent('nexus-camera-stream', {
+            detail: { track: event.track, stream: this.cameraStream }
+          }));
+        } else if (this.activeVideoType === 'screen') {
+          this.screenStream = stream;
+          this.cameraStream = null;
+          window.dispatchEvent(new CustomEvent('nexus-screen-stream', {
+            detail: { track: event.track, stream: this.screenStream }
+          }));
+        } else {
+          // No video feed actively authorized yet: clear specific pointers so neither view plays unexpectedly
+          this.cameraStream = null;
+          this.screenStream = null;
         }
-        window.dispatchEvent(new CustomEvent('nexus-camera-stream', {
-          detail: { track: event.track, stream: this.cameraStream }
-        }));
-        window.dispatchEvent(new CustomEvent('nexus-screen-stream', {
-          detail: { track: event.track, stream: this.cameraStream }
-        }));
       }
 
       this.notifyTrackReceived(event.track, stream);
@@ -320,6 +431,9 @@ export class DesktopWebRtcManager {
     this.unsubscribeAnswer = null;
     this.micStream = null;
     this.cameraStream = null;
+    this.screenStream = null;
+    this.rawVideoStream = null;
+    this.activeVideoType = null;
 
     // Dispatches proactive DISCONNECT command over DataChannel so Child executes immediate hardware teardown
     if (this.dataChannel && this.dataChannel.readyState === 'open') {

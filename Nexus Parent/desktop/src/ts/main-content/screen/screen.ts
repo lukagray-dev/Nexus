@@ -23,6 +23,7 @@
 
 import { sidebarState } from '../../left-sidebar/state.js';
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { showToast } from '../../shared/toast.js';
 import {
   type ScreenState,
   CMD_SCREEN_ON,
@@ -37,6 +38,20 @@ import { OpusAudioPlayer } from './opus-audio-player.js';
 
 // Module-level activation hook callback for smooth resumption on tab switch
 let onScreenActivatedCallback: (() => void) | null = null;
+
+// Module-level deactivation callback so other coordinators (e.g. Camera Feed) can cleanly reset screen
+let onScreenStopCallback: ((sendOffCommand?: boolean) => void) | null = null;
+
+/**
+ * Public helper to stop and reset the screen feed from other view coordinators.
+ * Hey friend! When the user clicks Play on Camera Feed, this is called so
+ * screen surveillance yields the single WebRTC video transceiver immediately!
+ *
+ * @param sendOffCommand Whether to dispatch SCREEN_OFF over DataChannel (defaults to true)
+ */
+export function stopScreenFeed(sendOffCommand = true): void {
+  onScreenStopCallback?.(sendOffCommand);
+}
 
 /**
  * Hey friend! This activation hook is called whenever the user switches back
@@ -179,6 +194,26 @@ function bindScreenEvents(container: HTMLElement): void {
   const dvrManager = new ScreenDvrManager();
   const opusAudioPlayer = new OpusAudioPlayer();
 
+  // Register module-level stop hook so outside callers (e.g. Camera Feed) can cleanly reset screen
+  onScreenStopCallback = (sendOffCommand = true) => {
+    if (screenState !== 'IDLE') {
+      console.log(`[Screen] External stop requested (sendOff=${sendOffCommand}, currentState=${screenState})`);
+      if (sendOffCommand && (screenState === 'STREAMING' || screenState === 'STARTING')) {
+        webrtcManager.sendCommand(CMD_SCREEN_OFF);
+      }
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      setScreenState('IDLE');
+    }
+  };
+
+  // Register with WebRTC manager feed coordinator
+  const unregisterDeactivator = webrtcManager.registerFeedDeactivator('screen', (sendOffCommand = true) => {
+    onScreenStopCallback?.(sendOffCommand);
+  });
+
   /**
    * Updates Play/Pause button visual state, overlays, and sidebar indicators.
    */
@@ -195,6 +230,11 @@ function bindScreenEvents(container: HTMLElement): void {
         if (pausedOverlay) pausedOverlay.style.display = 'flex';
         if (liveBadgeGroup) liveBadgeGroup.style.display = 'none';
         sidebarState.setFeatureLive('screen', false);
+
+        // Hey friend! When screen stops, release active video type lock if we held it
+        if (webrtcManager.getActiveVideoType() === 'screen') {
+          webrtcManager.setActiveVideoType(null);
+        }
 
         // Clear video surfaces and stop DVR & audio
         liveVideo.srcObject = null;
@@ -301,11 +341,25 @@ function bindScreenEvents(container: HTMLElement): void {
   playPauseBtn.addEventListener('click', () => {
     if (screenState === 'IDLE') {
       console.log('[Screen] Play clicked: Sending SCREEN_ON command...');
+
+      // Hey friend! Mutual exclusivity guard:
+      // The child device uses a single WebRTC video transceiver for both Camera and Screen.
+      // If Camera monitoring was running, we must cleanly deactivate it first so Camera frames
+      // never leak into the Screen video element!
+      if (sidebarState.isFeatureLive('camera') || webrtcManager.getActiveVideoType() === 'camera') {
+        console.log('[Screen] Camera stream is currently active. Deactivating camera to switch to screen...');
+        webrtcManager.deactivateFeed('camera', true);
+        showToast('Camera feed paused to switch to screen');
+      }
+
+      // Claim the active video type for screen so incoming video packets route strictly here
+      webrtcManager.setActiveVideoType('screen');
       setScreenState('STARTING');
 
       const sent = webrtcManager.sendCommand(CMD_SCREEN_ON);
       if (!sent) {
         console.warn('[Screen] Cannot send SCREEN_ON: DataChannel is not open.');
+        webrtcManager.setActiveVideoType(null);
         setScreenState('IDLE');
         return;
       }
@@ -502,15 +556,36 @@ function bindScreenEvents(container: HTMLElement): void {
 
     console.log('[Screen] DataChannel message received:', message);
 
-    if (message === RESP_SCREEN_STARTED) {
+    if (message === RESP_SCREEN_STARTED || message === 'SCREEN_RECORDING_STARTED') {
       console.log('[Screen] Confirmation received: SCREEN_STARTED. Activating stream and pause button...');
       if (confirmationTimeout) {
         clearTimeout(confirmationTimeout);
         confirmationTimeout = null;
       }
-      setScreenState('STREAMING');
-    } else if (message === RESP_SCREEN_STOPPED) {
+      // Hey friend! Only activate streaming if screen is actually expecting to start.
+      // If the user cancelled or switched to camera monitoring while in flight, ignore or mute.
+      if (screenState === 'STARTING') {
+        webrtcManager.setActiveVideoType('screen');
+        setScreenState('STREAMING');
+      } else if (webrtcManager.getActiveVideoType() !== 'screen') {
+        console.log('[Screen] SCREEN_STARTED arrived but active video is not screen. Sending SCREEN_OFF to mute.');
+        webrtcManager.sendCommand(CMD_SCREEN_OFF);
+      }
+    } else if (message === RESP_SCREEN_STOPPED || message === 'SCREEN_RECORDING_STOPPED') {
       console.log('[Screen] Confirmation received: SCREEN_STOPPED. Deactivating stream and play button...');
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout);
+        confirmationTimeout = null;
+      }
+      if (webrtcManager.getActiveVideoType() === 'screen') {
+        webrtcManager.setActiveVideoType(null);
+      }
+      setScreenState('IDLE');
+    } else if (message === 'CAMERA_STARTED') {
+      // Hey friend! Child confirmed camera monitoring has started!
+      // Because WebRTC shares a single video transceiver, Screen MUST immediately reset to IDLE
+      // so it never renders incoming camera frames on the screen surface!
+      console.log('[Screen] Child confirmed CAMERA_STARTED. Reverting screen view to IDLE to avoid cross-feed frame leak.');
       if (confirmationTimeout) {
         clearTimeout(confirmationTimeout);
         confirmationTimeout = null;
@@ -563,12 +638,14 @@ function bindScreenEvents(container: HTMLElement): void {
       opusAudioPlayer.stop();
       unbindDataChannel();
       unbindConnectionState();
+      unregisterDeactivator();
       resizeObserver.disconnect();
       document.removeEventListener('fullscreenchange', onFullscreenChange);
       window.removeEventListener('nexus-screen-stream', onScreenStreamReceived);
       window.removeEventListener('nexus-screen-audio', onScreenAudioPacket);
       sidebarState.setFeatureLive('screen', false);
       onScreenActivatedCallback = null;
+      onScreenStopCallback = null;
       observer.disconnect();
     }
   });
