@@ -119,4 +119,34 @@ class WebRtcProtocolTest {
         assertTrue("JSON must contain freeStorageBytes", jsonStr.contains("\"freeStorageBytes\":64424509440"))
         assertTrue("JSON must contain totalStorageBytes", jsonStr.contains("\"totalStorageBytes\":256000000000"))
     }
+
+    @Test
+    fun testIceCandidateMapStructureAndParsing() {
+        val sampleSdp = "candidate:1 1 UDP 2130706431 192.168.1.100 54321 typ host"
+        val sampleMid = "0"
+        val sampleMLineIndex = 0
+
+        val candidateMap = mapOf(
+            "candidate" to sampleSdp,
+            "sdpMid" to sampleMid,
+            "sdpMLineIndex" to sampleMLineIndex
+        )
+
+        val sdp = candidateMap["candidate"] as? String
+        val sdpMid = candidateMap["sdpMid"] as? String
+        val sdpMLineIndex = (candidateMap["sdpMLineIndex"] as? Number)?.toInt()
+
+        assertEquals(sampleSdp, sdp)
+        assertEquals(sampleMid, sdpMid)
+        assertEquals(sampleMLineIndex, sdpMLineIndex)
+    }
+
+    @Test
+    fun testDeviceStatusConstantsConformToMonorepoContract() {
+        assertEquals("online-waiting", DeviceStatusManager.STATUS_ONLINE_WAITING)
+        assertEquals("connecting", DeviceStatusManager.STATUS_CONNECTING)
+        assertEquals("connected", DeviceStatusManager.STATUS_CONNECTED)
+        assertEquals("disconnected", DeviceStatusManager.STATUS_DISCONNECTED)
+        assertEquals("offline", DeviceStatusManager.STATUS_OFFLINE)
+    }
 }

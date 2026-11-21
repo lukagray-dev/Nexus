@@ -3,11 +3,11 @@
  * @description Firebase Realtime Database signaling client for Nexus Parent Desktop.
  *
  * Hey friend! WebRTC is peer-to-peer, but the two devices need an initial handshake
- * to swap network routing parameters (SDP and ICE candidates).
+ * to swap network routing parameters (SDP and embedded ICE candidates).
  *
- * Here is how the Parent signaling client operates:
+ * Here is how the Parent signaling client operates in Non-Trickle ICE mode:
  * 1. Checks `/child-devices/{childId}` to ensure the phone exists and is currently online.
- * 2. Writes the Parent's Non-Trickle SDP Offer to `/signaling/{childId}/offer`.
+ * 2. Writes the Parent's complete self-contained SDP Offer to `/signaling/{childId}/offer`.
  * 3. Listens for the child's response on `/signaling/{childId}/answer`.
  * 4. Cleans up signaling paths when disconnecting or starting fresh.
  */
@@ -132,7 +132,7 @@ export class DesktopSignalingClient {
       }
 
       lastProcessedSdp = val.sdp;
-      console.log('[SignalingClient] Valid SDP Answer received from child.');
+      console.log('[SignalingClient] Valid Non-Trickle SDP Answer received from child.');
 
       onAnswer({
         type: (val.type as RTCSdpType) || 'answer',
@@ -179,6 +179,7 @@ export class DesktopSignalingClient {
 
     console.log(`[SignalingClient] Clearing signaling session for: ${rawId}`);
     try {
+      this.cleanupAnswerListener();
       await update(signalingRef, {
         offer: null,
         answer: null,

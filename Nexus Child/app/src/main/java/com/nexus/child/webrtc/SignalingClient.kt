@@ -12,14 +12,14 @@ import org.webrtc.SessionDescription
 /**
  * SignalingClient manages WebRTC signaling communication with Firebase Realtime Database.
  *
- * Hey friend! How do WebRTC peers connect if they don't know each other's IP address?
- * That is what "Signaling" is for:
- * 1. The desktop Parent writes its SDP Offer to `/signaling/{deviceId}/offer`.
- * 2. This SignalingClient listens to that node in Firebase.
- * 3. When an Offer arrives, we pass it to WebRtcManager to configure remote tracks
- *    and gather local ICE candidates.
- * 4. Once local ICE gathering is COMPLETE (Non-Trickle ICE), we send the self-contained
- *    SDP Answer to `/signaling/{deviceId}/answer`.
+ * Hey friend! How do WebRTC peers connect in Non-Trickle ICE mode?
+ * 1. The desktop Parent gathers all candidate routes locally and writes the self-contained
+ *    SDP Offer to `/signaling/{deviceId}/offer`.
+ * 2. This SignalingClient listens to that node in Firebase and notifies WebRtcManager.
+ * 3. WebRtcManager gathers local routes with GATHER_ONCE (200-400ms) and publishes the complete
+ *    self-contained SDP Answer to `/signaling/{deviceId}/answer`.
+ * 4. In Non-Trickle ICE, all candidates are embedded directly inside the SDP text without
+ *    relying on an auxiliary `ice-candidates` tree, providing clean and deterministic handshakes.
  */
 class SignalingClient(
     private val deviceId: String,
@@ -39,6 +39,7 @@ class SignalingClient(
         .child(deviceId)
 
     private var offerListener: ValueEventListener? = null
+
     @Volatile
     private var isListening = false
     private var lastProcessedOfferSdp: String? = null
@@ -98,7 +99,7 @@ class SignalingClient(
 
                 lastProcessedOfferSdp = desc.description
                 if (desc.type == SessionDescription.Type.OFFER) {
-                    Log.d(TAG, "Valid SDP Offer received from Parent. Passing to WebRtcManager...")
+                    Log.d(TAG, "Valid Non-Trickle SDP Offer received from Parent. Passing to WebRtcManager...")
                     onOfferReceived(desc)
                 } else if (desc.type == SessionDescription.Type.ANSWER) {
                     Log.d(TAG, "Valid renegotiation SDP Answer received from Parent. Passing to handler...")
@@ -118,12 +119,11 @@ class SignalingClient(
 
     /**
      * Writes the complete, self-contained SDP Answer to /signaling/{deviceId}/answer.
-     * In Non-Trickle ICE, this contains all gathered candidates embedded in the SDP text.
      *
-     * @param answer The generated SessionDescription answer with all candidates gathered.
+     * @param answer The generated SessionDescription answer with all candidates embedded.
      */
     fun sendAnswer(answer: SessionDescription) {
-        Log.d(TAG, "Publishing SDP Answer to /signaling/$deviceId/answer...")
+        Log.d(TAG, "Publishing Non-Trickle SDP Answer to /signaling/$deviceId/answer...")
         signalingRef.child("answer").setValue(answer.serialize()).addOnSuccessListener {
             Log.d(TAG, "SDP Answer published successfully to Firebase.")
         }.addOnFailureListener { error ->

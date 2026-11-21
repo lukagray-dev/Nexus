@@ -45,10 +45,18 @@ Instead, Nexus leverages the **native WebRTC stack already embedded in the OS We
 +-------------------------------------------------------------------------+
 ```
 
+## 3. Fast Non-Trickle ICE Architecture (1–2s Connection)
 
-## 3. Frontend Stream Integration Rules
+Nexus operates in **Fast Non-Trickle ICE** mode:
+1. **Self-Contained SDP Payloads**: All ICE candidates (host, local private IP, and STUN reflexive public IP/port) are gathered and embedded directly inside the SDP text. No auxiliary `ice-candidates` node is populated in Firebase.
+2. **`GATHER_ONCE` Policy**: Android explicitly sets `continualGatheringPolicy = GATHER_ONCE`. WebRTC gathers all candidate interfaces once and fires `IceGatheringState.COMPLETE` in **200–400ms**, eliminating the indefinite stall caused by `GATHER_CONTINUALLY`.
+3. **Streamlined STUN Mirrors**: Configured with 2 high-availability Google STUN servers (`stun.l.google.com:19302` and `stun1.l.google.com:19302`), preventing multi-second delays caused by polling 5+ mirrors.
+4. **Early Gathering Completion**: Both Desktop and Android detect `iceGatheringState === 'complete'` and immediately transmit the SDP offer/answer to Firebase, with a 1000ms safety window fallback.
+5. **Zero-Delay Media Renegotiation (< 100ms)**: When toggling the microphone (`MIC_ON` / `MIC_OFF`), the peer connection is already established and candidate routes are active. Both peers skip candidate gathering during renegotiation and swap the updated `m=audio` SDP offers/answers instantly.
 
-When implementing actual streaming in `desktop/src/ts/`:
+## 4. Frontend Stream Integration Rules
+
+When implementing streaming in `desktop/src/ts/`:
 
 1. **Camera Feed (`main-content/camera/camera.ts`)**:
    - Receive the remote camera `MediaStreamTrack`.
@@ -63,11 +71,12 @@ When implementing actual streaming in `desktop/src/ts/`:
    - Feed the frequency data into the existing 36-bar `<canvas id="mic-wave-canvas">` visualizer.
    - For Push-to-Talk ("Hold to Speak"): capture local microphone via `navigator.mediaDevices.getUserMedia({ audio: true })` and send it back over the peer connection to the child device.
 4. **DataChannel**:
-   - Use `peerConnection.createDataChannel('nexus-telemetry')` for bi-directional JSON messages (GPS coordinates, battery levels, command dispatch).
+   - Use `peerConnection.createDataChannel('nexus-control')` for bidirectional JSON messages (telemetry, live pings, remote commands).
 
-## 4. Key Takeaways for AI Agents
+## 5. Key Takeaways for AI Agents
 
 - **DO NOT** add Rust dependencies for video/audio codecs or WebRTC in `Cargo.toml`.
 - **DO NOT** attempt to pass video frame buffers through Tauri IPC commands.
 - **DO** write standard browser WebRTC JavaScript/TypeScript code using `window.RTCPeerConnection`.
 - All decoding and rendering are 100% native to the WebView.
+- Always use the Non-Trickle ICE protocol with embedded candidates in the SDP payload; do not populate separate `ice-candidates` nodes in Firebase.

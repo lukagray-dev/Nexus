@@ -162,7 +162,7 @@ class WebRtcManager(
         val rtcConfig = PeerConnection.RTCConfiguration(iceServers).apply {
             bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
             rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
-            continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
+            continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_ONCE
         }
 
         peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerObserver)
@@ -191,7 +191,7 @@ class WebRtcManager(
 
             pc.setRemoteDescription(object : SimpleSdpObserver("setRemoteDescription") {
                 override fun onSetSuccess() {
-                    Log.d(TAG, "Remote description set successfully. Generating answer...")
+                    Log.d(TAG, "Remote description set successfully. Generating Non-Trickle answer...")
                     createAnswer()
                 }
 
@@ -204,7 +204,8 @@ class WebRtcManager(
     }
 
     /**
-     * Creates an SDP Answer and applies it as local description to start ICE gathering.
+     * Creates an SDP Answer and applies it as local description, gathering all ICE candidates
+     * locally with GATHER_ONCE before transmitting the complete Non-Trickle SDP answer to Firebase.
      */
     private fun createAnswer() {
         val pc = peerConnection ?: return
@@ -216,16 +217,21 @@ class WebRtcManager(
 
                 pc.setLocalDescription(object : SimpleSdpObserver("setLocalDescription") {
                     override fun onSetSuccess() {
-                        Log.d(TAG, "Local description set. ICE candidate gathering started...")
+                        Log.d(TAG, "Local description set. Fast Non-Trickle ICE candidate gathering started...")
 
-                        // Schedule a fallback timer: if gathering doesn't complete within
-                        // fallback timeout, send whatever candidates we have accumulated so far.
-                        mainHandler.postDelayed({
-                            if (isAnswering.get() && !answerSent.get()) {
-                                Log.d(TAG, "ICE gathering timeout reached. Transmitting collected SDP answer.")
-                                transmitLocalAnswerIfReady()
-                            }
-                        }, ICE_GATHERING_FALLBACK_TIMEOUT_MS)
+                        // If gathering has already completed, transmit immediately
+                        if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE) {
+                            Log.d(TAG, "ICE gathering already COMPLETE. Transmitting answer immediately.")
+                            transmitLocalAnswerIfReady()
+                        } else {
+                            // Fast safety fallback: if gathering doesn't fire COMPLETE within 1000ms, transmit collected candidates
+                            mainHandler.postDelayed({
+                                if (isAnswering.get() && !answerSent.get()) {
+                                    Log.d(TAG, "Fast ICE gathering fallback window reached (1000ms). Transmitting collected SDP answer.")
+                                    transmitLocalAnswerIfReady()
+                                }
+                            }, 1000L)
+                        }
                     }
 
                     override fun onSetFailure(error: String?) {
@@ -292,19 +298,8 @@ class WebRtcManager(
                     Log.d(TAG, "Renegotiation offer created. Setting local description...")
                     pc.setLocalDescription(object : SimpleSdpObserver("setLocalDescRenegotiation") {
                         override fun onSetSuccess() {
-                            Log.d(TAG, "Local description set for renegotiation. Gathering ICE candidates...")
-                            // In Non-Trickle ICE, if gathering is already complete, transmit immediately
-                            if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE) {
-                                transmitRenegotiationOfferIfReady()
-                            } else {
-                                // Fallback timeout: transmit collected candidates if gathering takes too long
-                                mainHandler.postDelayed({
-                                    if (isRenegotiating.get() && !renegotiationOfferSent.get()) {
-                                        Log.d(TAG, "ICE gathering timeout for renegotiation reached. Transmitting collected SDP offer.")
-                                        transmitRenegotiationOfferIfReady()
-                                    }
-                                }, ICE_GATHERING_FALLBACK_TIMEOUT_MS)
-                            }
+                            Log.d(TAG, "Local description set for renegotiation. Transmitting offer immediately...")
+                            transmitRenegotiationOfferIfReady()
                         }
 
                         override fun onSetFailure(error: String?) {
@@ -389,19 +384,14 @@ class WebRtcManager(
         override fun onIceGatheringChange(state: PeerConnection.IceGatheringState) {
             Log.d(TAG, "ICE Gathering State changed: $state")
             if (state == PeerConnection.IceGatheringState.COMPLETE) {
-                if (isRenegotiating.get()) {
-                    Log.d(TAG, "Non-Trickle ICE gathering COMPLETE for renegotiation. Transmitting offer...")
-                    transmitRenegotiationOfferIfReady()
-                } else {
-                    Log.d(TAG, "Non-Trickle ICE gathering COMPLETE for answer. Transmitting answer...")
-                    transmitLocalAnswerIfReady()
-                }
+                Log.d(TAG, "Fast Non-Trickle ICE gathering COMPLETE. Transmitting answer...")
+                transmitLocalAnswerIfReady()
             }
         }
 
         override fun onIceCandidate(candidate: IceCandidate) {
             // In Non-Trickle ICE, candidates are bundled automatically into the local SDP
-            Log.d(TAG, "Gathered local ICE candidate: ${candidate.sdp.take(40)}...")
+            Log.d(TAG, "Gathered local ICE candidate into SDP: ${candidate.sdp.take(40)}...")
         }
 
         override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {

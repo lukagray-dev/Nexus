@@ -30,28 +30,55 @@ class WakeLockManager(private val context: Context) {
     private var wakeLock: PowerManager.WakeLock? = null
 
     /**
-     * Acquires the partial wake lock.
-     * If already held, calling this refreshes the timeout safely.
+     * Ensures the internal PowerManager.WakeLock instance is initialized.
+     */
+    private fun ensureWakeLockCreated() {
+        if (wakeLock == null) {
+            wakeLock = powerManager?.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                WAKE_LOCK_TAG
+            )?.apply {
+                setReferenceCounted(false) // One release() call safely releases it
+            }
+        }
+    }
+
+    /**
+     * Acquires the partial wake lock indefinitely without an automatic timeout.
+     * This is strictly intended for the foreground service lifecycle where an active
+     * notification is displayed and the CPU must not enter deep Doze sleep.
+     */
+    @Synchronized
+    fun acquireIndefinite() {
+        try {
+            ensureWakeLockCreated()
+            wakeLock?.let { lock ->
+                if (!lock.isHeld) {
+                    lock.acquire()
+                    Log.d(TAG, "Indefinite partial wake lock acquired for foreground service")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to acquire indefinite wake lock: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Acquires the partial wake lock with a specified timeout safety limit.
+     * If already held, refreshes the acquisition.
      *
      * @param timeoutMs Duration in milliseconds to keep the CPU awake.
      */
     @Synchronized
     fun acquire(timeoutMs: Long = DEFAULT_TIMEOUT_MS) {
         try {
-            if (wakeLock == null) {
-                // PARTIAL_WAKE_LOCK keeps the CPU running while screen and keyboard backlight may be off
-                wakeLock = powerManager?.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK,
-                    WAKE_LOCK_TAG
-                )?.apply {
-                    setReferenceCounted(false) // One release() call is guaranteed to release it
-                }
-            }
+            ensureWakeLockCreated()
             wakeLock?.let { lock ->
-                if (!lock.isHeld) {
-                    lock.acquire(timeoutMs)
-                    Log.d(TAG, "Partial wake lock acquired for ${timeoutMs}ms")
+                if (lock.isHeld) {
+                    lock.release()
                 }
+                lock.acquire(timeoutMs)
+                Log.d(TAG, "Partial wake lock acquired for ${timeoutMs}ms")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to acquire wake lock: ${e.message}", e)

@@ -1,6 +1,6 @@
 # Background Service & Multi-Tier Process Revival Specification
 
-Nexus Child operates as an autonomous, persistent monitoring agent on Android. This document specifies the architecture, lifecycle management, Android 14+ Foreground Service compliance, and multi-tier process resurrection defense system.
+Nexus Child operates as an autonomous, persistent monitoring agent on Android. This document specifies the architecture, lifecycle management, Android 14+ Foreground Service compliance, persistent Firebase background presence, and multi-tier process resurrection defense system.
 
 ---
 
@@ -12,7 +12,7 @@ In Nexus Child, the UI and the monitoring engine are completely decoupled:
    - Manages the entire WebRTC DataChannel connection, Firebase anonymous authentication, and presence heartbeat.
    - Hosts all 10 hardware monitoring domain controllers (Camera, Microphone, Screen, Location, SMS, CallLog, Storage, Notification, Vibrate/Flash, Wallpaper).
    - Runs as a persistent Android Foreground Service with types `dataSync` and `location`.
-   - Acquires a CPU `PARTIAL_WAKE_LOCK` via `WakeLockManager` to maintain socket connectivity when the display sleeps.
+   - Acquires an indefinite CPU `PARTIAL_WAKE_LOCK` via `WakeLockManager.acquireIndefinite()` to maintain socket connectivity when the display sleeps.
 2. **`MainActivity` (`com.nexus.child`)**:
    - Pure presentation layer.
    - Does not create or destroy WebRTC or hardware controller instances.
@@ -49,7 +49,28 @@ Android's LowMemoryKiller (LMK) and OEM custom battery optimizations (MIUI, OneU
 
 ---
 
-## 3. Auto-Start & OEM Battery Exemption
+## 3. Persistent Firebase Presence Architecture (`/.info/connected`)
+
+In cellular and long-running background environments, maintaining accurate status on Firebase Realtime Database requires proactive socket lifecycle management:
+
+1. **The Mobile Network Drop Problem**:
+   - Cellular carriers enforce aggressive idle NAT connection timeouts (typically 60–120 seconds).
+   - Network handovers (Wi-Fi to LTE, cell tower switches, radio sleep) drop the TCP socket.
+   - The Firebase server detects socket termination and fires the registered `onDisconnect()` hook, setting `status = "offline"`.
+   - Without active presence listening, the client's internal socket reconnects silently in the background, but the status remains stuck in `offline`.
+2. **The `/.info/connected` Solution in `DeviceStatusManager`**:
+   - Subscribes to Firebase's special `/.info/connected` path.
+   - Whenever `connected == true` fires:
+     - Re-arms server-side `onDisconnect().setValue(STATUS_OFFLINE)` and `onDisconnect().setValue(ServerValue.TIMESTAMP)` hooks for the new socket session.
+     - Immediately re-asserts the desired operational status (`online-waiting` or `connected`) and refreshes `lastSeen`.
+   - The 30-second recurring heartbeat (`heartbeatRunnable`) continuously refreshes `lastSeen` and validates that `status` matches `currentDesiredStatus`.
+3. **Indefinite Foreground CPU Wake Lock**:
+   - `WakeLockManager.acquireIndefinite()` is held by `NexusBackgroundService` during active foreground service execution.
+   - Prevents the Linux kernel from entering deep CPU sleep (Doze mode) that would otherwise freeze background coroutines and drop socket keep-alives with the screen turned off.
+
+---
+
+## 4. Auto-Start & OEM Battery Exemption
 
 Vendor-specific OEM task killers terminate apps regardless of foreground status unless auto-start is granted.
 Nexus Child includes `PermissionType.AUTO_START` in its 15-permission catalog:
@@ -63,7 +84,7 @@ Nexus Child includes `PermissionType.AUTO_START` in its 15-permission catalog:
 
 ---
 
-## 4. Foreground Notification & Tactical Design System
+## 5. Foreground Notification & Tactical Design System
 
 In compliance with the project's **No-Emoji Policy** and tactical monochrome aesthetic:
 - **Channel ID**: `nexus_core_service_channel`
@@ -77,13 +98,14 @@ In compliance with the project's **No-Emoji Policy** and tactical monochrome aes
 
 ---
 
-## 5. File & Component Map
+## 6. File & Component Map
 
 | File | Package | Responsibility |
 | :--- | :--- | :--- |
 | `NexusBackgroundService.kt` | `com.nexus.child.service` | Core Foreground Service hosting WebRTC and 10 monitoring domains |
 | `ServiceNotificationManager.kt` | `com.nexus.child.service` | Creates notification channel and builds tactical ongoing notification |
-| `WakeLockManager.kt` | `com.nexus.child.service` | Safe acquisition and release of CPU `PARTIAL_WAKE_LOCK` |
+| `WakeLockManager.kt` | `com.nexus.child.service` | Safe acquisition (indefinite or timeout) and release of CPU `PARTIAL_WAKE_LOCK` |
+| `DeviceStatusManager.kt` | `com.nexus.child.webrtc` | Presence management via `/.info/connected`, 30s heartbeat, and `onDisconnect()` hooks |
 | `BatteryOptimizationManager.kt` | `com.nexus.child.service` | Evaluates battery exemptions and resolves OEM auto-start intents |
 | `BootReceiver.kt` | `com.nexus.child.service.receiver` | Intercepts boot, quickboot, and package updates to start service |
 | `UnlockReceiver.kt` | `com.nexus.child.service.receiver` | Intercepts `ACTION_USER_PRESENT` to revive service upon screen unlock |

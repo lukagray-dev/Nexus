@@ -1,19 +1,16 @@
 /**
  * @file webrtc-manager.ts
- * @description WebRTC Connection and Media Stream Manager for Nexus Parent Desktop.
+ * @description Native WebRTC manager coordinating RTCPeerConnection and DataChannel in Nexus Parent Desktop.
  *
- * Hey friend! Why is WebRTC so fast and low-latency in Tauri?
- * Because we run inside WebView2 (Chromium on Windows), which already has Google's
- * native libwebrtc compiled directly into the browser runtime!
- *
- * This manager:
- * 1. Creates a standard RTCPeerConnection configured with Google STUN servers.
- * 2. Creates the 'nexus-control' DataChannel for commands and telemetry.
- * 3. Registers 'recvonly' transceivers for receiving live video and audio from the phone.
- * 4. Executes Non-Trickle ICE gathering: waits until iceGatheringState === 'complete'
- *    before writing the self-contained SDP offer to Firebase.
- * 5. Receives the child's Non-Trickle SDP answer and applies it as remote description.
- * 6. Dispatches incoming media tracks (camera, screen, microphone) directly to the DOM!
+ * Hey friend! Here is how the desktop WebRTC connection pipeline works step-by-step:
+ * 1. Checks that the child device is valid and currently marked as online in Firebase.
+ * 2. Creates a clean RTCPeerConnection instance with Google STUN servers.
+ * 3. Adds transceivers for receiving child camera video and bidirectional mic audio.
+ * 4. Creates the 'nexus-control' DataChannel for commands and telemetry.
+ * 5. Generates the SDP Offer and gathers all local/STUN ICE candidates into the SDP (Fast Non-Trickle ICE).
+ * 6. Publishes the self-contained SDP offer to Firebase at `/signaling/{childId}/offer`.
+ * 7. Listens for the child's self-contained SDP answer at `/signaling/{childId}/answer`.
+ * 8. Applies remote description, and direct peer-to-peer connectivity is active within 1-2 seconds!
  */
 
 import { STUN_SERVERS, DATA_CHANNEL_LABEL } from './firebase-config.js';
@@ -73,13 +70,7 @@ export class DesktopWebRtcManager {
   }
 
   /**
-   * Initiates the full end-to-end connection pipeline to a target child device:
-   * 1. Authenticates with Firebase anonymously.
-   * 2. Validates device existence and online status.
-   * 3. Creates PeerConnection and adds transceivers.
-   * 4. Gathers all ICE candidates locally (Non-Trickle ICE).
-   * 5. Publishes the complete SDP offer to Firebase.
-   * 6. Awaits the child's answer and applies it as remote description.
+   * Initiates the Fast Non-Trickle WebRTC connection handshake with the target child device.
    *
    * @param childId The 12-digit Child ID entered by the parent
    * @returns Device metadata upon successful connection
@@ -110,13 +101,13 @@ export class DesktopWebRtcManager {
     // Step 6: Create the primary control DataChannel
     this.setupDataChannel(pc);
 
-    // Step 7: Create offer and gather ICE candidates (Non-Trickle ICE)
+    // Step 7: Create offer and gather ICE candidates locally (Fast Non-Trickle ICE)
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     console.log('[WebRTCManager] Local description set. Gathering ICE candidates locally...');
 
-    // Wait for ICE gathering to complete before sending the SDP
-    await this.waitForIceGatheringComplete(pc);
+    // Wait for fast ICE gathering to complete (typically 200-400ms with 2 Google STUN mirrors)
+    await this.waitForIceGatheringComplete(pc, 1000);
 
     const completedSdp = pc.localDescription;
     if (!completedSdp) {
@@ -140,7 +131,7 @@ export class DesktopWebRtcManager {
         try {
           // Case 1: Initial Answer Handshake
           if (pc.signalingState === 'have-local-offer') {
-            console.log('[WebRTCManager] Received initial SDP Answer from child. Applying remote description...');
+            console.log('[WebRTCManager] Received initial Non-Trickle SDP Answer from child. Applying remote description...');
             clearTimeout(timeoutTimer);
             initialHandshakeDone = true;
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -157,14 +148,11 @@ export class DesktopWebRtcManager {
 
             const parentAnswer = await pc.createAnswer();
             await pc.setLocalDescription(parentAnswer);
-            console.log('[WebRTCManager] Created and set parent local answer. Gathering ICE...');
+            console.log('[WebRTCManager] Created and set parent local answer. Transmitting immediately...');
 
-            await this.waitForIceGatheringComplete(pc);
-
-            if (pc.localDescription) {
-              await signalingClient.sendRenegotiationAnswer(childId, pc.localDescription);
-              console.log('[WebRTCManager] Sent parent renegotiation answer to Firebase (/offer)');
-            }
+            // On an active connection, candidate routes are already established. Transmit immediately!
+            await signalingClient.sendRenegotiationAnswer(childId, parentAnswer);
+            console.log('[WebRTCManager] Sent parent renegotiation answer to Firebase (/offer)');
 
             // Acknowledge renegotiation completion over DataChannel so Child can confirm MIC_STARTED
             if (this.dataChannel && this.dataChannel.readyState === 'open') {
@@ -186,6 +174,38 @@ export class DesktopWebRtcManager {
     });
 
     return deviceMetadata;
+  }
+
+  /**
+   * Waits for local ICE candidate gathering to transition to 'complete'.
+   * Resolves immediately when 'complete' fires (typically 200-400ms).
+   * Includes a 1000ms safety window fallback to prevent hanging if an obscure interface stalls.
+   */
+  private waitForIceGatheringComplete(pc: RTCPeerConnection, maxWaitMs = 1000): Promise<void> {
+    return new Promise((resolve) => {
+      if (pc.iceGatheringState === 'complete') {
+        resolve();
+        return;
+      }
+
+      let timer: ReturnType<typeof setTimeout>;
+
+      const checkState = () => {
+        if (pc.iceGatheringState === 'complete') {
+          pc.removeEventListener('icegatheringstatechange', checkState);
+          clearTimeout(timer);
+          resolve();
+        }
+      };
+
+      pc.addEventListener('icegatheringstatechange', checkState);
+
+      timer = setTimeout(() => {
+        pc.removeEventListener('icegatheringstatechange', checkState);
+        console.log('[WebRTCManager] Fast ICE gathering window finished. Proceeding with gathered SDP.');
+        resolve();
+      }, maxWaitMs);
+    });
   }
 
   /**
@@ -276,36 +296,6 @@ export class DesktopWebRtcManager {
   }
 
   /**
-   * Waits for ICE gathering to transition to 'complete'.
-   * Includes a safety timeout fallback to prevent indefinitely hanging if an interface stalls.
-   */
-  private waitForIceGatheringComplete(pc: RTCPeerConnection): Promise<void> {
-    return new Promise((resolve) => {
-      if (pc.iceGatheringState === 'complete') {
-        resolve();
-        return;
-      }
-
-      const checkState = () => {
-        if (pc.iceGatheringState === 'complete') {
-          pc.removeEventListener('icegatheringstatechange', checkState);
-          clearTimeout(fallbackTimer);
-          resolve();
-        }
-      };
-
-      pc.addEventListener('icegatheringstatechange', checkState);
-
-      // Fallback timer: if gathering doesn't report complete within 2.5s, proceed with gathered candidates
-      const fallbackTimer = setTimeout(() => {
-        pc.removeEventListener('icegatheringstatechange', checkState);
-        console.log('[WebRTCManager] ICE gathering fallback timer expired. Proceeding with collected candidates.');
-        resolve();
-      }, 2500);
-    });
-  }
-
-  /**
    * Sends a text command across the active WebRTC DataChannel.
    *
    * @param command Text string or serialized JSON payload
@@ -368,6 +358,7 @@ export class DesktopWebRtcManager {
   }
 
   // Listener registration helpers
+
   public onConnectionStateChange(listener: ConnectionStateListener): () => void {
     this.connectionStateListeners.add(listener);
     return () => this.connectionStateListeners.delete(listener);
@@ -384,21 +375,33 @@ export class DesktopWebRtcManager {
   }
 
   private notifyConnectionStateChange(state: RTCPeerConnectionState): void {
-    for (const listener of this.connectionStateListeners) {
-      listener(state);
-    }
+    this.connectionStateListeners.forEach((listener) => {
+      try {
+        listener(state);
+      } catch (err) {
+        console.error('[WebRTCManager] Error in connection state listener:', err);
+      }
+    });
   }
 
   private notifyMessageReceived(message: string): void {
-    for (const listener of this.messageListeners) {
-      listener(message);
-    }
+    this.messageListeners.forEach((listener) => {
+      try {
+        listener(message);
+      } catch (err) {
+        console.error('[WebRTCManager] Error in message listener:', err);
+      }
+    });
   }
 
   private notifyTrackReceived(track: MediaStreamTrack, stream: MediaStream): void {
-    for (const listener of this.trackListeners) {
-      listener(track, stream);
-    }
+    this.trackListeners.forEach((listener) => {
+      try {
+        listener(track, stream);
+      } catch (err) {
+        console.error('[WebRTCManager] Error in track listener:', err);
+      }
+    });
   }
 }
 

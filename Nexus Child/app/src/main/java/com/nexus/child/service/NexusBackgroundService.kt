@@ -213,9 +213,9 @@ class NexusBackgroundService : Service() {
         notificationManager = ServiceNotificationManager(this)
         notificationManager.createNotificationChannel()
 
-        // Acquire partial wake lock to keep CPU active when display sleeps
+        // Acquire indefinite partial wake lock to keep CPU active when display sleeps while foreground service is running
         wakeLockManager = WakeLockManager(this)
-        wakeLockManager.acquire()
+        wakeLockManager.acquireIndefinite()
 
         // Start Foreground Service with declared Android 14+ types (DataSync and Location)
         val notification = notificationManager.buildForegroundNotification(isConnected = false)
@@ -254,7 +254,7 @@ class NexusBackgroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "NexusBackgroundService onStartCommand (flags=$flags, startId=$startId)")
-        wakeLockManager.acquire()
+        wakeLockManager.acquireIndefinite()
 
         if (!isBoundToWatchdog && !isWatchdogBindingInProgress.get()) {
             bindToWatchdog()

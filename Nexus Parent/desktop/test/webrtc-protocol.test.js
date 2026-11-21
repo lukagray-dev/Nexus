@@ -26,7 +26,7 @@ describe('WebRTC Configuration & Protocol Tests', () => {
 
   it('STUN_SERVERS should define valid Google STUN endpoints', () => {
     assert.ok(Array.isArray(STUN_SERVERS), 'STUN_SERVERS must be an array');
-    assert.ok(STUN_SERVERS.length >= 3, 'Must have at least 3 STUN mirrors');
+    assert.ok(STUN_SERVERS.length >= 2, 'Must have at least 2 STUN mirrors');
 
     for (const server of STUN_SERVERS) {
       assert.ok(server.urls, 'Each entry must have a urls property');
@@ -98,5 +98,14 @@ describe('WebRTC Configuration & Protocol Tests', () => {
     assert.strictEqual(dev.networkState, 'WiFi');
     assert.strictEqual(dev.storageUsageText, '64.0 GB free of 256.0 GB');
     deviceState.disconnect();
+  });
+
+  it('DesktopSignalingClient should support Non-Trickle ICE methods and cleanup', () => {
+    const client = new DesktopSignalingClient();
+    assert.strictEqual(typeof client.sendOffer, 'function');
+    assert.strictEqual(typeof client.listenForAnswer, 'function');
+    assert.strictEqual(typeof client.cleanupAnswerListener, 'function');
+    assert.strictEqual(typeof client.sendRenegotiationAnswer, 'function');
+    assert.strictEqual(typeof client.clearSignalingSession, 'function');
   });
 });
