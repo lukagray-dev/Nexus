@@ -24,6 +24,24 @@ export interface DeviceTelemetryUpdate {
   totalStorageBytes?: number;
 }
 
+/**
+ * Metadata record for a previously connected child device saved in local storage.
+ * Hey friend! This allows the desktop app to offer 1-click reconnect shortcuts
+ * on the Enter Child ID page so parents don't have to re-type 12 digits every time!
+ */
+export interface LastConnectedDevice {
+  /** Raw unformatted 12-digit numeric identifier, e.g. "482194021104" */
+  rawId: string;
+  /** Visually chunked 12-digit string, e.g. "4821 9402 1104" */
+  formattedId: string;
+  /** Friendly device name, e.g. "Pixel 8 Pro" or "Lucas Galaxy S24" */
+  name?: string;
+  /** Hardware model identifier, e.g. "Google Pixel 8 Pro (Android 14)" */
+  model?: string;
+  /** Timestamp when the device was last connected */
+  lastConnectedAt?: number;
+}
+
 export interface DeviceInfo {
   /** The 12-digit formatted Child ID, e.g. "4821 9402 1104" */
   id: string;
@@ -62,9 +80,23 @@ export type DeviceChangeListener = () => void;
 class DeviceStateManager {
   private connected: boolean = false;
   private currentDevice: DeviceInfo | null = null;
+  private lastDevice: LastConnectedDevice | null = null;
+  private readonly LAST_DEVICE_STORAGE_KEY = 'nexus_last_connected_child_device';
   private listeners: Set<DeviceChangeListener> = new Set();
 
+  /**
+   * In-memory storage dictionary fallback.
+   * Hey friend! In unit test environments (like Node.js test runner) or environments
+   * where window.localStorage might be sandboxed or throw a SecurityError, this fallback
+   * ensures our state manager remains completely rock-solid without throwing unhandled exceptions!
+   */
+  private memoryStorage: Map<string, string> = new Map();
+
   constructor() {
+    // Hey friend! Preload previously connected child device from storage so
+    // the pairing screen can instantly display the 1-click reconnect shortcut!
+    this.loadLastConnectedDevice();
+
     // Listen for WebRTC state changes to automatically handle disconnections
     webrtcManager.onConnectionStateChange((state) => {
       console.log('[DeviceState] WebRTC connection state changed to:', state);
@@ -109,6 +141,111 @@ class DeviceStateManager {
   }
 
   /**
+   * Safely reads a string value from local storage with graceful in-memory fallback.
+   *
+   * @param key Storage key name
+   * @returns Stored string value or null if not found
+   */
+  private getStorageItem(key: string): string | null {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (error) {
+      console.warn('[DeviceState] localStorage read error, falling back to memory:', error);
+    }
+    return this.memoryStorage.get(key) ?? null;
+  }
+
+  /**
+   * Safely writes a key-value string pair to local storage with graceful in-memory fallback.
+   *
+   * @param key Storage key name
+   * @param value String value to store
+   */
+  private setStorageItem(key: string, value: string): void {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (error) {
+      console.warn('[DeviceState] localStorage write error, falling back to memory:', error);
+    }
+    this.memoryStorage.set(key, value);
+  }
+
+  /**
+   * Safely removes a key-value entry from local storage with graceful in-memory fallback.
+   *
+   * @param key Storage key name
+   */
+  private removeStorageItem(key: string): void {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (error) {
+      console.warn('[DeviceState] localStorage remove error, falling back to memory:', error);
+    }
+    this.memoryStorage.delete(key);
+  }
+
+  /**
+   * Loads previously connected device information from persistent local storage.
+   * Hey friend! If a valid record exists, we deserialize it so UI screens can render it instantly.
+   *
+   * @returns The restored LastConnectedDevice metadata or null if none stored
+   */
+  public loadLastConnectedDevice(): LastConnectedDevice | null {
+    try {
+      const serialized = this.getStorageItem(this.LAST_DEVICE_STORAGE_KEY);
+      if (serialized) {
+        const parsed = JSON.parse(serialized) as LastConnectedDevice;
+        if (parsed && typeof parsed.rawId === 'string' && parsed.rawId.length === 12) {
+          this.lastDevice = parsed;
+          return this.lastDevice;
+        }
+      }
+    } catch (err) {
+      console.warn('[DeviceState] Could not parse previously connected device from storage:', err);
+    }
+    this.lastDevice = null;
+    return null;
+  }
+
+  /**
+   * Returns the cached metadata of the most recently connected child device, or null if none.
+   */
+  public getLastConnectedDevice(): LastConnectedDevice | null {
+    return this.lastDevice;
+  }
+
+  /**
+   * Saves metadata for the currently or previously connected child device to persistent local storage.
+   * Hey friend! This enables parents to quickly connect to their child phone with a single click!
+   *
+   * @param device Metadata record of the child device
+   */
+  public saveLastConnectedDevice(device: LastConnectedDevice): void {
+    this.lastDevice = device;
+    try {
+      this.setStorageItem(this.LAST_DEVICE_STORAGE_KEY, JSON.stringify(device));
+    } catch (err) {
+      console.warn('[DeviceState] Failed to persist last connected device to storage:', err);
+    }
+    this.notify();
+  }
+
+  /**
+   * Clears the stored last connected child device from persistent local storage.
+   */
+  public clearLastConnectedDevice(): void {
+    this.lastDevice = null;
+    this.removeStorageItem(this.LAST_DEVICE_STORAGE_KEY);
+    this.notify();
+  }
+
+  /**
    * Returns true if a child device is currently paired and connected.
    */
   public isConnected(): boolean {
@@ -128,6 +265,20 @@ class DeviceStateManager {
   public setConnectedDevice(info: DeviceInfo): void {
     this.connected = true;
     this.currentDevice = info;
+
+    // Hey friend! Automatically persist the connected device record so
+    // parents can easily reconnect next time without retyping!
+    const cleanRaw = info.rawId ? info.rawId.replace(/\D/g, '') : info.id.replace(/\D/g, '');
+    if (cleanRaw.length === 12) {
+      this.saveLastConnectedDevice({
+        rawId: cleanRaw,
+        formattedId: this.formatId(cleanRaw),
+        name: info.name,
+        model: info.model,
+        lastConnectedAt: Date.now()
+      });
+    }
+
     this.notify();
   }
 
@@ -186,6 +337,15 @@ class DeviceStateManager {
       );
     }
     this.currentDevice.lastSeen = 'Just now';
+
+    // Hey friend! If the connected device name or model was refined by the telemetry payload,
+    // update our stored lastDevice record as well so the reconnect button displays the friendly phone name!
+    if (this.lastDevice && this.currentDevice?.rawId && this.lastDevice.rawId === this.currentDevice.rawId) {
+      this.lastDevice.name = this.currentDevice.name;
+      this.lastDevice.model = this.currentDevice.model;
+      this.setStorageItem(this.LAST_DEVICE_STORAGE_KEY, JSON.stringify(this.lastDevice));
+    }
+
     this.notify();
   }
 
@@ -250,6 +410,15 @@ class DeviceStateManager {
         lastSeen: 'Just now'
       };
 
+      // Hey friend! Save the successfully connected child device to persistent storage!
+      this.saveLastConnectedDevice({
+        rawId: raw,
+        formattedId: formattedId,
+        name: 'Android Device',
+        model: 'Android Device',
+        lastConnectedAt: Date.now()
+      });
+
       this.notify();
       return true;
     } catch (error) {
@@ -283,6 +452,15 @@ class DeviceStateManager {
       isOnline: true,
       lastSeen: 'Just now'
     };
+
+    // Hey friend! Save the connected device to persistent storage!
+    this.saveLastConnectedDevice({
+      rawId: raw,
+      formattedId: formattedId,
+      name: 'Pixel 8 Pro',
+      model: 'Google Pixel 8 Pro (Android 14)',
+      lastConnectedAt: Date.now()
+    });
 
     this.notify();
     return true;

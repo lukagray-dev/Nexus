@@ -108,4 +108,68 @@ describe('WebRTC Configuration & Protocol Tests', () => {
     assert.strictEqual(typeof client.sendRenegotiationAnswer, 'function');
     assert.strictEqual(typeof client.clearSignalingSession, 'function');
   });
+
+  it('deviceState should manage saving, retrieving, and clearing lastConnectedDevice', () => {
+    // Start clean
+    deviceState.clearLastConnectedDevice();
+    assert.strictEqual(deviceState.getLastConnectedDevice(), null);
+
+    // Save a device
+    deviceState.saveLastConnectedDevice({
+      rawId: '123456789012',
+      formattedId: '1234 5678 9012',
+      name: 'Child Galaxy',
+      model: 'SM-G998B',
+      lastConnectedAt: 1700000000000
+    });
+
+    const saved = deviceState.getLastConnectedDevice();
+    assert.ok(saved);
+    assert.strictEqual(saved.rawId, '123456789012');
+    assert.strictEqual(saved.formattedId, '1234 5678 9012');
+    assert.strictEqual(saved.name, 'Child Galaxy');
+    assert.strictEqual(saved.model, 'SM-G998B');
+
+    // Clear
+    deviceState.clearLastConnectedDevice();
+    assert.strictEqual(deviceState.getLastConnectedDevice(), null);
+  });
+
+  it('deviceState.connect should automatically persist the child device for quick reconnect', () => {
+    deviceState.clearLastConnectedDevice();
+    deviceState.connect('987654321098');
+
+    const last = deviceState.getLastConnectedDevice();
+    assert.ok(last);
+    assert.strictEqual(last.rawId, '987654321098');
+    assert.strictEqual(last.formattedId, '9876 5432 1098');
+
+    // Disconnecting the active session should preserve the last connected record
+    deviceState.disconnect();
+    assert.strictEqual(deviceState.isConnected(), false);
+    assert.strictEqual(deviceState.getConnectedDevice(), null);
+
+    const preserved = deviceState.getLastConnectedDevice();
+    assert.ok(preserved);
+    assert.strictEqual(preserved.rawId, '987654321098');
+
+    deviceState.clearLastConnectedDevice();
+  });
+
+  it('deviceState.updateTelemetry should synchronize device name and model with the last connected device', () => {
+    deviceState.connect('987654321098');
+    deviceState.updateTelemetry({
+      deviceName: 'Sophie Pixel 8',
+      model: 'Pixel 8',
+      manufacturer: 'Google'
+    });
+
+    const last = deviceState.getLastConnectedDevice();
+    assert.ok(last);
+    assert.strictEqual(last.name, 'Sophie Pixel 8');
+    assert.strictEqual(last.model, 'Google Pixel 8');
+
+    deviceState.disconnect();
+    deviceState.clearLastConnectedDevice();
+  });
 });

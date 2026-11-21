@@ -302,6 +302,139 @@
   border-color: rgba(255, 255, 255, 0.25);
 }
 
+/* Quick Reconnect Shortcut Section for Previously Connected Child Device */
+.connect-recent-section {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.connect-recent-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0 0 10px 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.connect-recent-divider::before,
+.connect-recent-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.connect-recent-divider span {
+  padding: 0 12px;
+}
+
+.btn-recent-device {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 14px;
+  background-color: #171717;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  text-align: left;
+}
+
+.btn-recent-device:hover {
+  background-color: #1f1f1f;
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-recent-device:active {
+  transform: translateY(0);
+}
+
+.recent-device-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recent-device-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.recent-device-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.recent-device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-device-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.recent-device-id {
+  font-family: var(--mono-font-family);
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.recent-device-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recent-device-action {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.15s ease;
+}
+
+.btn-recent-device:hover .recent-device-action {
+  color: #ffffff;
+}
+
+.recent-arrow-icon {
+  width: 12px;
+  height: 12px;
+  filter: invert(1);
+  opacity: 0.5;
+  transition: all 0.15s ease;
+}
+
+.btn-recent-device:hover .recent-arrow-icon {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
 /* Footer Hint */
 .connect-footer-hint {
   margin-top: 22px;

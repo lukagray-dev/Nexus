@@ -267,7 +267,7 @@ function setupPairDeviceButton(): void {
       pairBtn.title = `Connected to ${device.name} (${device.id})`;
       pairBtn.innerHTML = `
         <div class="btn-sidebar-primary-left">
-          <img src="assets/icons/main-content/connection-state/smartphone.svg" alt="" style="width: 13px; height: 13px; opacity: 0.85;" />
+          <img src="assets/logo/nexus-child.svg" alt="Nexus Child Logo" style="width: 14px; height: 14px; object-fit: contain;" />
           <span class="device-btn-id">${device.id}</span>
           <span class="status-pulse-dot active" title="Device is online"></span>
         </div>

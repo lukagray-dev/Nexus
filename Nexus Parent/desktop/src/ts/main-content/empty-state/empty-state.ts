@@ -20,6 +20,11 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
   const card = document.createElement('div');
   card.className = 'empty-connect-card';
 
+  // Hey friend! Check if there is a previously connected child device stored in local storage.
+  // If found, we render a 1-click shortcut button right beneath the Connect button so parents
+  // never have to manually type the 12-digit Child ID on repeat sessions!
+  const lastDevice = deviceState.getLastConnectedDevice();
+
   card.innerHTML = `
     <!-- Card Brand & Icon Header -->
     <div class="connect-card-header">
@@ -67,6 +72,36 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
           <img src="assets/icons/main-content/empty-state/link.svg" alt="" style="filter: invert(0); width: 14px; height: 14px;" />
           <span>Connect Device</span>
         </button>
+
+        ${lastDevice ? `
+          <!-- Quick Reconnect Shortcut for Previously Connected Child Device -->
+          <div class="connect-recent-section" id="connect-recent-section">
+            <div class="connect-recent-divider">
+              <span>or reconnect to recent child</span>
+            </div>
+            <button
+              type="button"
+              id="btn-recent-child-device"
+              class="btn-recent-device"
+              data-raw-id="${lastDevice.rawId}"
+              title="Quickly connect to ${lastDevice.name || 'Child Device'} (${lastDevice.formattedId})"
+            >
+              <div class="recent-device-left">
+                <span class="recent-device-icon">
+                  <img src="assets/logo/nexus-child.svg" alt="Nexus Child Logo" />
+                </span>
+                <div class="recent-device-info">
+                  <span class="recent-device-label">${lastDevice.name || 'Child Phone'}</span>
+                  <span class="recent-device-id">${lastDevice.formattedId}</span>
+                </div>
+              </div>
+              <div class="recent-device-right">
+                <span class="recent-device-action">Quick Connect</span>
+                <img class="recent-arrow-icon" src="assets/icons/main-content/arrow-right.svg" alt="" />
+              </div>
+            </button>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Footer Help Hint -->
@@ -174,6 +209,20 @@ function bindPairingEvents(card: HTMLElement, onConnected: () => void): void {
   };
 
   connectBtn.addEventListener('click', () => {
+    void submitConnection();
+  });
+
+  // Quick-connect button click handler for previously connected child device
+  const recentBtn = card.querySelector<HTMLButtonElement>('#btn-recent-child-device');
+  recentBtn?.addEventListener('click', () => {
+    const rawId = recentBtn.getAttribute('data-raw-id') || deviceState.getLastConnectedDevice()?.rawId;
+    if (!rawId) return;
+
+    // Hey friend! Fill the 12-digit input and trigger validate() so the UI is active and synced
+    input.value = cleanInput(rawId);
+    validate();
+
+    // Instantly launch connection so the parent can connect with a single click!
     void submitConnection();
   });
 
