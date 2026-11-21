@@ -11,6 +11,7 @@
  */
 
 import { webrtcManager } from '../webrtc/webrtc-manager.js';
+import { reconnectManager } from './reconnect-manager.js';
 
 export interface DeviceTelemetryUpdate {
   batteryPercent?: number;
@@ -83,6 +84,8 @@ class DeviceStateManager {
   private lastDevice: LastConnectedDevice | null = null;
   private readonly LAST_DEVICE_STORAGE_KEY = 'nexus_last_connected_child_device';
   private listeners: Set<DeviceChangeListener> = new Set();
+  /** Tracks whether the disconnection was intentionally triggered by the user */
+  private isManualDisconnect: boolean = false;
 
   /**
    * In-memory storage dictionary fallback.
@@ -97,17 +100,49 @@ class DeviceStateManager {
     // the pairing screen can instantly display the 1-click reconnect shortcut!
     this.loadLastConnectedDevice();
 
+    // Wire ReconnectManager delegates and event listeners
+    this.attachReconnectHandlers();
+
     // Listen for WebRTC state changes to automatically handle disconnections
     webrtcManager.onConnectionStateChange((state) => {
       console.log('[DeviceState] WebRTC connection state changed to:', state);
       if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+        const wasConnected = this.connected;
+        const target = this.currentDevice;
+
+        // Automatic Reconnection Trigger:
+        // If the connection dropped suddenly due to network/child dropout (and was NOT
+        // manually triggered by the parent), start auto-reconnecting up to 9 times FIRST
+        // before clearing state flags or notifying subscribers!
+        const shouldAutoReconnect = wasConnected && target && !this.isManualDisconnect;
+        if (shouldAutoReconnect && target) {
+          console.log('[DeviceState] Unexpected connection drop detected. Triggering auto-reconnect...');
+          const cleanRaw = target.rawId ? target.rawId.replace(/\D/g, '') : target.id.replace(/\D/g, '');
+          if (cleanRaw.length === 12) {
+            reconnectManager.start({
+              rawId: cleanRaw,
+              formattedId: target.id,
+              name: target.name,
+              model: target.model
+            });
+          }
+        }
+
         if (this.connected) {
-          console.log('[DeviceState] Connection lost. Resetting device state to disconnected.');
+          console.log('[DeviceState] Connection lost. Setting connected state to false.');
           this.connected = false;
-          this.currentDevice = null;
+          // Retain currentDevice during auto-reconnection so active views retain device context.
+          // Only clear currentDevice if manual disconnect occurred or auto-reconnect is not active.
+          if (!reconnectManager.isReconnecting()) {
+            this.currentDevice = null;
+          }
           this.notify();
         }
+
+        this.isManualDisconnect = false;
       } else if (state === 'connected') {
+        this.isManualDisconnect = false;
+        reconnectManager.handleSuccess();
         if (!this.connected && this.currentDevice) {
           this.connected = true;
           this.notify();
@@ -387,6 +422,7 @@ class DeviceStateManager {
       return false;
     }
 
+    this.isManualDisconnect = false;
     onProgress?.('Authenticating session...');
     const formattedId = this.formatId(raw);
 
@@ -419,12 +455,17 @@ class DeviceStateManager {
         lastConnectedAt: Date.now()
       });
 
+      // Clear any pending reconnection attempts upon successful connection
+      reconnectManager.handleSuccess();
+
       this.notify();
       return true;
     } catch (error) {
       console.error('[DeviceState] Connection attempt failed:', error);
       this.connected = false;
-      this.currentDevice = null;
+      if (!reconnectManager.isReconnecting()) {
+        this.currentDevice = null;
+      }
       this.notify();
       throw error;
     }
@@ -439,6 +480,7 @@ class DeviceStateManager {
       return false;
     }
 
+    this.isManualDisconnect = false;
     const formattedId = this.formatId(raw);
 
     this.connected = true;
@@ -462,21 +504,75 @@ class DeviceStateManager {
       lastConnectedAt: Date.now()
     });
 
+    reconnectManager.handleSuccess();
     this.notify();
     return true;
   }
 
   /**
    * Disconnects the active child device and resets connection state back to the Enter Child ID screen.
+   * Marks this disconnection as an intentional user action so auto-reconnect is not triggered.
    */
   public disconnect(): void {
-    if (this.connected || this.currentDevice) {
-      console.log('[DeviceState] Disconnecting from active child device...');
+    if (this.connected || this.currentDevice || reconnectManager.isReconnecting()) {
+      console.log('[DeviceState] Disconnecting from active child device (manual)...');
+      this.isManualDisconnect = true;
+      reconnectManager.cancel();
       webrtcManager.disconnect();
       this.connected = false;
       this.currentDevice = null;
       this.notify();
     }
+  }
+
+  /**
+   * Explicitly cancels any ongoing automated reconnection attempts and resets state.
+   */
+  public cancelReconnection(): void {
+    console.log('[DeviceState] Cancelling active reconnection sequence...');
+    reconnectManager.cancel();
+    this.connected = false;
+    this.currentDevice = null;
+    this.notify();
+  }
+
+  /**
+   * Wires ReconnectManager delegation handlers and lifecycle listeners.
+   */
+  public attachReconnectHandlers(): void {
+    reconnectManager.setConnectHandler(async (rawId) => {
+      return await this.connectLive(rawId);
+    });
+
+    reconnectManager.onCancel(() => {
+      console.log('[DeviceState] Reconnection sequence cancelled. Transitioning to empty state.');
+      this.connected = false;
+      this.currentDevice = null;
+      this.notify();
+    });
+
+    reconnectManager.onExhausted(() => {
+      console.log('[DeviceState] All 9 reconnection attempts exhausted. Transitioning to empty state.');
+      this.connected = false;
+      this.currentDevice = null;
+      this.notify();
+    });
+
+    reconnectManager.subscribe(() => {
+      if (!this.connected && !reconnectManager.isReconnecting() && !reconnectManager.getState().isActive) {
+        if (this.currentDevice !== null) {
+          this.currentDevice = null;
+        }
+      }
+      this.notify();
+    });
+  }
+
+  /**
+   * Returns whether an automated reconnection sequence is actively ongoing.
+   */
+  public isReconnecting(): boolean {
+    return reconnectManager.isReconnecting();
   }
 
   /**

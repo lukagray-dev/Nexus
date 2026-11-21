@@ -10,6 +10,7 @@
 import { appState } from '../shared/state.js';
 import { sidebarState } from './state.js';
 import { deviceState } from '../shared/device-state.js';
+import { reconnectManager } from '../shared/reconnect-manager.js';
 import { rightSidebarState, type RightSidebarPanelId } from '../right-sidebar/state.js';
 import { initStealthManager } from '../stealth/stealth-manager.js';
 import type { SidebarSection } from './types.js';
@@ -152,7 +153,9 @@ function setupKeyboardShortcuts(): void {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
       e.preventDefault();
       sidebarState.setActiveFeatureId(null);
-      if (deviceState.isConnected()) {
+      if (reconnectManager.isReconnecting()) {
+        deviceState.cancelReconnection();
+      } else if (deviceState.isConnected()) {
         deviceState.disconnect();
       }
     }
@@ -192,6 +195,70 @@ function setupPairDeviceButton(): void {
     }
   };
 
+  /**
+   * Renders the Reconnection Status popover when clicking the top button during reconnection.
+   * Displays the Child Device ID, current attempt count, live countdown, and a Cancel button.
+   */
+  const renderReconnectDropdown = () => {
+    if (dropdownEl) {
+      closeDropdown();
+      return;
+    }
+
+    const targetDevice = reconnectManager.getTargetDevice();
+    const reconnectState = reconnectManager.getState();
+    if (!targetDevice) return;
+
+    dropdownEl = document.createElement('div');
+    dropdownEl.id = 'sidebar-device-dropdown';
+    dropdownEl.className = 'sidebar-device-dropdown sidebar-reconnect-dropdown';
+
+    const statusText = reconnectState.status === 'CONNECTING'
+      ? 'Connecting now...'
+      : `Reconnecting in ${reconnectState.secondsRemaining}s`;
+
+    dropdownEl.innerHTML = `
+      <div class="dropdown-telemetry-header">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <span class="dropdown-device-name">${targetDevice.name || 'Child Device'}</span>
+          <span class="count-pill reconnecting-pill">Attempt ${reconnectState.currentAttempt} of ${reconnectState.maxAttempts}</span>
+        </div>
+        <span class="dropdown-device-model">${targetDevice.model || 'Android Phone'}</span>
+      </div>
+      <div class="dropdown-telemetry-stats">
+        <div class="dropdown-stat-row">
+          <span class="dropdown-stat-label">Device ID</span>
+          <span class="dropdown-stat-value dropdown-mono-id">${targetDevice.formattedId}</span>
+        </div>
+        <div class="dropdown-stat-row">
+          <span class="dropdown-stat-label">Status</span>
+          <span class="dropdown-stat-value reconnect-status-val" style="color: #f59e0b; display: flex; align-items: center; gap: 4px;">
+            <span class="status-pulse-dot reconnecting"></span>
+            <span class="reconnect-status-text">${statusText}</span>
+          </span>
+        </div>
+      </div>
+      <div class="dropdown-separator"></div>
+      <button id="btn-dropdown-cancel-reconnect" class="dropdown-disconnect-btn dropdown-cancel-btn" title="Cancel Reconnection Attempts">
+        <img src="assets/icons/titlebar/close.svg" alt="" style="width: 10px; height: 10px; filter: brightness(0) saturate(100%) invert(32%) sepia(85%) saturate(2895%) hue-rotate(340deg) brightness(98%) contrast(92%);" />
+        <span>Cancel Reconnection</span>
+      </button>
+    `;
+
+    dropdownEl.querySelector('#btn-dropdown-cancel-reconnect')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      sidebarState.setActiveFeatureId(null);
+      deviceState.cancelReconnection();
+    });
+
+    sidebarTop?.appendChild(dropdownEl);
+    pairBtn.classList.add('open');
+  };
+
+  /**
+   * Renders the Connected Device Information popover with telemetry and disconnect button.
+   */
   const renderDropdown = () => {
     if (dropdownEl) {
       closeDropdown();
@@ -259,10 +326,39 @@ function setupPairDeviceButton(): void {
   });
 
   const updatePairButtonUi = () => {
+    const isReconnecting = reconnectManager.isReconnecting();
     const isConnected = deviceState.isConnected();
     const device = deviceState.getConnectedDevice();
+    const targetDevice = reconnectManager.getTargetDevice();
+    const reconnectState = reconnectManager.getState();
 
-    if (isConnected && device) {
+    if (isReconnecting && targetDevice) {
+      pairBtn.className = 'btn-sidebar-primary btn-sidebar-reconnecting';
+      pairBtn.title = `Reconnecting to ${targetDevice.name || targetDevice.formattedId} (Attempt ${reconnectState.currentAttempt} of ${reconnectState.maxAttempts})`;
+      pairBtn.innerHTML = `
+        <div class="btn-sidebar-primary-left">
+          <img src="assets/icons/animations/loading.svg" alt="" class="sidebar-reconnect-spinner" />
+          <span class="device-btn-id">Reconnecting (${reconnectState.currentAttempt}/${reconnectState.maxAttempts})</span>
+          <span class="status-pulse-dot reconnecting" title="Reconnection in progress"></span>
+        </div>
+        <span class="sidebar-caret">▼</span>
+      `;
+
+      // If reconnect dropdown is open, update its live countdown & attempt badge
+      if (dropdownEl && dropdownEl.classList.contains('sidebar-reconnect-dropdown')) {
+        const attemptBadge = dropdownEl.querySelector('.reconnecting-pill');
+        if (attemptBadge) {
+          attemptBadge.textContent = `Attempt ${reconnectState.currentAttempt} of ${reconnectState.maxAttempts}`;
+        }
+        const statusTextEl = dropdownEl.querySelector('.reconnect-status-text');
+        if (statusTextEl) {
+          statusTextEl.textContent = reconnectState.status === 'CONNECTING'
+            ? 'Connecting now...'
+            : `Reconnecting in ${reconnectState.secondsRemaining}s`;
+        }
+      }
+    } else if (isConnected && device) {
+      // Normal connected state
       pairBtn.className = 'btn-sidebar-primary btn-sidebar-connected';
       pairBtn.title = `Connected to ${device.name} (${device.id})`;
       pairBtn.innerHTML = `
@@ -273,6 +369,45 @@ function setupPairDeviceButton(): void {
         </div>
         <span class="sidebar-caret">▼</span>
       `;
+
+      // If reconnect dropdown was open, close it
+      if (dropdownEl && dropdownEl.classList.contains('sidebar-reconnect-dropdown')) {
+        closeDropdown();
+      }
+
+      // If connected dropdown is open, refresh telemetry contents
+      if (dropdownEl) {
+        const headerName = dropdownEl.querySelector('.dropdown-device-name');
+        if (headerName) headerName.textContent = device.name;
+
+        const headerModel = dropdownEl.querySelector('.dropdown-device-model');
+        if (headerModel) {
+          const os = device.androidVersion ? `Android ${device.androidVersion}` : 'Android';
+          headerModel.textContent = `${device.model} • ${os}`;
+        }
+
+        const stats = dropdownEl.querySelector('.dropdown-telemetry-stats');
+        if (stats) {
+          stats.innerHTML = `
+            <div class="dropdown-stat-row">
+              <span class="dropdown-stat-label">Battery</span>
+              <span class="dropdown-stat-value">${device.batteryPercent}%${device.isCharging ? ' (Charging)' : ''}</span>
+            </div>
+            <div class="dropdown-stat-row">
+              <span class="dropdown-stat-label">Network</span>
+              <span class="dropdown-stat-value">${device.networkState || 'WiFi'}</span>
+            </div>
+            <div class="dropdown-stat-row">
+              <span class="dropdown-stat-label">Storage</span>
+              <span class="dropdown-stat-value">${device.storageUsageText || 'Calculating...'}</span>
+            </div>
+            <div class="dropdown-stat-row">
+              <span class="dropdown-stat-label">Status</span>
+              <span class="dropdown-stat-value" style="color: #22c55e;">Online</span>
+            </div>
+          `;
+        }
+      }
     } else {
       closeDropdown();
       pairBtn.className = 'btn-sidebar-primary';
@@ -285,59 +420,30 @@ function setupPairDeviceButton(): void {
         <span class="key-badge">Ctrl+P</span>
       `;
     }
-
-    // If dropdown is open, refresh telemetry contents
-    if (dropdownEl && isConnected && device) {
-      const headerName = dropdownEl.querySelector('.dropdown-device-name');
-      if (headerName) headerName.textContent = device.name;
-
-      const headerModel = dropdownEl.querySelector('.dropdown-device-model');
-      if (headerModel) {
-        const os = device.androidVersion ? `Android ${device.androidVersion}` : 'Android';
-        headerModel.textContent = `${device.model} • ${os}`;
-      }
-
-      const stats = dropdownEl.querySelector('.dropdown-telemetry-stats');
-      if (stats) {
-        stats.innerHTML = `
-          <div class="dropdown-stat-row">
-            <span class="dropdown-stat-label">Battery</span>
-            <span class="dropdown-stat-value">${device.batteryPercent}%${device.isCharging ? ' (Charging)' : ''}</span>
-          </div>
-          <div class="dropdown-stat-row">
-            <span class="dropdown-stat-label">Network</span>
-            <span class="dropdown-stat-value">${device.networkState || 'WiFi'}</span>
-          </div>
-          <div class="dropdown-stat-row">
-            <span class="dropdown-stat-label">Storage</span>
-            <span class="dropdown-stat-value">${device.storageUsageText || 'Calculating...'}</span>
-          </div>
-          <div class="dropdown-stat-row">
-            <span class="dropdown-stat-label">Status</span>
-            <span class="dropdown-stat-value" style="color: #22c55e;">Online</span>
-          </div>
-        `;
-      }
-    }
   };
 
   pairBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (deviceState.isConnected()) {
+    if (reconnectManager.isReconnecting()) {
+      renderReconnectDropdown();
+    } else if (deviceState.isConnected()) {
       renderDropdown();
     } else {
       sidebarState.setActiveFeatureId(null);
     }
   });
 
-  // Re-render button whenever device connection or telemetry updates
+  // Re-render button whenever device connection, telemetry, or reconnection state updates
   deviceState.subscribe(updatePairButtonUi);
+  reconnectManager.subscribe(updatePairButtonUi);
   updatePairButtonUi();
 
   const pairMenuItem = document.getElementById('menu-item-pair-device');
   pairMenuItem?.addEventListener('click', () => {
     sidebarState.setActiveFeatureId(null);
-    if (deviceState.isConnected()) {
+    if (reconnectManager.isReconnecting()) {
+      deviceState.cancelReconnection();
+    } else if (deviceState.isConnected()) {
       deviceState.disconnect();
     }
   });

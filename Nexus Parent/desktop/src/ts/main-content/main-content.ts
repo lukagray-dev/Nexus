@@ -12,6 +12,7 @@
 
 import { sidebarState } from '../left-sidebar/state.js';
 import { deviceState } from '../shared/device-state.js';
+import { reconnectManager } from '../shared/reconnect-manager.js';
 import { renderPairingScreen } from './empty-state/empty-state.js';
 import { renderConnectedEmptyState } from './connection-state/connection-state.js';
 import { renderCameraView, onCameraViewActivated } from './camera/camera.js';
@@ -68,6 +69,14 @@ export function initMainContent(): void {
   // Listen to device connection changes: only re-render if in empty state or when disconnected
   deviceState.subscribe(() => {
     const isConnected = deviceState.isConnected();
+    const isReconnecting = reconnectManager.isReconnecting();
+
+    // While reconnecting, NEVER navigate away or kick the user off their current view!
+    // The user stays exactly on whichever feature or dashboard view they were on.
+    if (isReconnecting) {
+      return;
+    }
+
     if (!sidebarState.getActiveFeatureId()) {
       if (isConnected !== currentConnectedStatus) {
         if (!isConnected) {
@@ -76,11 +85,26 @@ export function initMainContent(): void {
         updateContentView(true);
       }
     } else if (!isConnected) {
-      // If a feature was active when the device disconnected, clean up views and return to pairing
+      // If a feature was active when the device disconnected (and is not auto-reconnecting),
+      // clean up views and return to pairing screen
       clearFeatureViews(contentPane);
       sidebarState.setActiveFeatureId(null);
       updateContentView(true);
     }
+  });
+
+  // When reconnection is cancelled by user or all 9 attempts are exhausted,
+  // clean up feature views and take the user to the empty state (connect to child page)
+  reconnectManager.onCancel(() => {
+    clearFeatureViews(contentPane);
+    sidebarState.setActiveFeatureId(null);
+    updateContentView(true);
+  });
+
+  reconnectManager.onExhausted(() => {
+    clearFeatureViews(contentPane);
+    sidebarState.setActiveFeatureId(null);
+    updateContentView(true);
   });
 }
 
@@ -202,16 +226,19 @@ function renderEmptyStateContainer(): HTMLElement {
 
   const renderActiveSubView = (): void => {
     container.innerHTML = '';
+    const isReconnecting = reconnectManager.isReconnecting();
     const isConnected = deviceState.isConnected();
 
-    if (!isConnected) {
+    // If fully disconnected and not actively reconnecting, render Phase 1 pairing screen.
+    // If connected OR in active auto-reconnect, user stays on the connected dashboard!
+    if (!isConnected && !isReconnecting) {
       container.appendChild(
         renderPairingScreen(() => {
           renderActiveSubView();
         })
       );
     } else {
-      const device = deviceState.getConnectedDevice() || {
+      const device = deviceState.getConnectedDevice() || (reconnectManager.getTargetDevice() as any) || {
         id: 'NX84-2881-2340',
         name: 'Pixel 8 Pro',
         model: 'Google Pixel 8 Pro (Android 14)',
