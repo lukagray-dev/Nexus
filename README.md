@@ -28,14 +28,24 @@
   <tbody>
     <tr>
       <td align="center" valign="middle">
-        <video src="assets/screenshots/Nexus%20Child.mp4" height="480" controls muted playsinline></video>
+        <a href="assets/screenshots/Nexus%20Child.mp4" target="_blank" rel="noopener noreferrer">
+          <img src="assets/screenshots/Nexus%20Child.png" height="480" alt="Nexus Child Mobile App" />
+        </a>
       </td>
       <td align="center" valign="middle">
-        <video src="assets/screenshots/Nexus%20Parent.mp4" height="480" controls muted playsinline></video>
+        <a href="assets/screenshots/Nexus%20Parent.mp4" target="_blank" rel="noopener noreferrer">
+          <img src="assets/screenshots/Nexus%20Parent.png" height="480" alt="Nexus Parent Desktop App" />
+        </a>
       </td>
     </tr>
   </tbody>
 </table>
+
+<p align="center">
+  <sub>Looking for video tutorials? Watch the full recorded walkthroughs:</sub><br/>
+  <b><a href="assets/screenshots/Nexus%20Child.mp4" target="_blank">Watch Nexus Child Walkthrough (.mp4)</a></b> • 
+  <b><a href="assets/screenshots/Nexus%20Parent.mp4" target="_blank">Watch Nexus Parent Walkthrough (.mp4)</a></b>
+</p>
 
 </div>
 
