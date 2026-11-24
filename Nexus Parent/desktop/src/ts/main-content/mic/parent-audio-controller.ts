@@ -1,20 +1,25 @@
 /**
  * @file parent-audio-controller.ts
- * @description Manages parent microphone capture and live WebRTC audio transmission
- * for the Parent-to-Child Voice Intercom feature.
+ * @description Manages parent microphone capture, real-time voice changer DSP,
+ * and live WebRTC audio transmission for the Parent-to-Child Voice Intercom feature.
  *
  * Hey friend! Here is how speaking to the child phone works from Desktop:
- * 1. Parent clicks the Speak button in the Mic panel.
+ * 1. Parent clicks the Speak button in the Mic panel (or selects a voice).
  * 2. ParentAudioController acquires the user's PC microphone via navigator.mediaDevices.getUserMedia
  *    with professional noise suppression, echo cancellation, auto-gain, and 48kHz audio.
- * 3. We find the WebRTC audio transceiver and attach our microphone track using sender.replaceTrack(track).
- * 4. We set track.enabled = true, and dispatch "PARENT_AUDIO_UNMUTE" via the DataChannel.
- * 5. Child device receives the command, cranks loudspeaker volume to MAX, and replies "PARENT_AUDIO_UNMUTED".
- * 6. When the parent clicks again to stop speaking, we set track.enabled = false and dispatch "PARENT_AUDIO_MUTE".
- * 7. Child restores normal volume levels and replies "PARENT_AUDIO_MUTED".
+ * 3. The raw microphone stream is routed through VoiceChangerEngine, which applies the active
+ *    DSP preset (e.g. Robot, Monster, Human Female, Alien, Echo, or clean Original).
+ * 4. We find the WebRTC audio transceiver and attach our processed audio track using sender.replaceTrack(track).
+ * 5. We set track.enabled = true, and dispatch "PARENT_AUDIO_UNMUTE" via the DataChannel.
+ * 6. Child device receives the command, boosts loudspeaker volume to MAX, and replies "PARENT_AUDIO_UNMUTED".
+ * 7. When the parent clicks again to stop speaking, we set track.enabled = false and dispatch "PARENT_AUDIO_MUTE".
+ * 8. Child restores normal volume levels and replies "PARENT_AUDIO_MUTED".
+ * 9. The parent can switch voices live at any time (idle or while actively speaking) without dropping the stream!
  */
 
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { VoicePreset, VoicePresetId, VOICE_PRESETS } from './voice-presets.js';
+import { voiceChangerEngine } from './voice-changer-engine.js';
 
 export class ParentAudioController {
   private localAudioStream: MediaStream | null = null;
@@ -23,7 +28,8 @@ export class ParentAudioController {
   private isInitialized = false;
 
   /**
-   * Initializes local microphone capture and attaches track to the peer connection sender.
+   * Initializes local microphone capture, mounts the VoiceChangerEngine DSP graph,
+   * and attaches the processed track to the WebRTC peer connection audio transceiver sender.
    * Audio track starts muted (disabled) until parent explicitly clicks to speak.
    *
    * @returns true if microphone was initialized and attached successfully; false otherwise.
@@ -45,13 +51,23 @@ export class ParentAudioController {
         },
       });
 
-      const tracks = this.localAudioStream.getAudioTracks();
-      if (!tracks || tracks.length === 0) {
+      const rawTracks = this.localAudioStream.getAudioTracks();
+      if (!rawTracks || rawTracks.length === 0) {
         console.error('[ParentAudio] No audio tracks found in local stream!');
         return false;
       }
 
-      this.audioTrack = tracks[0];
+      // Initialize VoiceChangerEngine with raw microphone stream
+      console.log('[ParentAudio] Initializing VoiceChangerEngine DSP pipeline...');
+      const dspSuccess = voiceChangerEngine.initialize(this.localAudioStream);
+      if (!dspSuccess) {
+        console.warn('[ParentAudio] VoiceChangerEngine failed to initialize. Falling back to raw track.');
+        this.audioTrack = rawTracks[0];
+      } else {
+        const processedTrack = voiceChangerEngine.getProcessedTrack();
+        this.audioTrack = processedTrack || rawTracks[0];
+      }
+
       // Keep microphone track muted initially
       this.audioTrack.enabled = false;
       this.isMutedState = true;
@@ -76,7 +92,7 @@ export class ParentAudioController {
       }
 
       this.isInitialized = true;
-      console.log('[ParentAudio] Local microphone initialized (muted baseline).');
+      console.log('[ParentAudio] Local microphone and voice changer initialized (muted baseline).');
       return true;
     } catch (error) {
       console.error('[ParentAudio] Failed to initialize local microphone:', error);
@@ -100,6 +116,9 @@ export class ParentAudioController {
     if (!this.audioTrack) {
       throw new Error('Audio track is not available.');
     }
+
+    // Resume any suspended browser audio contexts
+    await voiceChangerEngine.resume();
 
     // Enable track so live speech begins streaming over WebRTC RTP sender
     this.audioTrack.enabled = true;
@@ -136,6 +155,30 @@ export class ParentAudioController {
   }
 
   /**
+   * Changes the active voice preset. Can be called while idle or during active live speech.
+   *
+   * @param voiceId The identifier of the voice preset to activate.
+   */
+  public setVoice(voiceId: VoicePresetId): void {
+    console.log(`[ParentAudio] Setting active voice preset to: ${voiceId}`);
+    voiceChangerEngine.setVoice(voiceId);
+  }
+
+  /**
+   * Returns the currently active voice preset identifier.
+   */
+  public getActiveVoice(): VoicePresetId {
+    return voiceChangerEngine.getActiveVoice();
+  }
+
+  /**
+   * Returns the full list of all available voice presets.
+   */
+  public getAvailableVoices(): VoicePreset[] {
+    return VOICE_PRESETS;
+  }
+
+  /**
    * Returns whether the parent microphone is currently muted.
    */
   public isMuted(): boolean {
@@ -150,10 +193,12 @@ export class ParentAudioController {
   }
 
   /**
-   * Stops all active microphone tracks and releases hardware audio inputs.
+   * Stops all active microphone tracks, tears down VoiceChangerEngine, and releases hardware inputs.
    */
   public cleanup(): void {
     console.log('[ParentAudio] Cleaning up microphone resources...');
+    voiceChangerEngine.cleanup();
+
     if (this.audioTrack) {
       this.audioTrack.enabled = false;
       this.audioTrack.stop();

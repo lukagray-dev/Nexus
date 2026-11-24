@@ -1,22 +1,35 @@
 /**
  * @file mic.ts
- * @description Compact Floating Draggable Microphone Monitor component for Nexus Parent.
+ * @description Compact Floating Draggable Microphone Monitor component for Nexus Parent
+ * with Parent-to-Child Voice Intercom and Real-Time Voice Changer Dropdown.
  *
  * Hey friend! This module implements a sleek floating audio monitor overlay with real-time
  * WebRTC audio playback and visualizer:
  *  1. Play / Pause / Loading button:
- *     - When user clicks Play, shows animated loading spinner (loading.svg) while sending MIC_ON
- *     - When Child acknowledges with MIC_STARTED, flips to active Pause button and starts playback
- *     - When user clicks Pause, shows animated loading spinner while sending MIC_OFF
- *     - When Child acknowledges with MIC_STOPPED, flips back to Play button and stops audio
+ *     - When user clicks Play, shows animated loading spinner (loading.svg) while sending MIC_ON.
+ *     - When Child acknowledges with MIC_STARTED, flips to active Pause button and starts playback.
+ *     - When user clicks Pause, shows animated loading spinner while sending MIC_OFF.
+ *     - When Child acknowledges with MIC_STOPPED, flips back to Play button and stops audio.
  *  2. Real-Time Web Audio API Frequency Visualizer:
- *     - 36-bar canvas spectrum analyzing live audio PCM buffers from the child device
- *  3. Hold to Speak button (Push-to-talk intercom)
+ *     - 36-bar canvas spectrum analyzing live audio PCM buffers from the child device.
+ *  3. Split Intercom Control (Push-to-talk with Real-Time Voice Changer):
+ *     - Primary Speak Button: Click to speak / stop with the active voice.
+ *     - Dropdown Toggle Chevron: Click to open the tactical voice dropdown menu.
+ *     - 10 Presets: Original, Robot Male, Robot Female, Human Male, Human Female,
+ *       Male Monstar, Female Monstar, Overall Morphed, Echo, Alien.
+ *     - Live Hot-Switching: Switch voices seamlessly during active speech without dropping audio!
+ *     - LocalStorage Persistence: Remembers the parent's favorite voice across app sessions.
  */
 
 import { sidebarState } from '../../left-sidebar/state.js';
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
 import { parentAudioController } from './parent-audio-controller.js';
+import {
+  VoicePresetId,
+  VOICE_PRESETS,
+  getVoicePreset,
+  getSavedVoicePresetId,
+} from './voice-presets.js';
 
 // Cache the active floating panel DOM instance and its coordinates
 let activePanelInstance: HTMLElement | null = null;
@@ -91,9 +104,10 @@ export function syncMicOverlay(container: HTMLElement): void {
   } else {
     // Default to the bottom-right corner with 24px margin
     const positionDefault = () => {
-      const containerRect = typeof container.getBoundingClientRect === 'function'
-        ? container.getBoundingClientRect()
-        : { width: 960, height: 600 };
+      const containerRect =
+        typeof container.getBoundingClientRect === 'function'
+          ? container.getBoundingClientRect()
+          : { width: 960, height: 600 };
       const parentWidth = container.clientWidth || containerRect.width;
       const parentHeight = container.clientHeight || containerRect.height;
       const panelWidth = panel.offsetWidth || 280;
@@ -135,6 +149,9 @@ export function renderMicPanel(): HTMLElement {
   panel.id = 'mic-floating-panel';
   panel.className = 'mic-floating-panel';
 
+  const initialVoiceId = getSavedVoicePresetId();
+  const initialVoice = getVoicePreset(initialVoiceId);
+
   panel.innerHTML = `
     <!-- Draggable Header -->
     <div id="mic-panel-header" class="mic-panel-header">
@@ -151,24 +168,44 @@ export function renderMicPanel(): HTMLElement {
       </div>
     </div>
 
-    <!-- 4. Dynamic Audio Wave Visualizer Canvas -->
+    <!-- Dynamic Audio Wave Visualizer Canvas -->
     <div class="mic-wave-container">
       <canvas id="mic-wave-canvas" class="mic-wave-canvas" width="256" height="34"></canvas>
     </div>
 
-    <!-- 3 Core Action Controls -->
+    <!-- Core Action Controls Row -->
     <div class="mic-controls-row">
       <!-- 1. Play / Pause / Loading Button (starts in IDLE/paused state) -->
       <button id="btn-mic-play" class="mic-btn-icon" title="Play live audio stream">
         <img id="mic-play-icon" src="assets/icons/main-content/play.svg" alt="" />
       </button>
 
-      <!-- 2. Click to Speak Button (Microphone Intercom) -->
-      <button id="btn-mic-speak" class="mic-btn-speak" title="Click to speak to child (Mic off)">
-        <img id="mic-speak-icon" class="mic-speak-icon" src="assets/icons/main-content/mic.svg" alt="" />
-        <img id="mic-speak-wave" class="mic-speak-wave" src="assets/icons/animations/wave.svg" alt="" style="display: none;" />
-        <span id="mic-speak-label">Speak</span>
-      </button>
+      <!-- 2. Split Speak & Voice Selector Control -->
+      <div id="mic-speak-group" class="mic-speak-group">
+        <!-- Main Speak Action Button -->
+        <button id="btn-mic-speak" class="mic-btn-speak" title="Click to speak to child (Mic off)">
+          <img id="mic-speak-icon" class="mic-speak-icon" src="assets/icons/main-content/mic.svg" alt="" />
+          <img id="mic-speak-wave" class="mic-speak-wave" src="assets/icons/animations/wave.svg" alt="" style="display: none;" />
+          <span id="mic-speak-label" class="mic-speak-label">Speak</span>
+          <span id="mic-speak-voice-badge" class="mic-speak-voice-badge" title="Active Voice Preset">${initialVoice.name}</span>
+        </button>
+
+        <!-- Dropdown Chevron Trigger Button -->
+        <button id="btn-mic-voice-toggle" class="mic-btn-voice-toggle" title="Select Voice Effect" aria-haspopup="true" aria-expanded="false">
+          <img id="mic-voice-chevron" class="mic-voice-chevron" src="assets/icons/left-sidebar/chevron-down.svg" alt="" />
+        </button>
+
+        <!-- Tactical Voice Selection Dropdown Menu (pops up above the controls row) -->
+        <div id="mic-voice-dropdown" class="mic-voice-dropdown drop-up" style="display: none;" role="menu">
+          <div class="mic-voice-dropdown-header">
+            <span class="mic-voice-dropdown-title">VOICE CHANGER</span>
+            <span class="mic-voice-dropdown-subtitle">Real-time DSP</span>
+          </div>
+          <div id="mic-voice-dropdown-list" class="mic-voice-dropdown-list">
+            <!-- Dynamically populated in bindMicPanelEvents -->
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -204,17 +241,22 @@ export function renderMicView(): HTMLElement {
 
 /**
  * Attaches dragging, WebRTC DataChannel signaling, audio element playback,
- * and real-time frequency waveform rendering to the panel.
+ * real-time frequency waveform rendering, and voice changer dropdown handlers to the panel.
  */
 function bindMicPanelEvents(panel: HTMLElement): void {
   const header = panel.querySelector<HTMLElement>('#mic-panel-header');
   const canvas = panel.querySelector<HTMLCanvasElement>('#mic-wave-canvas');
   const btnPlay = panel.querySelector<HTMLButtonElement>('#btn-mic-play');
   const playIcon = panel.querySelector<HTMLImageElement>('#mic-play-icon');
+  const micSpeakGroup = panel.querySelector<HTMLElement>('#mic-speak-group');
   const btnSpeak = panel.querySelector<HTMLButtonElement>('#btn-mic-speak');
   const micSpeakIcon = panel.querySelector<HTMLImageElement>('#mic-speak-icon');
   const micSpeakWave = panel.querySelector<HTMLImageElement>('#mic-speak-wave');
   const micSpeakLabel = panel.querySelector<HTMLElement>('#mic-speak-label');
+  const micSpeakVoiceBadge = panel.querySelector<HTMLElement>('#mic-speak-voice-badge');
+  const btnVoiceToggle = panel.querySelector<HTMLButtonElement>('#btn-mic-voice-toggle');
+  const micVoiceDropdown = panel.querySelector<HTMLElement>('#mic-voice-dropdown');
+  const micVoiceDropdownList = panel.querySelector<HTMLElement>('#mic-voice-dropdown-list');
   const btnClose = panel.querySelector<HTMLButtonElement>('#btn-panel-close');
 
   if (!header) return;
@@ -226,6 +268,139 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   let animFrameId: number | null = null;
   let confirmationTimeout: ReturnType<typeof setTimeout> | null = null;
   let speakTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Track the active voice preset
+  let activeVoiceId: VoicePresetId = parentAudioController.getActiveVoice();
+
+  /**
+   * Refreshes the dropdown items DOM list with all 10 presets and marks the active voice.
+   */
+  function populateVoiceDropdown(): void {
+    if (!micVoiceDropdownList) return;
+    micVoiceDropdownList.innerHTML = '';
+
+    VOICE_PRESETS.forEach((preset) => {
+      const item = document.createElement('div');
+      item.className = `mic-voice-item ${preset.id === activeVoiceId ? 'is-active' : ''}`;
+      item.dataset.voiceId = preset.id;
+      item.setAttribute('role', 'menuitem');
+      item.setAttribute('tabindex', '0');
+
+      item.innerHTML = `
+        <img class="mic-voice-item-icon" src="${preset.iconPath}" alt="" />
+        <div class="mic-voice-item-info">
+          <span class="mic-voice-item-name">${preset.name}</span>
+          <span class="mic-voice-item-desc">${preset.description}</span>
+        </div>
+        <img class="mic-voice-item-check" src="assets/icons/voice-presets/check.svg" alt="" style="display: ${
+          preset.id === activeVoiceId ? 'block' : 'none'
+        };" />
+      `;
+
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectVoicePreset(preset.id);
+      });
+
+      micVoiceDropdownList.appendChild(item);
+    });
+  }
+
+  /**
+   * Activates a chosen voice preset, updates badges, and crossfades Web Audio DSP.
+   */
+  function selectVoicePreset(presetId: VoicePresetId): void {
+    activeVoiceId = presetId;
+    parentAudioController.setVoice(presetId);
+
+    const preset = getVoicePreset(presetId);
+    if (micSpeakVoiceBadge) {
+      micSpeakVoiceBadge.textContent = preset.name;
+    }
+
+    // Refresh active highlights in dropdown list
+    if (micVoiceDropdownList) {
+      const items = micVoiceDropdownList.querySelectorAll<HTMLElement>('.mic-voice-item');
+      items.forEach((item) => {
+        const isMatch = item.dataset.voiceId === presetId;
+        item.classList.toggle('is-active', isMatch);
+        const checkIcon = item.querySelector<HTMLImageElement>('.mic-voice-item-check');
+        if (checkIcon) {
+          checkIcon.style.display = isMatch ? 'block' : 'none';
+        }
+      });
+    }
+
+    closeVoiceDropdown();
+  }
+
+  /**
+   * Opens the tactical voice selection dropdown menu with smart collision detection.
+   */
+  function openVoiceDropdown(): void {
+    if (!micVoiceDropdown || !btnVoiceToggle) return;
+
+    // Smart vertical placement: If panel is positioned near the top of the container,
+    // open downwards so the menu is not clipped by viewport edges.
+    const panelTop = panel.offsetTop;
+    if (panelTop < 290) {
+      micVoiceDropdown.classList.remove('drop-up');
+      micVoiceDropdown.classList.add('drop-down');
+    } else {
+      micVoiceDropdown.classList.remove('drop-down');
+      micVoiceDropdown.classList.add('drop-up');
+    }
+
+    micVoiceDropdown.style.display = 'flex';
+    btnVoiceToggle.classList.add('is-open');
+    btnVoiceToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  /**
+   * Closes the tactical voice selection dropdown menu.
+   */
+  function closeVoiceDropdown(): void {
+    if (!micVoiceDropdown || !btnVoiceToggle) return;
+    micVoiceDropdown.style.display = 'none';
+    btnVoiceToggle.classList.remove('is-open');
+    btnVoiceToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  /**
+   * Toggles the dropdown menu open or closed.
+   */
+  function toggleVoiceDropdown(): void {
+    if (micVoiceDropdown && micVoiceDropdown.style.display === 'flex') {
+      closeVoiceDropdown();
+    } else {
+      openVoiceDropdown();
+    }
+  }
+
+  // Populate initial dropdown items
+  populateVoiceDropdown();
+
+  // Dropdown toggle button click
+  btnVoiceToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleVoiceDropdown();
+  });
+
+  // Close dropdown on outside click
+  const onDocumentClick = (e: MouseEvent) => {
+    if (micSpeakGroup && !micSpeakGroup.contains(e.target as Node)) {
+      closeVoiceDropdown();
+    }
+  };
+  document.addEventListener('click', onDocumentClick);
+
+  // Close dropdown on Escape key
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      closeVoiceDropdown();
+    }
+  };
+  document.addEventListener('keydown', onKeyDown);
 
   /**
    * Updates the Speak button visuals according to its state machine:
@@ -244,6 +419,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
         micSpeakWave.style.display = 'none';
         micSpeakLabel.textContent = 'Speak';
         btnSpeak.classList.remove('is-speaking', 'is-loading');
+        micSpeakGroup?.classList.remove('is-speaking', 'is-loading');
         btnSpeak.removeAttribute('disabled');
         btnSpeak.setAttribute('title', 'Click to speak to child (Mic off)');
         isSpeaking = false;
@@ -255,6 +431,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
         micSpeakLabel.textContent = 'Connecting...';
         btnSpeak.classList.remove('is-speaking');
         btnSpeak.classList.add('is-loading');
+        micSpeakGroup?.classList.remove('is-speaking');
+        micSpeakGroup?.classList.add('is-loading');
         btnSpeak.setAttribute('disabled', 'true');
         btnSpeak.setAttribute('title', 'Connecting to child loudspeaker...');
         isSpeaking = false;
@@ -266,6 +444,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
         micSpeakLabel.textContent = 'Speaking';
         btnSpeak.classList.remove('is-loading');
         btnSpeak.classList.add('is-speaking');
+        micSpeakGroup?.classList.remove('is-loading');
+        micSpeakGroup?.classList.add('is-speaking');
         btnSpeak.removeAttribute('disabled');
         btnSpeak.setAttribute('title', 'Speaking to child at MAX volume (Click to stop)');
         isSpeaking = true;
@@ -277,6 +457,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
         micSpeakLabel.textContent = 'Stopping...';
         btnSpeak.classList.remove('is-speaking');
         btnSpeak.classList.add('is-loading');
+        micSpeakGroup?.classList.remove('is-speaking');
+        micSpeakGroup?.classList.add('is-loading');
         btnSpeak.setAttribute('disabled', 'true');
         btnSpeak.setAttribute('title', 'Restoring normal phone volume...');
         isSpeaking = false;
@@ -357,7 +539,9 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     // Step 2: Wire Web Audio API AnalyserNode
     try {
       if (!audioContext || audioContext.state === 'closed') {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         audioContext = new AudioCtx();
       }
       if (audioContext.state === 'suspended') {
@@ -403,6 +587,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     // Hey friend! Closing the floating mic panel should ONLY minimize the overlay!
     // The active audio stream continues playing seamlessly in the background,
     // and the sidebar LIVE badge remains active until the user explicitly pauses.
+    closeVoiceDropdown();
     sidebarState.setMicOpen(false);
   });
 
@@ -416,6 +601,9 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   header.addEventListener('mousedown', (e: MouseEvent) => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('.mic-header-btn')) return;
     e.preventDefault();
+
+    // Close voice dropdown on drag start
+    closeVoiceDropdown();
 
     isDragging = true;
     panel.classList.add('is-dragging');
@@ -460,6 +648,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
 
   // 1. Play / Pause / Loading Control with Confirmation-based flow
   btnPlay?.addEventListener('click', () => {
+    closeVoiceDropdown();
+
     if (micState === 'IDLE') {
       console.log('[Mic] Play clicked: Sending MIC_ON command...');
       setButtonState('STARTING');
@@ -506,6 +696,7 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     console.log('[Mic] WebRTC connection state changed:', state);
     if (state === 'disconnected' || state === 'failed' || state === 'closed') {
       console.log('[Mic] Connection lost. Executing automatic microphone and intercom reset...');
+      closeVoiceDropdown();
       if (confirmationTimeout) {
         clearTimeout(confirmationTimeout);
         confirmationTimeout = null;
@@ -590,8 +781,12 @@ function bindMicPanelEvents(panel: HTMLElement): void {
 
   // 2. Click to Speak Control (Microphone Intercom)
   btnSpeak?.addEventListener('click', async () => {
+    closeVoiceDropdown();
+
     if (speakState === 'IDLE') {
-      console.log('[Mic] Speak clicked: Activating parent microphone and requesting loudspeaker boost...');
+      console.log(
+        `[Mic] Speak clicked: Activating parent microphone with voice [${activeVoiceId}] and requesting loudspeaker boost...`
+      );
       setSpeakButtonState('STARTING');
 
       try {
@@ -701,6 +896,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
       if (animFrameId) cancelAnimationFrame(animFrameId);
       if (confirmationTimeout) clearTimeout(confirmationTimeout);
       if (speakTimeout) clearTimeout(speakTimeout);
+      document.removeEventListener('click', onDocumentClick);
+      document.removeEventListener('keydown', onKeyDown);
       parentAudioController.cleanup();
       unbindDataChannel();
       unbindConnectionState();
