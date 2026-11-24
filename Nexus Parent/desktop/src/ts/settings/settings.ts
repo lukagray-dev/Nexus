@@ -1,89 +1,95 @@
 /**
  * @file settings.ts
- * @description Application Settings Dialog & Preferences for Nexus Parent.
+ * @description Master Settings Dialog & Layout Orchestrator for Nexus Parent.
  *
- * Hey friend! This manages the settings modal allowing the user to configure
- * STUN/TURN WebRTC signaling servers, auto-reconnect behavior, and stealth mode preferences.
+ * Hey friend! This orchestrator manages the master-detail Settings modal:
+ * 1. Hosts a two-pane layout: a dedicated left navigation sidebar (`sidebar/`) and
+ *    category-specific main content sections (`main-content/`).
+ * 2. Wires activation triggers: Left Sidebar Settings button, Titlebar File -> Settings,
+ *    and the global `Ctrl+,` keyboard shortcut.
+ * 3. Dynamically hot-swaps category content views when clicking sidebar tabs without modal flicker.
+ * 4. Implements the Instant Auto-Save model with a Reset Defaults recovery button.
+ * 5. Handles smooth keyboard dismissal with Escape and click-outside overlay detection.
  */
 
+import { settingsState } from './sidebar/state.js';
+import { SettingsTabId } from './sidebar/types.js';
+import { SettingsSidebar } from './sidebar/sidebar.js';
+import { renderAudioVoiceIntercomContent } from './main-content/audio-voice-intercom.js';
+import { renderSurveillanceDvrContent } from './main-content/surveillance-dvr.js';
+import { renderConnectionWebrtcContent } from './main-content/connection-webrtc.js';
+import { renderSecurityForensicsContent } from './main-content/security-forensics.js';
+import { renderGeneralSystemContent } from './main-content/general-system.js';
+import { renderPairedDevicesContent } from './main-content/paired-devices.js';
+import { renderDiagnosticsStorageContent } from './main-content/diagnostics-storage.js';
 import { showToast } from '../shared/toast.js';
 
+let activeSidebarInstance: SettingsSidebar | null = null;
+let unbindTabListener: (() => void) | null = null;
+
 /**
- * Initializes settings triggers from sidebar and titlebar menu.
+ * Initializes global settings triggers from the Left Sidebar and keyboard shortcuts.
  */
 export function initSettings(): void {
+  // 1. Left sidebar Settings button
   const sidebarBtn = document.getElementById('btn-sidebar-settings');
   sidebarBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    showToast('Settings coming soon');
+    openSettingsDialog();
   });
 
-  const menuBtn = document.getElementById('menu-item-settings');
-  menuBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    showToast('Settings coming soon');
+  // 2. Global keyboard shortcut (Ctrl+, or Cmd+,)
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+      e.preventDefault();
+      openSettingsDialog();
+    }
   });
 }
 
 /**
- * Opens the interactive settings modal.
+ * Opens the interactive master-detail settings modal dialog.
  */
 export function openSettingsDialog(): void {
   const existing = document.getElementById('settings-dialog-overlay');
-  if (existing) return;
+  if (existing) {
+    existing.focus();
+    return;
+  }
 
   const overlay = document.createElement('div');
   overlay.id = 'settings-dialog-overlay';
   overlay.className = 'settings-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'settings-modal-title');
 
   overlay.innerHTML = `
-    <div class="settings-modal">
+    <div class="settings-modal settings-modal-two-pane">
+      <!-- Modal Top Header Bar -->
       <div class="settings-header">
-        <span class="settings-title">Nexus Parent Preferences</span>
-        <button id="btn-settings-close" class="settings-close-btn" title="Close">✕</button>
+        <div class="settings-header-left">
+          <img src="assets/icons/settings/settings.svg" alt="" style="width: 14px; height: 14px; filter: invert(1); opacity: 0.8;" />
+          <span id="settings-modal-title" class="settings-title">Preferences</span>
+        </div>
+        <button id="btn-settings-close" class="settings-close-btn" title="Close Settings (Escape)">✕</button>
       </div>
-      <div class="settings-body">
-        <div class="settings-section">
-          <div class="settings-section-title">WebRTC & P2P Connectivity</div>
-          <div class="settings-row">
-            <div class="settings-row-label">
-              <span class="settings-label-title">Primary STUN Server</span>
-              <span class="settings-label-desc">Used for NAT traversal and direct peer connection</span>
-            </div>
-          </div>
-          <input type="text" class="settings-input" value="stun:stun.l.google.com:19302" readonly />
-        </div>
 
-        <div class="settings-section">
-          <div class="settings-section-title">Application Defaults</div>
-          <div class="settings-row">
-            <div class="settings-row-label">
-              <span class="settings-label-title">Hardware Video Acceleration</span>
-              <span class="settings-label-desc">Decodes 1080p 60fps streams via GPU</span>
-            </div>
-            <span class="mono-badge">ENABLED</span>
-          </div>
-          <div class="settings-row" style="margin-top: 8px;">
-            <div class="settings-row-label">
-              <span class="settings-label-title">End-to-End Encryption (E2EE)</span>
-              <span class="settings-label-desc">WebRTC DTLS-SRTP 256-bit AES-GCM cipher suite</span>
-            </div>
-            <span class="mono-badge">ACTIVE</span>
-          </div>
-        </div>
+      <!-- Two-Pane Master-Detail Body -->
+      <div class="settings-two-pane-body">
+        <!-- Left Pane: Navigation Sidebar -->
+        <div id="settings-sidebar-mount" class="settings-sidebar-container"></div>
 
-        <div class="settings-section">
-          <div class="settings-section-title">Build Information</div>
-          <div class="settings-row">
-            <div class="settings-row-label">
-              <span class="settings-label-title">Architecture</span>
-              <span class="settings-label-desc">Tauri v2 Native Rust Backend + WebView2</span>
-            </div>
-            <span class="mono-badge">v0.1.0</span>
-          </div>
-        </div>
+        <!-- Right Pane: Category Content Area -->
+        <div id="settings-content-mount" class="settings-content-area"></div>
       </div>
+
+      <!-- Modal Bottom Action Footer -->
       <div class="settings-footer">
+        <button id="btn-settings-reset" class="settings-btn settings-btn-secondary" title="Reset all settings to factory defaults">
+          <img src="assets/icons/settings/refresh-cw.svg" alt="" style="width: 11px; height: 11px; filter: invert(1); vertical-align: middle; margin-right: 4px;" />
+          Reset Defaults
+        </button>
         <button id="btn-settings-done" class="settings-btn settings-btn-primary">Done</button>
       </div>
     </div>
@@ -91,17 +97,121 @@ export function openSettingsDialog(): void {
 
   document.body.appendChild(overlay);
 
-  const close = (): void => {
-    if (overlay.parentElement) {
-      overlay.parentElement.removeChild(overlay);
-    }
-  };
+  // Mount Left Navigation Sidebar
+  const sidebarMount = overlay.querySelector<HTMLElement>('#settings-sidebar-mount');
+  if (sidebarMount) {
+    activeSidebarInstance = new SettingsSidebar();
+    sidebarMount.appendChild(activeSidebarInstance.render());
+  }
 
-  overlay.querySelector('#btn-settings-close')?.addEventListener('click', close);
-  overlay.querySelector('#btn-settings-done')?.addEventListener('click', close);
+  // Mount Initial Category Content View
+  const contentMount = overlay.querySelector<HTMLElement>('#settings-content-mount');
+  if (contentMount) {
+    renderActiveCategoryView(contentMount, settingsState.getActiveTab());
+
+    // Listen to tab changes and re-render content area smoothly
+    unbindTabListener = settingsState.onTabChange((newTabId: SettingsTabId) => {
+      renderActiveCategoryView(contentMount, newTabId);
+    });
+  }
+
+  // Wire Reset Defaults Button
+  const resetBtn = overlay.querySelector<HTMLButtonElement>('#btn-settings-reset');
+  resetBtn?.addEventListener('click', () => {
+    settingsState.resetToDefaults();
+    if (contentMount) {
+      renderActiveCategoryView(contentMount, settingsState.getActiveTab());
+    }
+    showToast('All settings restored to factory defaults');
+  });
+
+  // Wire Close Actions
+  const closeBtn = overlay.querySelector<HTMLButtonElement>('#btn-settings-close');
+  const doneBtn = overlay.querySelector<HTMLButtonElement>('#btn-settings-done');
+
+  closeBtn?.addEventListener('click', closeSettingsDialog);
+  doneBtn?.addEventListener('click', closeSettingsDialog);
+
+  // Close on outside overlay click
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
-      close();
+      closeSettingsDialog();
     }
   });
+
+  // Close on Escape key
+  const onEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      closeSettingsDialog();
+    }
+  };
+  document.addEventListener('keydown', onEscape);
+
+  // Attach teardown hook to clean up Escape listener when modal unmounts
+  (overlay as HTMLElement & { _cleanupEscape?: () => void })._cleanupEscape = () => {
+    document.removeEventListener('keydown', onEscape);
+  };
+}
+
+/**
+ * Closes and unmounts the active settings modal dialog.
+ */
+export function closeSettingsDialog(): void {
+  const overlay = document.getElementById('settings-dialog-overlay') as
+    | (HTMLElement & { _cleanupEscape?: () => void })
+    | null;
+
+  if (!overlay) return;
+
+  if (overlay._cleanupEscape) {
+    overlay._cleanupEscape();
+  }
+
+  if (unbindTabListener) {
+    unbindTabListener();
+    unbindTabListener = null;
+  }
+
+  if (activeSidebarInstance) {
+    activeSidebarInstance.destroy();
+    activeSidebarInstance = null;
+  }
+
+  if (overlay.parentElement) {
+    overlay.parentElement.removeChild(overlay);
+  }
+}
+
+/**
+ * Router that renders the corresponding category view inside the main content container.
+ */
+function renderActiveCategoryView(container: HTMLElement, tabId: SettingsTabId): void {
+  container.innerHTML = '';
+
+  switch (tabId) {
+    case 'audio':
+      container.appendChild(renderAudioVoiceIntercomContent());
+      break;
+    case 'surveillance':
+      container.appendChild(renderSurveillanceDvrContent());
+      break;
+    case 'connection':
+      container.appendChild(renderConnectionWebrtcContent());
+      break;
+    case 'security':
+      container.appendChild(renderSecurityForensicsContent());
+      break;
+    case 'general':
+      container.appendChild(renderGeneralSystemContent());
+      break;
+    case 'devices':
+      container.appendChild(renderPairedDevicesContent());
+      break;
+    case 'diagnostics':
+      container.appendChild(renderDiagnosticsStorageContent());
+      break;
+    default:
+      container.appendChild(renderAudioVoiceIntercomContent());
+      break;
+  }
 }

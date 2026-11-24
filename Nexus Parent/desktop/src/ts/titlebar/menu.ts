@@ -87,11 +87,11 @@ function setupMenuActions(): void {
     pairBtn?.click();
   });
 
-  // File -> Settings (shows coming soon toast)
+  // File -> Settings (opens tactical settings modal)
   document.getElementById('menu-item-settings')?.addEventListener('click', (e) => {
     e.stopPropagation();
     appState.setActiveMenu(null);
-    showToast('Settings coming soon');
+    import('../settings/settings.js').then((m) => m.openSettingsDialog());
   });
 
   // File -> Exit
