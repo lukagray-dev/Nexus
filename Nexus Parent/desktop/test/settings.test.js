@@ -25,21 +25,31 @@ import {
 import { SettingsSidebar } from '../src/js/settings/sidebar/sidebar.js';
 
 describe('Settings Category Registry & Default Values Tests', () => {
-  it('Must register exactly 7 settings categories matching system specification', () => {
+  it('Must register exactly 7 settings categories in the requested sidebar order', () => {
     assert.strictEqual(SETTINGS_TABS.length, 7);
 
     const expectedIds = [
+      'general',
+      'connection',
       'audio',
       'surveillance',
-      'connection',
       'security',
-      'general',
       'devices',
       'diagnostics',
     ];
 
-    const actualIds = SETTINGS_TABS.map((t) => t.id);
-    assert.deepStrictEqual(actualIds, expectedIds);
+    const expectedLabels = [
+      'General & System',
+      'Connection & WebRTC',
+      'Audio & Intercom',
+      'Surveillance & DVR',
+      'Security & App Lock',
+      'Paired Devices',
+      'Diagnostics & Storage',
+    ];
+
+    assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.id), expectedIds);
+    assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.label), expectedLabels);
   });
 
   it('Each category tab must possess non-empty label, description, and valid SVG iconPath without emojis', () => {
@@ -83,12 +93,21 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.lockoutStrikes, '3');
     assert.strictEqual(defaults.maskPasswords, true);
     assert.strictEqual(defaults.stealthConfirmation, true);
+    assert.strictEqual(defaults.alertIntruderSelfie, true);
+    assert.strictEqual(defaults.alertLowBattery, true);
+    assert.strictEqual(defaults.alertChildDisconnected, true);
+    assert.strictEqual('alertSos' in defaults, false);
 
     // 5. General
-    assert.ok(defaults.downloadsDirectory.includes('Downloads'));
+    assert.strictEqual(defaults.downloadsDirectory, '');
+    assert.strictEqual(defaults.askBeforeDownload, false);
+    assert.strictEqual(defaults.autoConnectLastDevice, false);
+    assert.strictEqual(defaults.launchOnStartup, false);
+    assert.strictEqual(defaults.startMinimized, false);
+    assert.strictEqual(defaults.alwaysOnTop, false);
+    assert.strictEqual(defaults.keepScreenAwake, true);
     assert.strictEqual(defaults.closeAction, 'tray');
-    assert.strictEqual(defaults.alertIntruderSelfie, true);
-    assert.strictEqual(defaults.alertSos, true);
+    assert.strictEqual(defaults.autoCheckUpdates, true);
 
     // 6. Devices
     assert.strictEqual(defaults.deviceAlias, 'Lucas - Pixel 8');
@@ -121,7 +140,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
 
   it('Manages active navigation tab and triggers onTabChange listeners', () => {
     const state = new SettingsState();
-    assert.strictEqual(state.getActiveTab(), 'audio');
+    assert.strictEqual(state.getActiveTab(), 'general');
 
     let reportedTab = null;
     const unsubscribe = state.onTabChange((newTab) => {
@@ -186,6 +205,17 @@ describe('Settings State Machine & Auto-Save Tests', () => {
 
     assert.strictEqual(state.getValue('defaultVoicePreset'), 'original');
     assert.strictEqual(state.getValue('screenQuality'), '1080p');
+  });
+
+  it('Migrates legacy launchMinimized=true into launchOnStartup and startMinimized', () => {
+    mockStorage[SETTINGS_STORAGE_KEY] = JSON.stringify({
+      closeAction: 'tray',
+      launchMinimized: true,
+    });
+    const state = new SettingsState();
+
+    assert.strictEqual(state.getValue('launchOnStartup'), true);
+    assert.strictEqual(state.getValue('startMinimized'), true);
   });
 });
 
@@ -265,12 +295,176 @@ describe('Settings Navigation Sidebar Component Tests', () => {
     assert.strictEqual(nav.attributes['role'], 'tablist');
     assert.strictEqual(nav.children.length, 7);
 
-    // Initial tab 'audio' should be selected
+    // Initial tab 'general' should be selected
     const firstTab = nav.children[0];
-    assert.strictEqual(firstTab.dataset.tabId, 'audio');
+    assert.strictEqual(firstTab.dataset.tabId, 'general');
     assert.strictEqual(firstTab.classList.contains('is-active'), true);
     assert.strictEqual(firstTab.attributes['aria-selected'], 'true');
 
     sidebar.destroy();
+  });
+});
+
+describe('Security & App Lock Desktop Alert Toggles Tests', () => {
+  let mockStorage = {};
+
+  function createAlertMockElement(tag) {
+    let _className = '';
+    let _innerHTML = '';
+    const _classes = new Set();
+    const el = {
+      tagName: tag.toUpperCase(),
+      id: '',
+      checked: false,
+      children: [],
+      textContent: '',
+      style: {},
+      attributes: {},
+      dataset: {},
+      _parsedById: {},
+      get className() {
+        return _className;
+      },
+      set className(val) {
+        _className = String(val);
+        _classes.clear();
+        _className.split(/\s+/).filter(Boolean).forEach((c) => _classes.add(c));
+      },
+      get innerHTML() {
+        return _innerHTML;
+      },
+      set innerHTML(html) {
+        _innerHTML = String(html);
+        const byId = {};
+        const regex = /<input[^>]*type="checkbox"[^>]*id="([^"]+)"([^>]*)>/g;
+        let match;
+        while ((match = regex.exec(_innerHTML)) !== null) {
+          const input = createAlertMockElement('input');
+          input.id = match[1];
+          input.checked = /\bchecked\b/.test(match[2]);
+          byId[input.id] = input;
+        }
+        el._parsedById = byId;
+      },
+      classList: {
+        add: (c) => _classes.add(c),
+        remove: (c) => _classes.delete(c),
+        toggle: (c, force) => {
+          if (force === undefined) {
+            if (_classes.has(c)) _classes.delete(c);
+            else _classes.add(c);
+          } else if (force) {
+            _classes.add(c);
+          } else {
+            _classes.delete(c);
+          }
+        },
+        contains: (c) => _classes.has(c),
+      },
+      querySelectorAll: () => [],
+      setAttribute: (k, v) => {
+        el.attributes[k] = String(v);
+      },
+      appendChild: (child) => {
+        el.children.push(child);
+        return child;
+      },
+      addEventListener: (event, handler) => {
+        if (!el._listeners) el._listeners = {};
+        if (!el._listeners[event]) el._listeners[event] = [];
+        el._listeners[event].push(handler);
+      },
+      dispatchEvent: async (eventName) => {
+        const handlers = el._listeners?.[eventName] || [];
+        for (const fn of handlers) {
+          await fn({ stopPropagation: () => {}, preventDefault: () => {} });
+        }
+      },
+      querySelector: (selector) => {
+        if (selector.startsWith('#')) {
+          const id = selector.slice(1);
+          if (el._parsedById[id]) return el._parsedById[id];
+          for (const child of el.children) {
+            const found = child.querySelector(selector);
+            if (found) return found;
+          }
+        }
+        return null;
+      },
+    };
+    return el;
+  }
+
+  beforeEach(() => {
+    mockStorage = {};
+    global.window = {
+      localStorage: {
+        getItem: (key) => (key in mockStorage ? mockStorage[key] : null),
+        setItem: (key, val) => {
+          mockStorage[key] = String(val);
+        },
+        removeItem: (key) => {
+          delete mockStorage[key];
+        },
+        clear: () => {
+          mockStorage = {};
+        },
+      },
+    };
+    global.document = {
+      createElement: (tag) => createAlertMockElement(tag),
+    };
+  });
+
+  it('renderDesktopAlertSettings renders 3 toggle rows (no checkboxes, no Emergency SOS Alert) and persists changes', async () => {
+    const { settingsState } = await import('../src/js/settings/sidebar/state.js');
+    const { renderDesktopAlertSettings } = await import(
+      '../src/js/settings/main-content/security-forensics/desktop-alerts.js'
+    );
+    const { renderSecurityForensicsContent } = await import(
+      '../src/js/settings/main-content/security-forensics/security-forensics.js'
+    );
+    const { renderGeneralSystemContent } = await import(
+      '../src/js/settings/main-content/general-system/general-system.js'
+    );
+
+    settingsState.resetToDefaults();
+
+    const rows = renderDesktopAlertSettings();
+    assert.strictEqual(rows.length, 3);
+
+    const combinedHtml = rows.map((r) => r.innerHTML).join('\n');
+    assert.ok(combinedHtml.includes('settings-toggle'));
+    assert.strictEqual(combinedHtml.includes('settings-checkbox-row'), false);
+    assert.strictEqual(combinedHtml.includes('Emergency SOS Alert'), false);
+    assert.strictEqual(combinedHtml.includes('setting-alert-sos'), false);
+
+    const intruderToggle = rows[0].querySelector('#setting-alert-intruder');
+    const batteryToggle = rows[1].querySelector('#setting-alert-low-battery');
+    const disconnectToggle = rows[2].querySelector('#setting-alert-disconnect');
+
+    assert.ok(intruderToggle && batteryToggle && disconnectToggle);
+    assert.strictEqual(intruderToggle.checked, true);
+    assert.strictEqual(batteryToggle.checked, true);
+    assert.strictEqual(disconnectToggle.checked, true);
+
+    intruderToggle.checked = false;
+    await intruderToggle.dispatchEvent('change');
+    assert.strictEqual(settingsState.getValue('alertIntruderSelfie'), false);
+
+    batteryToggle.checked = false;
+    await batteryToggle.dispatchEvent('change');
+    assert.strictEqual(settingsState.getValue('alertLowBattery'), false);
+
+    disconnectToggle.checked = false;
+    await disconnectToggle.dispatchEvent('change');
+    assert.strictEqual(settingsState.getValue('alertChildDisconnected'), false);
+
+    // Verify alerts group is mounted in Security & App Lock and removed from General & System
+    const securityView = renderSecurityForensicsContent();
+    const generalView = renderGeneralSystemContent();
+
+    assert.ok(securityView.querySelector('#setting-alert-intruder'));
+    assert.strictEqual(generalView.querySelector('#setting-alert-intruder'), null);
   });
 });

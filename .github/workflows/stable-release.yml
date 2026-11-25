@@ -128,9 +128,12 @@ jobs:
           
           $bin = "Nexus Parent/desktop/src-tauri/target/release/nexus-parent.exe"
           if (Test-Path $bin) {
-              $dest = "artifacts/nexus-parent-$tag-windows-x86_64.exe"
+              $fileName = "nexus-parent-$tag-windows-x86_64.exe"
+              $dest = "artifacts/$fileName"
               Copy-Item $bin $dest
-              Write-Host "Packaged Desktop binary to $dest"
+              $sha256 = (Get-FileHash -Path $dest -Algorithm SHA256).Hash.ToLowerInvariant()
+              Set-Content -Path "$dest.sha256" -Value "$sha256  $fileName" -NoNewline -Encoding ASCII
+              Write-Host "Packaged Desktop binary to $dest (SHA-256: $sha256)"
           } else {
               Write-Error "Desktop binary not found at $bin!"
               exit 1

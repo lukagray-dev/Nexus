@@ -12,7 +12,7 @@
 import { exitApplication, openExternalUrl } from '../shared/ipc.js';
 import { deviceState } from '../shared/device-state.js';
 import { appState } from '../shared/state.js';
-import { showToast } from '../shared/toast.js';
+import { runManualUpdateCheck } from '../settings/main-content/general-system/auto-update.js';
 import { openAboutDialog } from './about.js';
 
 export const DOCUMENTATION_URL = 'https://github.com/lukagray-dev/Nexus/tree/main/docs';
@@ -122,7 +122,7 @@ function setupMenuActions(): void {
   document.getElementById('menu-item-check-update')?.addEventListener('click', (e) => {
     e.stopPropagation();
     appState.setActiveMenu(null);
-    showToast('You are running the latest version of Nexus Parent (v0.1.0).');
+    void runManualUpdateCheck();
   });
 
   // Help -> Report bug

@@ -36,11 +36,36 @@ import {
   TYPE_STORAGE_DELETE_ERROR
 } from './types.js';
 import { storageState } from './state.js';
+import {
+  type ResolvedDownloadTarget,
+  resolveDownloadDestination,
+  saveBase64ChunksToTauri,
+  saveBlobWithUniversalSettings,
+  triggerBrowserBlobDownload,
+} from './download-manager.js';
 
 let isDataChannelListenerRegistered = false;
 
-// Pending file save handles keyed by transferId or path
-const pendingSaveHandles: Map<string, any> = new Map();
+// Pending download destinations queued per child file path until STORAGE_FILE_START arrives
+const pendingDownloadTargets: Map<string, ResolvedDownloadTarget[]> = new Map();
+
+function enqueueDownloadTarget(path: string, target: ResolvedDownloadTarget): void {
+  const queue = pendingDownloadTargets.get(path) || [];
+  queue.push(target);
+  pendingDownloadTargets.set(path, queue);
+}
+
+function dequeueDownloadTarget(path: string): ResolvedDownloadTarget | undefined {
+  const queue = pendingDownloadTargets.get(path);
+  if (!queue || queue.length === 0) {
+    return undefined;
+  }
+  const next = queue.shift();
+  if (queue.length === 0) {
+    pendingDownloadTargets.delete(path);
+  }
+  return next;
+}
 
 /**
  * Creates and returns the full-viewport Storage Monitor DOM element.
@@ -204,7 +229,7 @@ export function renderStorageView(): HTMLElement {
         <div class="storage-modal-actions">
           <button id="btn-image-modal-download" class="storage-modal-btn btn-primary">
             <img src="assets/icons/main-content/download.svg" alt="" style="width:13px;height:13px;filter:invert(1);" />
-            <span>Save Image As...</span>
+            <span>Download Image</span>
           </button>
         </div>
       </div>
@@ -257,7 +282,11 @@ function registerDataChannelListener(): void {
           showStorageToast(`Storage error: ${packet.reason || 'Failed to list directory'}`);
           break;
 
-        case TYPE_STORAGE_FILE_START:
+        case TYPE_STORAGE_FILE_START: {
+          const target =
+            (packet.purpose || 'download') === 'download'
+              ? dequeueDownloadTarget(packet.path)
+              : undefined;
           storageState.startTransferSession({
             transferId: packet.transferId,
             path: packet.path,
@@ -268,10 +297,13 @@ function registerDataChannelListener(): void {
             purpose: packet.purpose || 'download',
             mimeType: packet.mimeType || 'application/octet-stream',
             progressPercent: 0,
-            fileHandle: pendingSaveHandles.get(packet.path)
+            targetDirectory: target?.targetDirectory,
+            exactFilePath: target?.exactFilePath,
+            fileHandle: target?.fileHandle,
           });
           showStorageToast(`Streaming ${packet.fileName}... 0%`);
           break;
+        }
 
         case TYPE_STORAGE_FILE_CHUNK:
           storageState.appendTransferChunk(packet.transferId, packet.chunkIndex, packet.data);
@@ -322,6 +354,42 @@ function handleListBatch(packet: StorageListBatchPacket): void {
 }
 
 async function handleFileComplete(transferId: string): Promise<void> {
+  const existingSession = storageState.getTransferSession(transferId);
+  if (!existingSession) {
+    showStorageToast('Failed to reassemble file chunks');
+    return;
+  }
+
+  // Fast Tauri path: stream ordered Base64 chunks directly into Rust without duplicating Blobs in JS
+  if (
+    existingSession.purpose === 'download' &&
+    (existingSession.targetDirectory || existingSession.exactFilePath)
+  ) {
+    try {
+      const sortedKeys = Array.from(existingSession.receivedChunks.keys()).sort((a, b) => a - b);
+      const orderedBase64Chunks = sortedKeys.map((k) => existingSession.receivedChunks.get(k) || '');
+      const savedPath = await saveBase64ChunksToTauri({
+        transferId,
+        target: {
+          mode: existingSession.exactFilePath ? 'tauri-exact' : 'tauri-directory',
+          targetDirectory: existingSession.targetDirectory,
+          exactFilePath: existingSession.exactFilePath,
+        },
+        fileName: existingSession.fileName,
+        orderedBase64Chunks,
+      });
+
+      storageState.removeTransferSession(transferId);
+      showStorageToast(`Saved to: ${savedPath}`);
+    } catch (err: unknown) {
+      console.error('[Storage] Failed to save downloaded file to disk:', err);
+      storageState.removeTransferSession(transferId);
+      const reason = err instanceof Error ? err.message : 'Disk write error';
+      showStorageToast(`Failed to save ${existingSession.fileName}: ${reason}`);
+    }
+    return;
+  }
+
   const result = storageState.completeTransferSession(transferId);
   if (!result) {
     showStorageToast('Failed to reassemble file chunks');
@@ -331,40 +399,35 @@ async function handleFileComplete(transferId: string): Promise<void> {
   const { blobUrl, blob, session } = result;
 
   if (session.purpose === 'preview') {
-    // Open in-app image preview modal
-    storageState.setImagePreview(blobUrl, session.fileName);
+    // Open in-app image preview modal with cached Blob for universal Save/Download
+    storageState.setImagePreview(blobUrl, session.fileName, blob);
+    storageState.removeTransferSession(transferId);
     showStorageToast(`Image loaded: ${session.fileName}`);
-  } else {
-    // Check if user selected a native file handle before downloading
-    if (session.fileHandle) {
-      try {
-        const writable = await session.fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        pendingSaveHandles.delete(session.path);
-        showStorageToast(`Saved successfully: ${session.fileName}`);
-        return;
-      } catch (err: any) {
-        console.warn('[Storage] Error writing to native file handle, falling back to download link:', err);
-      }
-    }
-
-    // Fallback: Trigger browser / OS file download link
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = session.fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showStorageToast(`Download complete: ${session.fileName}`);
-
-    // Revoke Blob URL after short delay
-    setTimeout(() => {
-      URL.revokeObjectURL(blobUrl);
-      storageState.removeTransferSession(transferId);
-    }, 15000);
+    return;
   }
+
+  // Non-Tauri browser fallback: FileSystemFileHandle if chosen, else <a download>
+  if (session.fileHandle) {
+    try {
+      const writable = await session.fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      storageState.removeTransferSession(transferId);
+      showStorageToast(`Saved successfully: ${session.fileName}`);
+      return;
+    } catch (err: unknown) {
+      console.warn('[Storage] Error writing to native file handle, falling back to download link:', err);
+    }
+  }
+
+  triggerBrowserBlobDownload(blobUrl, session.fileName);
+  showStorageToast(`Download complete: ${session.fileName}`);
+
+  // Revoke Blob URL after short delay
+  setTimeout(() => {
+    URL.revokeObjectURL(blobUrl);
+    storageState.removeTransferSession(transferId);
+  }, 15000);
 }
 
 /**
@@ -787,7 +850,8 @@ function bindStorageEvents(container: HTMLElement): void {
     // 1. Check Image Preview Cache first
     const cachedUrl = storageState.getCachedImagePreview(item.path);
     if (cachedUrl) {
-      storageState.setImagePreview(cachedUrl, item.name);
+      const cachedBlob = storageState.getCachedImagePreviewBlob(item.path) || null;
+      storageState.setImagePreview(cachedUrl, item.name, cachedBlob);
       showStorageToast(`Loaded from cache: ${item.name}`);
       return;
     }
@@ -803,43 +867,34 @@ function bindStorageEvents(container: HTMLElement): void {
   };
 
   /**
-   * Prompts user for destination location before streaming and downloading.
+   * Resolves download destination from General & System universal settings before streaming.
    */
   const triggerDownload = async (item: RemoteFileItem) => {
-    let fileHandle: any = null;
+    try {
+      const target = await resolveDownloadDestination({
+        fileName: item.name,
+        mimeType: item.mimeType,
+        extension: item.extension,
+        onToast: showStorageToast,
+      });
 
-    // Use standard native File System Access API if supported
-    if (typeof (window as any).showSaveFilePicker === 'function') {
-      try {
-        fileHandle = await (window as any).showSaveFilePicker({
-          suggestedName: item.name,
-          types: [{
-            description: `${item.extension} file`,
-            accept: {
-              [item.mimeType || 'application/octet-stream']: [`.${item.name.split('.').pop() || ''}`]
-            }
-          }]
-        });
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          showStorageToast('Download cancelled');
-          return;
-        }
-        console.warn('[Storage] showSaveFilePicker failed:', err);
+      if (!target) {
+        showStorageToast('Download cancelled');
+        return;
       }
-    }
 
-    if (fileHandle) {
-      pendingSaveHandles.set(item.path, fileHandle);
+      enqueueDownloadTarget(item.path, target);
+      showStorageToast(`Starting high-speed download: ${item.name}...`);
+      const payload = JSON.stringify({
+        type: CMD_STORAGE_GET_FILE,
+        path: item.path,
+        purpose: 'download'
+      });
+      webrtcManager.sendCommand(payload);
+    } catch (err: unknown) {
+      console.error('[Storage] Failed to resolve download destination:', err);
+      showStorageToast('Failed to open save location dialog');
     }
-
-    showStorageToast(`Starting high-speed download: ${item.name}...`);
-    const payload = JSON.stringify({
-      type: CMD_STORAGE_GET_FILE,
-      path: item.path,
-      purpose: 'download'
-    });
-    webrtcManager.sendCommand(payload);
   };
 
   /**
@@ -940,13 +995,22 @@ function bindStorageEvents(container: HTMLElement): void {
 
   btnImageModalDownload?.addEventListener('click', async () => {
     const preview = storageState.getImagePreview();
-    if (preview.url && preview.name) {
-      const link = document.createElement('a');
-      link.href = preview.url;
-      link.download = preview.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    if (!preview.url || !preview.name) return;
+
+    try {
+      const blob: Blob = preview.blob
+        ? preview.blob
+        : await (await fetch(preview.url)).blob();
+      await saveBlobWithUniversalSettings({
+        blob,
+        blobUrl: preview.url,
+        fileName: preview.name,
+        mimeType: blob.type || 'image/jpeg',
+        onToast: showStorageToast,
+      });
+    } catch (err: unknown) {
+      console.error('[Storage] Failed to save preview image:', err);
+      showStorageToast('Failed to save preview image');
     }
   });
 

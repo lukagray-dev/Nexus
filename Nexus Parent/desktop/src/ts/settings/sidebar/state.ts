@@ -19,7 +19,7 @@ import {
 export const SETTINGS_STORAGE_KEY = 'nexus_parent_settings_v1';
 
 export class SettingsState {
-  private activeTab: SettingsTabId = 'audio';
+  private activeTab: SettingsTabId = 'general';
   private values: SettingsValues;
   private tabChangeListeners: Array<(tabId: SettingsTabId) => void> = [];
   private valueChangeListeners: Array<(values: SettingsValues) => void> = [];
@@ -132,8 +132,22 @@ export class SettingsState {
       if (typeof window !== 'undefined' && window.localStorage) {
         const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
         if (raw) {
-          const parsed = JSON.parse(raw);
-          return { ...defaults, ...parsed };
+          const parsed = JSON.parse(raw) as Record<string, unknown>;
+          const merged = { ...defaults, ...parsed } as SettingsValues & {
+            launchMinimized?: boolean;
+          };
+
+          // Migrate legacy combined `launchMinimized` preference cleanly into the separated toggles
+          if (parsed.launchMinimized === true) {
+            if (parsed.launchOnStartup === undefined) {
+              merged.launchOnStartup = true;
+            }
+            if (parsed.startMinimized === undefined) {
+              merged.startMinimized = true;
+            }
+          }
+          delete merged.launchMinimized;
+          return merged;
         }
       }
     } catch (err) {

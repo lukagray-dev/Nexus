@@ -7,6 +7,8 @@
  * - Adheres strictly to the dark theme tokens and zero-emoji production standards.
  */
 
+import { getAppVersion } from '../shared/ipc.js';
+
 /**
  * Opens the interactive About modal.
  */
@@ -29,7 +31,7 @@ export function openAboutDialog(): void {
           <img src="assets/logo/nexus-parent.svg" alt="Nexus Parent Logo" style="width: 36px; height: 36px; object-fit: contain;" />
         </div>
         <h2 style="font-size: 18px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; letter-spacing: -0.3px;">Nexus Parent</h2>
-        <span class="mono-badge" style="margin-bottom: 14px;">v0.1.0 (Production Release)</span>
+        <span id="about-version-badge" class="mono-badge" style="margin-bottom: 14px;">v0.1.0-alpha</span>
         <p style="font-size: 13px; line-height: 1.6; color: var(--text-muted); margin: 0 0 20px 0; max-width: 380px;">
           Next-generation parental surveillance and child device management system built with Tauri v2, WebRTC P2P streams, and hardware-accelerated telemetry.
         </p>
@@ -56,6 +58,13 @@ export function openAboutDialog(): void {
   `;
 
   document.body.appendChild(overlay);
+
+  const versionBadge = overlay.querySelector<HTMLElement>('#about-version-badge');
+  void getAppVersion().then((version) => {
+    if (version && versionBadge) {
+      versionBadge.textContent = `v${version}`;
+    }
+  });
 
   const close = (): void => {
     if (overlay.parentElement) {

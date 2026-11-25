@@ -11,6 +11,7 @@ import { renderIntruderSelfieSetting } from './intruder-selfie.js';
 import { renderLockoutStrikesSetting } from './lockout-strikes.js';
 import { renderMaskPasswordsSetting } from './mask-passwords.js';
 import { renderStealthConfirmationSetting } from './stealth-confirmation.js';
+import { renderDesktopAlertSettings } from './desktop-alerts.js';
 
 /**
  * Renders the Security & App Lock Settings main content section.
@@ -22,7 +23,7 @@ export function renderSecurityForensicsContent(): HTMLElement {
   container.appendChild(
     createSettingsSectionHeader(
       'Security & App Lock',
-      'Configure remote PIN enforcement, intruder photo captures, keystroke audit masking, and stealth protections.'
+      'Configure remote PIN enforcement, intruder photo captures, keystroke audit masking, stealth protections, and desktop alerts.'
     )
   );
 
@@ -39,6 +40,10 @@ export function renderSecurityForensicsContent(): HTMLElement {
       renderMaskPasswordsSetting(),
       renderStealthConfirmationSetting(),
     ])
+  );
+
+  container.appendChild(
+    createSettingsGroup('DESKTOP ALERT NOTIFICATIONS', renderDesktopAlertSettings())
   );
 
   return container;

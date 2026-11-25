@@ -107,7 +107,9 @@ export interface FileTransferSession {
   purpose: 'download' | 'preview';
   mimeType: string;
   progressPercent: number;
-  fileHandle?: any; // Native FileSystemFileHandle if Save As location was chosen
+  targetDirectory?: string; // Configured default folder for automatic saves
+  exactFilePath?: string; // Explicit destination path chosen via OS Save As dialog
+  fileHandle?: any; // Native FileSystemFileHandle fallback when running outside Tauri
 }
 
 /**

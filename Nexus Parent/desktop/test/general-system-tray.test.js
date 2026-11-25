@@ -2,16 +2,13 @@
  * @file general-system-tray.test.js
  * @description Comprehensive unit and integration tests for Nexus Parent's modular
  *              settings `main-content` wiring, General & System desktop window/tray
- *              settings, OS autostart sync, and exit vs minimize-to-tray IPC flows.
+ *              settings, separated OS startup & minimized toggles, Always on Top sync,
+ *              and exit vs minimize-to-tray IPC flows.
  */
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 
-/**
- * Builds a minimal lightweight DOM environment for node:test so HTML template parsing
- * (`innerHTML`) and `querySelector` / `querySelectorAll` work deterministically without jsdom.
- */
 function createMockElement(tag) {
   let _className = '';
   let _innerHTML = '';
@@ -118,15 +115,10 @@ function createMockElement(tag) {
   return el;
 }
 
-/**
- * Extracts interactive controls from the setting HTML templates so tests can click buttons
- * and toggle checkboxes identically to the browser DOM.
- */
 function parseControlsFromHtml(html) {
   const byId = {};
   const closeActionButtons = [];
 
-  // Extract checkbox inputs by id
   const checkboxRegex = /<input[^>]*type="checkbox"[^>]*id="([^"]+)"([^>]*)>/g;
   let match;
   while ((match = checkboxRegex.exec(html)) !== null) {
@@ -139,7 +131,6 @@ function parseControlsFromHtml(html) {
     byId[id] = input;
   }
 
-  // Extract segmented buttons inside #setting-close-action
   if (html.includes('id="setting-close-action"')) {
     const btnRegex = /<button[^>]*class="([^"]*)"[^>]*data-value="([^"]+)"[^>]*>/g;
     while ((match = btnRegex.exec(html)) !== null) {
@@ -165,7 +156,13 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     invokeCalls = [];
     closeCalledCount = 0;
     registeredEvents = {};
-    mockImpl = async () => ({ closeAction: 'tray', launchMinimized: false });
+    mockImpl = async () => ({
+      closeAction: 'tray',
+      launchOnStartup: false,
+      startMinimized: false,
+      alwaysOnTop: false,
+      autostartEnabled: false,
+    });
 
     const mockBody = createMockElement('body');
     global.document = {
@@ -231,18 +228,23 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     }
   });
 
-  it('Defaults keep closeAction as "tray" and launchMinimized as false', async () => {
+  it('Defaults keep closeAction as "tray" and separated startup toggles as false', async () => {
     const { settingsState } = await import('../src/js/settings/sidebar/state.js');
     settingsState.resetToDefaults();
 
     assert.strictEqual(settingsState.getValue('closeAction'), 'tray');
-    assert.strictEqual(settingsState.getValue('launchMinimized'), false);
+    assert.strictEqual(settingsState.getValue('launchOnStartup'), false);
+    assert.strictEqual(settingsState.getValue('startMinimized'), false);
+    assert.strictEqual(settingsState.getValue('alwaysOnTop'), false);
 
     const { renderSystemTraySetting } = await import(
       '../src/js/settings/main-content/general-system/system-tray.js'
     );
-    const { renderLaunchMinimizedSetting } = await import(
-      '../src/js/settings/main-content/general-system/launch-minimized.js'
+    const { renderLaunchOnStartupSetting } = await import(
+      '../src/js/settings/main-content/general-system/launch-on-startup.js'
+    );
+    const { renderStartMinimizedSetting } = await import(
+      '../src/js/settings/main-content/general-system/start-minimized.js'
     );
 
     const trayRow = renderSystemTraySetting();
@@ -253,10 +255,13 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     assert.strictEqual(buttons[1].dataset.value, 'exit');
     assert.strictEqual(buttons[1].classList.contains('is-active'), false);
 
-    const launchRow = renderLaunchMinimizedSetting();
-    const toggle = launchRow.querySelector('#setting-launch-minimized');
-    assert.ok(toggle);
-    assert.strictEqual(toggle.checked, false);
+    const startupToggle = renderLaunchOnStartupSetting().querySelector('#setting-launch-on-startup');
+    assert.ok(startupToggle);
+    assert.strictEqual(startupToggle.checked, false);
+
+    const minimizedToggle = renderStartMinimizedSetting().querySelector('#setting-start-minimized');
+    assert.ok(minimizedToggle);
+    assert.strictEqual(minimizedToggle.checked, false);
   });
 
   it('system-tray.ts updates settingsState, localStorage, and Rust backend when switching modes', async () => {
@@ -271,7 +276,6 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     const row = renderSystemTraySetting();
     const buttons = row.querySelectorAll('#setting-close-action .settings-segmented-btn');
 
-    // Click "Exit Application" and flush microtasks for async IPC
     await buttons[1].dispatchEvent('click');
     await new Promise((r) => setTimeout(r, 10));
     assert.strictEqual(settingsState.getValue('closeAction'), 'exit');
@@ -284,7 +288,6 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     const persisted = JSON.parse(mockStorage[SETTINGS_STORAGE_KEY]);
     assert.strictEqual(persisted.closeAction, 'exit');
 
-    // Switch back to "Minimize to Tray"
     await buttons[0].dispatchEvent('click');
     await new Promise((r) => setTimeout(r, 10));
     assert.strictEqual(settingsState.getValue('closeAction'), 'tray');
@@ -294,29 +297,28 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     });
   });
 
-  it('launch-minimized.ts enables/disables OS autostart and reverts checkbox if Rust rejects', async () => {
+  it('launch-on-startup.ts enables/disables OS autostart independently and reverts checkbox if Rust rejects', async () => {
     const { settingsState } = await import('../src/js/settings/sidebar/state.js');
     settingsState.resetToDefaults();
     invokeCalls = [];
 
-    const { renderLaunchMinimizedSetting } = await import(
-      '../src/js/settings/main-content/general-system/launch-minimized.js'
+    const { renderLaunchOnStartupSetting } = await import(
+      '../src/js/settings/main-content/general-system/launch-on-startup.js'
     );
 
-    const row = renderLaunchMinimizedSetting();
-    const toggle = row.querySelector('#setting-launch-minimized');
+    const row = renderLaunchOnStartupSetting();
+    const toggle = row.querySelector('#setting-launch-on-startup');
 
-    // Enable launchMinimized -> succeeds
     toggle.checked = true;
     await toggle.dispatchEvent('change');
-    assert.strictEqual(settingsState.getValue('launchMinimized'), true);
+    assert.strictEqual(settingsState.getValue('launchOnStartup'), true);
+    assert.strictEqual(settingsState.getValue('startMinimized'), false);
     assert.deepStrictEqual(invokeCalls, [
-      { cmd: 'set_launch_minimized', args: { enabled: true } },
+      { cmd: 'set_launch_on_startup', args: { enabled: true } },
     ]);
 
-    // Simulate OS autostart error when trying to disable -> must revert toggle & keep state intact
     mockImpl = async (cmd) => {
-      if (cmd === 'set_launch_minimized') {
+      if (cmd === 'set_launch_on_startup') {
         throw new Error('Registry access denied');
       }
       return null;
@@ -324,22 +326,34 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     toggle.checked = false;
     await toggle.dispatchEvent('change');
     assert.strictEqual(toggle.checked, true, 'Toggle must revert when Rust command fails');
-    assert.strictEqual(settingsState.getValue('launchMinimized'), true);
+    assert.strictEqual(settingsState.getValue('launchOnStartup'), true);
   });
 
-  it('initGeneralSystemRuntime reconciles boot state, handles Reset Defaults, and listens to tray open-settings', async () => {
+  it('initGeneralSystemRuntime reconciles separated startup, alwaysOnTop, Reset Defaults, and tray open-settings', async () => {
     const { settingsState } = await import('../src/js/settings/sidebar/state.js');
     settingsState.resetToDefaults();
     settingsState.setValue('closeAction', 'exit');
-    settingsState.setValue('launchMinimized', true);
+    settingsState.setValue('launchOnStartup', true);
+    settingsState.setValue('startMinimized', true);
+    settingsState.setValue('alwaysOnTop', true);
     invokeCalls = [];
 
-    // Pretend Rust disk config still holds stale defaults ('tray', false)
     mockImpl = async (cmd) => {
       if (cmd === 'get_window_tray_settings') {
-        return { closeAction: 'tray', launchMinimized: false, autostartEnabled: false };
+        return {
+          closeAction: 'tray',
+          launchOnStartup: false,
+          startMinimized: false,
+          alwaysOnTop: false,
+          autostartEnabled: false,
+        };
       }
-      return { closeAction: 'exit', launchMinimized: true };
+      return {
+        closeAction: 'exit',
+        launchOnStartup: true,
+        startMinimized: true,
+        alwaysOnTop: true,
+      };
     };
 
     const { initGeneralSystemRuntime, EVENT_TRAY_OPEN_SETTINGS } = await import(
@@ -351,40 +365,26 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
       openSettingsInvoked += 1;
     });
 
-    // Wait for async startup reconciliation and event listener registration
     await new Promise((r) => setTimeout(r, 20));
 
-    assert.ok(
-      invokeCalls.some((c) => c.cmd === 'get_window_tray_settings'),
-      'Must query native Rust state on startup'
-    );
-    assert.ok(
-      invokeCalls.some((c) => c.cmd === 'set_close_action' && c.args.action === 'exit'),
-      'Must reconcile closeAction to Rust'
-    );
-    assert.ok(
-      invokeCalls.some((c) => c.cmd === 'set_launch_minimized' && c.args.enabled === true),
-      'Must reconcile launchMinimized to Rust'
-    );
+    assert.ok(invokeCalls.some((c) => c.cmd === 'get_window_tray_settings'));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_close_action' && c.args.action === 'exit'));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_launch_on_startup' && c.args.enabled === true));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_start_minimized' && c.args.enabled === true));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_always_on_top' && c.args.enabled === true));
 
-    // Trigger tray "Settings" click event
-    assert.ok(registeredEvents[EVENT_TRAY_OPEN_SETTINGS], 'Must register tray open-settings listener');
+    assert.ok(registeredEvents[EVENT_TRAY_OPEN_SETTINGS]);
     registeredEvents[EVENT_TRAY_OPEN_SETTINGS]({ event: EVENT_TRAY_OPEN_SETTINGS, payload: null });
     assert.strictEqual(openSettingsInvoked, 1);
     assert.strictEqual(settingsState.getActiveTab(), 'general');
 
-    // Reset Defaults must sync 'tray' and false back to Rust
     invokeCalls = [];
     settingsState.resetToDefaults();
     await new Promise((r) => setTimeout(r, 20));
-    assert.ok(
-      invokeCalls.some((c) => c.cmd === 'set_close_action' && c.args.action === 'tray'),
-      'Reset Defaults must restore closeAction=tray in Rust'
-    );
-    assert.ok(
-      invokeCalls.some((c) => c.cmd === 'set_launch_minimized' && c.args.enabled === false),
-      'Reset Defaults must disable launchMinimized in Rust'
-    );
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_close_action' && c.args.action === 'tray'));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_launch_on_startup' && c.args.enabled === false));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_start_minimized' && c.args.enabled === false));
+    assert.ok(invokeCalls.some((c) => c.cmd === 'set_always_on_top' && c.args.enabled === false));
 
     dispose();
   });
@@ -396,21 +396,13 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     deviceState.connect('482194021104');
     assert.strictEqual(deviceState.isConnected(), true);
 
-    // Clicking [X] calls closeWindow() -> Rust intercepts & hides without disconnecting deviceState
     await closeWindow();
     assert.strictEqual(closeCalledCount, 1);
-    assert.strictEqual(
-      invokeCalls.some((c) => c.cmd === 'exit_application'),
-      false
-    );
-    assert.strictEqual(deviceState.isConnected(), true, 'Background WebRTC session must stay connected');
+    assert.strictEqual(invokeCalls.some((c) => c.cmd === 'exit_application'), false);
+    assert.strictEqual(deviceState.isConnected(), true);
 
-    // Explicit exit (File -> Exit / Ctrl+Q) invokes exit_application in Rust
     await exitApplication();
-    assert.strictEqual(
-      invokeCalls.some((c) => c.cmd === 'exit_application'),
-      true
-    );
+    assert.strictEqual(invokeCalls.some((c) => c.cmd === 'exit_application'), true);
 
     deviceState.disconnect();
   });

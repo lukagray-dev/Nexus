@@ -8,7 +8,7 @@ Nexus provides on-demand, privacy-preserving remote internal storage surveillanc
 5. **Hardware Telemetry Storage Gauge**: Seamlessly integrates with `DeviceTelemetryManager.kt` hardware metrics (`freeStorageBytes` and `totalStorageBytes`), dynamically rendering used gigabytes, total capacity, and a responsive visual gauge.
 6. **Lightweight Compressed Thumbnails**: Images and videos generate memory-safe 160x160 JPEG thumbnails (quality 50%) encoded into Base64 Data URLs, computed only for the requested 40-item slice.
 7. **Two-Stage Inspection & In-App Photo Viewer**: Single-clicking any file opens a tactical metadata drawer (path, size in bytes, MIME type, modified timestamp). For photos, parents can click "Load Full Image" to stream high-resolution images directly into an in-app viewer.
-8. **High-Speed 64KB Streaming & Native Save As Prompt**: Files are sliced into 64KB binary Base64 chunks (`65536` bytes) streamed without artificial sleep delays. Before downloading, desktop prompts the user with the native OS file picker (`showSaveFilePicker` with fallback) so the parent chooses the exact destination folder on their PC.
+8. **High-Speed 64KB Streaming & Universal Download Location**: Files are sliced into 64KB binary Base64 chunks (`65536` bytes) streamed without artificial sleep delays. Downloads respect the parent's **General & System** preferences: on a fresh install, the desktop asks once for a default folder and persists it; subsequent downloads save directly into that directory with automatic duplicate-filename numbering (`photo (1).jpg`) via Rust's atomic `.nexuspart` writer, or prompt every time when **Ask Every Time Before Downloading** is enabled.
 9. **Remote File Deletion with Confirmation Modal**: Parents can remotely delete files on the child device. To prevent accidental data loss, the desktop prompts with a high-contrast tactical confirmation dialog before dispatching `STORAGE_DELETE_FILE`. Deletions automatically evict affected paths from desktop caches.
 
 ---
@@ -145,9 +145,9 @@ Desktop Parent                                                          Android 
       |<-- 19. Receive STORAGE_FILE_COMPLETE ---------------------------------|
       |-- 20. Store Blob in imagePreviewCache & render in image modal         |
       |                                                                       |
-      |-- 21. User clicks "Download File"                                     |
-      |-- 22. Prompt native OS save file picker (window.showSaveFilePicker)    |
-      |-- 23. Stream file chunks (64KB) directly into destination file handle  |
+      |-- 21. User clicks "Download File" (or "Download Image" in modal)        |
+      |-- 22. Resolve target via General & System settings (once/ask/default) |
+      |-- 23. Stream 64KB chunks -> Rust atomic `.nexuspart` commit on disk   |
       |                                                                       |
       |-- 24. User deletes a file -> Send STORAGE_DELETE_FILE ---------------->|
       |                                                                       |-- 25. Execute file.delete()
@@ -164,7 +164,7 @@ Desktop Parent                                                          Android 
    - `directoryCache`: Keeps directory contents and pagination states indexed by path with background timestamp validation (`STORAGE_CHECK_DIR`).
    - `imagePreviewCache`: Keeps high-resolution Blob URLs in memory to eliminate redundant downloads when previewing the same photo multiple times.
 3. **Safe Memory Allocation on Android**: Thumbnails are generated only for requested 40-item pagination slices, preventing memory heap spikes on folders with thousands of media files. Bitmaps are downsampled via `inSampleSize`, use `RGB_565`, and are recycled promptly.
-4. **Native OS Save Location Support**: Employs `window.showSaveFilePicker` so the desktop user explicitly designates where downloaded files are saved on their local computer.
+4. **Universal Save Location & Atomic Disk Writing**: Uses `tauri-plugin-dialog` and Rust atomic `.nexuspart` staging (`downloads.rs`) so downloads follow General & System directory preferences (`downloadsDirectory` / `askBeforeDownload`), with `window.showSaveFilePicker` / Blob fallback outside Tauri.
 5. **Multi-Version Android Storage Compliance**:
    - Android 11+ (API 30+): Uses `Environment.isExternalStorageManager()` (`MANAGE_EXTERNAL_STORAGE`).
    - Android 10 and below: Uses `READ_EXTERNAL_STORAGE`.

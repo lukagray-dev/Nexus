@@ -47,6 +47,8 @@ class StorageStateManager {
   private activeTransfers: Map<string, FileTransferSession> = new Map();
   private imagePreviewUrl: string | null = null;
   private imagePreviewName: string | null = null;
+  private imagePreviewBlob: Blob | null = null;
+  private imagePreviewBlobCache: Map<string, Blob> = new Map();
   private deleteModalTarget: RemoteFileItem | null = null;
   private listeners: Set<StorageStateChangeListener> = new Set();
 
@@ -180,6 +182,7 @@ class StorageStateManager {
       } catch (_) {}
       this.imagePreviewCache.delete(path);
     }
+    this.imagePreviewBlobCache.delete(path);
   }
 
   /**
@@ -408,6 +411,7 @@ class StorageStateManager {
       // Cache image previews automatically
       if (session.purpose === 'preview') {
         this.setCachedImagePreview(session.path, blobUrl);
+        this.imagePreviewBlobCache.set(session.path, blob);
       }
 
       return { blobUrl, blob, session };
@@ -419,13 +423,18 @@ class StorageStateManager {
 
   // --- In-App Image Preview Modal ---
 
-  public getImagePreview(): { url: string | null; name: string | null } {
-    return { url: this.imagePreviewUrl, name: this.imagePreviewName };
+  public getCachedImagePreviewBlob(path: string): Blob | undefined {
+    return this.imagePreviewBlobCache.get(path);
   }
 
-  public setImagePreview(url: string | null, name: string | null): void {
+  public getImagePreview(): { url: string | null; name: string | null; blob: Blob | null } {
+    return { url: this.imagePreviewUrl, name: this.imagePreviewName, blob: this.imagePreviewBlob };
+  }
+
+  public setImagePreview(url: string | null, name: string | null, blob: Blob | null = null): void {
     this.imagePreviewUrl = url;
     this.imagePreviewName = name;
+    this.imagePreviewBlob = blob;
     this.notify();
   }
 
@@ -451,9 +460,11 @@ class StorageStateManager {
       } catch (_) {}
     });
     this.imagePreviewCache.clear();
+    this.imagePreviewBlobCache.clear();
     this.activeTransfers.clear();
     this.imagePreviewUrl = null;
     this.imagePreviewName = null;
+    this.imagePreviewBlob = null;
     this.deleteModalTarget = null;
     this.notify();
   }

@@ -95,6 +95,12 @@
       <!-- Draggable Center Spacer Region -->
       <div class="titlebar-drag-spacer" data-tauri-drag-region></div>
 
+      <!-- Conditional Update Action (visible ONLY when a newer stable GitHub release is staged) -->
+      <button id="btn-restart-to-update" class="titlebar-update-btn hidden" title="Restart to apply update" aria-label="Restart to update">
+        <img src="assets/icons/settings/refresh-cw.svg" alt="" class="titlebar-update-icon" />
+        <span>Restart to update</span>
+      </button>
+
       <!-- Right Window Actions: Minimize / Maximize / Close -->
       <div class="titlebar-actions">
         <button id="btn-minimize" class="action-btn" title="Minimize" aria-label="Minimize">

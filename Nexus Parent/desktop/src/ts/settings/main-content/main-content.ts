@@ -39,7 +39,7 @@ export function renderSettingsMainContent(tabId: SettingsTabId): HTMLElement {
     case 'diagnostics':
       return renderDiagnosticsStorageContent();
     default:
-      return renderAudioVoiceIntercomContent();
+      return renderGeneralSystemContent();
   }
 }
 

@@ -47,7 +47,9 @@ export type CloseActionMode = 'tray' | 'exit';
  */
 export interface WindowTraySettingsSnapshot {
   closeAction: CloseActionMode;
-  launchMinimized: boolean;
+  launchOnStartup: boolean;
+  startMinimized: boolean;
+  alwaysOnTop: boolean;
   autostartEnabled: boolean;
 }
 
@@ -56,7 +58,29 @@ export interface WindowTraySettingsSnapshot {
  */
 export interface WindowTraySettingsRecord {
   closeAction: CloseActionMode;
-  launchMinimized: boolean;
+  launchOnStartup: boolean;
+  startMinimized: boolean;
+  alwaysOnTop: boolean;
+}
+
+/**
+ * Updater lifecycle state shared with the Rust GitHub Releases updater.
+ */
+export type UpdateStatusKind =
+  | 'idle'
+  | 'checking'
+  | 'up-to-date'
+  | 'downloading'
+  | 'ready'
+  | 'error';
+
+export interface UpdateStatusPayload {
+  status: UpdateStatusKind;
+  currentVersion: string;
+  availableVersion: string | null;
+  releaseUrl: string | null;
+  sha256Verified: boolean;
+  errorMessage: string | null;
 }
 
 /**
@@ -206,17 +230,93 @@ export async function setCloseActionSetting(action: CloseActionMode): Promise<bo
 }
 
 /**
- * Enables or disables OS autostart (`--minimized`) and persists state in the Rust backend.
+ * Enables or disables OS autostart on system login in the Rust backend.
  * Throws if the native OS startup update fails so the caller can revert the UI switch.
  */
-export async function setLaunchMinimizedSetting(enabled: boolean): Promise<boolean> {
+export async function setLaunchOnStartupSetting(enabled: boolean): Promise<boolean> {
   const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
   if (!invoke) {
     return true;
   }
 
-  await invoke<WindowTraySettingsRecord>('set_launch_minimized', { enabled });
+  await invoke<WindowTraySettingsRecord>('set_launch_on_startup', { enabled });
   return true;
+}
+
+/**
+ * Enables or disables starting minimized in the system tray on application launch.
+ */
+export async function setStartMinimizedSetting(enabled: boolean): Promise<boolean> {
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (!invoke) {
+    return true;
+  }
+
+  try {
+    await invoke<WindowTraySettingsRecord>('set_start_minimized', { enabled });
+    return true;
+  } catch (err) {
+    console.error('[IPC] Failed to update start minimized setting:', err);
+    return false;
+  }
+}
+
+/**
+ * Pins or unpins the main desktop window above other windows via Rust.
+ */
+export async function setAlwaysOnTopSetting(enabled: boolean): Promise<boolean> {
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (!invoke) {
+    return true;
+  }
+
+  await invoke<WindowTraySettingsRecord>('set_always_on_top', { enabled });
+  return true;
+}
+
+/**
+ * Activates or releases the OS display wake lock via Rust.
+ */
+export async function setKeepScreenAwake(enabled: boolean): Promise<boolean> {
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (!invoke) {
+    return enabled;
+  }
+
+  try {
+    return await invoke<boolean>('set_keep_screen_awake', { enabled });
+  } catch (err) {
+    console.error('[IPC] Failed to update keep-screen-awake state:', err);
+    return false;
+  }
+}
+
+/**
+ * Queries the running desktop application version from Rust.
+ */
+export async function getAppVersion(): Promise<string | null> {
+  return await invokeCommand<string>('get_app_version');
+}
+
+/**
+ * Queries the current GitHub auto-updater status snapshot from Rust.
+ */
+export async function getUpdateStatus(): Promise<UpdateStatusPayload | null> {
+  return await invokeCommand<UpdateStatusPayload>('get_update_status');
+}
+
+/**
+ * Triggers a GitHub stable release check (and background download if newer) via Rust.
+ */
+export async function checkForUpdates(manual: boolean = false): Promise<UpdateStatusPayload | null> {
+  return await invokeCommandStrict<UpdateStatusPayload>('check_for_updates', { manual });
+}
+
+/**
+ * Installs a staged update and restarts the application immediately.
+ */
+export async function restartToUpdate(): Promise<void> {
+  await invokeCommandStrict<void>('restart_to_update');
 }
 
 /**
@@ -272,4 +372,87 @@ export async function exitApplication(): Promise<void> {
     }
   }
   await closeWindow();
+}
+
+/**
+ * Returns true when running inside the Tauri desktop WebView with native Rust IPC available.
+ */
+export function isTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && typeof window.__TAURI__?.core?.invoke === 'function';
+}
+
+/**
+ * Queries the OS user Downloads directory joined with `Nexus` as a suggested default path.
+ */
+export async function getDefaultDownloadsDirectory(): Promise<string | null> {
+  return await invokeCommand<string>('get_default_downloads_directory');
+}
+
+/**
+ * Opens the native OS folder picker dialog and returns the selected directory path, or `null` if cancelled.
+ */
+export async function pickDownloadsDirectory(initialDir?: string): Promise<string | null> {
+  const normalizedInitial = initialDir?.trim();
+  return await invokeCommandStrict<string | null>('pick_downloads_directory', {
+    initialDir: normalizedInitial && normalizedInitial.length > 0 ? normalizedInitial : null,
+  });
+}
+
+/**
+ * Opens the native OS Save As dialog and returns the selected file path, or `null` if cancelled.
+ */
+export async function pickSaveFilePath(
+  suggestedName: string,
+  initialDir?: string
+): Promise<string | null> {
+  const normalizedInitial = initialDir?.trim();
+  return await invokeCommandStrict<string | null>('pick_save_file_path', {
+    suggestedName,
+    initialDir: normalizedInitial && normalizedInitial.length > 0 ? normalizedInitial : null,
+  });
+}
+
+/**
+ * Initializes a staged `.nexuspart` file on disk in the Rust backend for a chunked download.
+ */
+export async function beginDownloadFile(params: {
+  transferId: string;
+  targetDirectory?: string;
+  exactFilePath?: string;
+  fileName: string;
+}): Promise<string | null> {
+  return await invokeCommandStrict<string>('begin_download_file', {
+    transferId: params.transferId,
+    targetDirectory: params.targetDirectory ?? null,
+    exactFilePath: params.exactFilePath ?? null,
+    fileName: params.fileName,
+  });
+}
+
+/**
+ * Appends a Base64-encoded chunk to an open staged download file in the Rust backend.
+ */
+export async function appendDownloadChunk(transferId: string, dataBase64: string): Promise<void> {
+  await invokeCommandStrict<void>('append_download_chunk', {
+    transferId,
+    dataBase64,
+  });
+}
+
+/**
+ * Atomically flushes and renames the staged `.nexuspart` file to its final destination path.
+ */
+export async function commitDownloadFile(transferId: string): Promise<string | null> {
+  return await invokeCommandStrict<string>('commit_download_file', {
+    transferId,
+  });
+}
+
+/**
+ * Cancels an active staged download and deletes its `.nexuspart` file from disk.
+ */
+export async function cancelDownloadFile(transferId: string): Promise<void> {
+  await invokeCommand<void>('cancel_download_file', {
+    transferId,
+  });
 }

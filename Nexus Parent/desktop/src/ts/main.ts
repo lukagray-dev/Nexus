@@ -15,6 +15,7 @@ import { initSidebar } from './left-sidebar/sidebar.js';
 import { initMainContent } from './main-content/main-content.js';
 import { initRightSidebar } from './right-sidebar/right-sidebar.js';
 import { initSettings } from './settings/settings.js';
+import { runStartupAutoConnect } from './settings/main-content/general-system/auto-connect-last-device.js';
 import { deviceState } from './shared/device-state.js';
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -32,8 +33,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initialize collapsible right sidebar for inspection and controls
   initRightSidebar();
 
-  // Initialize settings dialog listeners
+  // Initialize settings dialog listeners and runtime synchronizers
   initSettings();
+
+  // Attempt auto-connect to last paired child device if enabled in General & System settings
+  void runStartupAutoConnect();
 
   // Ensures active WebRTC session, DataChannel, and media streams are torn down cleanly when window closes
   window.addEventListener('beforeunload', () => {

@@ -66,15 +66,20 @@ export interface SettingsValues {
   lockoutStrikes: '3' | '5' | 'disabled';
   maskPasswords: boolean;
   stealthConfirmation: boolean;
-
-  // 5. General & System
-  downloadsDirectory: string;
-  launchMinimized: boolean;
-  closeAction: 'tray' | 'exit';
   alertIntruderSelfie: boolean;
   alertLowBattery: boolean;
   alertChildDisconnected: boolean;
-  alertSos: boolean;
+
+  // 5. General & System
+  downloadsDirectory: string;
+  askBeforeDownload: boolean;
+  autoConnectLastDevice: boolean;
+  launchOnStartup: boolean;
+  startMinimized: boolean;
+  alwaysOnTop: boolean;
+  keepScreenAwake: boolean;
+  closeAction: 'tray' | 'exit';
+  autoCheckUpdates: boolean;
 
   // 6. Paired Devices
   deviceAlias: string;
@@ -88,6 +93,18 @@ export interface SettingsValues {
  */
 export const SETTINGS_TABS: SettingsTabItem[] = [
   {
+    id: 'general',
+    label: 'General & System',
+    description: 'Downloads, window & tray behavior',
+    iconPath: 'assets/icons/settings/general.svg',
+  },
+  {
+    id: 'connection',
+    label: 'Connection & WebRTC',
+    description: 'P2P network & ICE signaling',
+    iconPath: 'assets/icons/settings/connection.svg',
+  },
+  {
     id: 'audio',
     label: 'Audio & Intercom',
     description: 'Voice changer & audio routing',
@@ -100,22 +117,10 @@ export const SETTINGS_TABS: SettingsTabItem[] = [
     iconPath: 'assets/icons/settings/surveillance.svg',
   },
   {
-    id: 'connection',
-    label: 'Connection & WebRTC',
-    description: 'P2P network & ICE signaling',
-    iconPath: 'assets/icons/settings/connection.svg',
-  },
-  {
     id: 'security',
     label: 'Security & App Lock',
-    description: 'PIN guard & anti-tamper',
+    description: 'PIN guard, anti-tamper & alerts',
     iconPath: 'assets/icons/settings/security.svg',
-  },
-  {
-    id: 'general',
-    label: 'General & System',
-    description: 'Window, tray & notifications',
-    iconPath: 'assets/icons/settings/general.svg',
   },
   {
     id: 'devices',
@@ -165,15 +170,20 @@ export function getDefaultSettingsValues(): SettingsValues {
     lockoutStrikes: '3',
     maskPasswords: true,
     stealthConfirmation: true,
-
-    // 5. General & System
-    downloadsDirectory: '~/Downloads/Nexus',
-    launchMinimized: false,
-    closeAction: 'tray',
     alertIntruderSelfie: true,
     alertLowBattery: true,
     alertChildDisconnected: true,
-    alertSos: true,
+
+    // 5. General & System
+    downloadsDirectory: '',
+    askBeforeDownload: false,
+    autoConnectLastDevice: false,
+    launchOnStartup: false,
+    startMinimized: false,
+    alwaysOnTop: false,
+    keepScreenAwake: true,
+    closeAction: 'tray',
+    autoCheckUpdates: true,
 
     // 6. Paired Devices
     deviceAlias: 'Lucas - Pixel 8',

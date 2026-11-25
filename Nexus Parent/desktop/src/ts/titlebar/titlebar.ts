@@ -8,6 +8,7 @@
 
 import { setupWindowActions } from './actions.js';
 import { setupMenus } from './menu.js';
+import { setupTitlebarUpdateButton } from './updater-ui.js';
 
 /**
  * Initializes and wires the complete native titlebar and menus.
@@ -15,4 +16,5 @@ import { setupMenus } from './menu.js';
 export function initTitlebar(): void {
   setupWindowActions();
   setupMenus();
+  setupTitlebarUpdateButton();
 }

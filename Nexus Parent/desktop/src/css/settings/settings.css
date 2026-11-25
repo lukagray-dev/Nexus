@@ -282,6 +282,21 @@
   background-color: #161616;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-row-vertical.is-disabled {
+  opacity: 0.45;
+}
+
+.settings-row-vertical.is-disabled .settings-file-picker-group {
+  pointer-events: none;
+}
+
+.settings-input:disabled,
+.settings-btn-inline:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .settings-row-label {
