@@ -9,7 +9,7 @@
  * 4. Factory function for deterministic default configurations.
  */
 
-import { VoicePresetId } from '../main-content/audio-voice-intercom.js';
+import { VoicePresetId } from '../main-content/audio-voice-intercom/audio-voice-intercom.js';
 
 /**
  * Union of all valid settings navigation tab identifiers.

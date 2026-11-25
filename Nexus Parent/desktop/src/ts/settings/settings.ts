@@ -4,9 +4,9 @@
  *
  * Hey friend! This orchestrator manages the master-detail Settings modal:
  * 1. Hosts a two-pane layout: a dedicated left navigation sidebar (`sidebar/`) and
- *    category-specific main content sections (`main-content/`).
+ *    modular category content wired via `main-content/main-content.ts`.
  * 2. Wires activation triggers: Left Sidebar Settings button, Titlebar File -> Settings,
- *    and the global `Ctrl+,` keyboard shortcut.
+ *    System Tray -> Settings, and the global `Ctrl+,` keyboard shortcut.
  * 3. Dynamically hot-swaps category content views when clicking sidebar tabs without modal flicker.
  * 4. Implements the Instant Auto-Save model with a Reset Defaults recovery button.
  * 5. Handles smooth keyboard dismissal with Escape and click-outside overlay detection.
@@ -15,30 +15,36 @@
 import { settingsState } from './sidebar/state.js';
 import { SettingsTabId } from './sidebar/types.js';
 import { SettingsSidebar } from './sidebar/sidebar.js';
-import { renderAudioVoiceIntercomContent } from './main-content/audio-voice-intercom.js';
-import { renderSurveillanceDvrContent } from './main-content/surveillance-dvr.js';
-import { renderConnectionWebrtcContent } from './main-content/connection-webrtc.js';
-import { renderSecurityForensicsContent } from './main-content/security-forensics.js';
-import { renderGeneralSystemContent } from './main-content/general-system.js';
-import { renderPairedDevicesContent } from './main-content/paired-devices.js';
-import { renderDiagnosticsStorageContent } from './main-content/diagnostics-storage.js';
+import {
+  initSettingsMainContentRuntime,
+  mountSettingsMainContent,
+} from './main-content/main-content.js';
 import { showToast } from '../shared/toast.js';
 
 let activeSidebarInstance: SettingsSidebar | null = null;
 let unbindTabListener: (() => void) | null = null;
+let disposeRuntime: (() => void) | null = null;
 
 /**
- * Initializes global settings triggers from the Left Sidebar and keyboard shortcuts.
+ * Initializes global settings triggers, keyboard shortcuts, and native runtime sync.
  */
 export function initSettings(): void {
-  // 1. Left sidebar Settings button
+  // 1. Initialize native runtime integrations (window close-to-tray, autostart, tray menu)
+  if (disposeRuntime) {
+    disposeRuntime();
+  }
+  disposeRuntime = initSettingsMainContentRuntime(() => {
+    openSettingsDialog('general');
+  });
+
+  // 2. Left sidebar Settings button
   const sidebarBtn = document.getElementById('btn-sidebar-settings');
   sidebarBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     openSettingsDialog();
   });
 
-  // 2. Global keyboard shortcut (Ctrl+, or Cmd+,)
+  // 3. Global keyboard shortcut (Ctrl+, or Cmd+,)
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === ',') {
       e.preventDefault();
@@ -48,9 +54,13 @@ export function initSettings(): void {
 }
 
 /**
- * Opens the interactive master-detail settings modal dialog.
+ * Opens the interactive master-detail settings modal dialog, optionally focusing a tab.
  */
-export function openSettingsDialog(): void {
+export function openSettingsDialog(initialTab?: SettingsTabId): void {
+  if (initialTab) {
+    settingsState.setActiveTab(initialTab);
+  }
+
   const existing = document.getElementById('settings-dialog-overlay');
   if (existing) {
     existing.focus();
@@ -107,11 +117,11 @@ export function openSettingsDialog(): void {
   // Mount Initial Category Content View
   const contentMount = overlay.querySelector<HTMLElement>('#settings-content-mount');
   if (contentMount) {
-    renderActiveCategoryView(contentMount, settingsState.getActiveTab());
+    mountSettingsMainContent(contentMount, settingsState.getActiveTab());
 
     // Listen to tab changes and re-render content area smoothly
     unbindTabListener = settingsState.onTabChange((newTabId: SettingsTabId) => {
-      renderActiveCategoryView(contentMount, newTabId);
+      mountSettingsMainContent(contentMount, newTabId);
     });
   }
 
@@ -120,7 +130,7 @@ export function openSettingsDialog(): void {
   resetBtn?.addEventListener('click', () => {
     settingsState.resetToDefaults();
     if (contentMount) {
-      renderActiveCategoryView(contentMount, settingsState.getActiveTab());
+      mountSettingsMainContent(contentMount, settingsState.getActiveTab());
     }
     showToast('All settings restored to factory defaults');
   });
@@ -179,39 +189,5 @@ export function closeSettingsDialog(): void {
 
   if (overlay.parentElement) {
     overlay.parentElement.removeChild(overlay);
-  }
-}
-
-/**
- * Router that renders the corresponding category view inside the main content container.
- */
-function renderActiveCategoryView(container: HTMLElement, tabId: SettingsTabId): void {
-  container.innerHTML = '';
-
-  switch (tabId) {
-    case 'audio':
-      container.appendChild(renderAudioVoiceIntercomContent());
-      break;
-    case 'surveillance':
-      container.appendChild(renderSurveillanceDvrContent());
-      break;
-    case 'connection':
-      container.appendChild(renderConnectionWebrtcContent());
-      break;
-    case 'security':
-      container.appendChild(renderSecurityForensicsContent());
-      break;
-    case 'general':
-      container.appendChild(renderGeneralSystemContent());
-      break;
-    case 'devices':
-      container.appendChild(renderPairedDevicesContent());
-      break;
-    case 'diagnostics':
-      container.appendChild(renderDiagnosticsStorageContent());
-      break;
-    default:
-      container.appendChild(renderAudioVoiceIntercomContent());
-      break;
   }
 }

@@ -9,7 +9,8 @@
  *   About modal, Follow creator, See repo).
  */
 
-import { closeWindow, openExternalUrl } from '../shared/ipc.js';
+import { exitApplication, openExternalUrl } from '../shared/ipc.js';
+import { deviceState } from '../shared/device-state.js';
 import { appState } from '../shared/state.js';
 import { showToast } from '../shared/toast.js';
 import { openAboutDialog } from './about.js';
@@ -64,10 +65,18 @@ export function setupMenus(): void {
     }
   });
 
-  // Dismiss menus on Escape key
+  // Dismiss menus on Escape key, and handle Ctrl+Q / Cmd+Q full application exit
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && appState.getActiveMenu()) {
       appState.setActiveMenu(null);
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'q') {
+      e.preventDefault();
+      appState.setActiveMenu(null);
+      deviceState.disconnect();
+      void exitApplication();
     }
   });
 
@@ -94,11 +103,12 @@ function setupMenuActions(): void {
     import('../settings/settings.js').then((m) => m.openSettingsDialog());
   });
 
-  // File -> Exit
+  // File -> Exit (forces full termination even when [X] is set to Minimize to Tray)
   document.getElementById('menu-item-exit')?.addEventListener('click', (e) => {
     e.stopPropagation();
     appState.setActiveMenu(null);
-    closeWindow();
+    deviceState.disconnect();
+    void exitApplication();
   });
 
   // Help -> Documentation
