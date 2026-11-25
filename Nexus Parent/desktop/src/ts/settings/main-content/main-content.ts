@@ -1,6 +1,6 @@
 /**
  * @file main-content.ts
- * @description Central router and runtime wiring for all 7 Settings main-content categories.
+ * @description Central router and runtime wiring for all 6 Settings main-content categories.
  *
  * Hey friend! Every settings category now lives in its own folder under `main-content/`,
  * with one `.ts` file per individual setting. This module wires them together so `settings.ts`
@@ -8,9 +8,11 @@
  */
 
 import { SettingsTabId } from '../sidebar/types.js';
-import { renderAudioVoiceIntercomContent } from './audio-voice-intercom/audio-voice-intercom.js';
+import {
+  initAudioVoiceIntercomRuntime,
+  renderAudioVoiceIntercomContent,
+} from './audio-voice-intercom/audio-voice-intercom.js';
 import { renderSurveillanceDvrContent } from './surveillance-dvr/surveillance-dvr.js';
-import { renderConnectionWebrtcContent } from './connection-webrtc/connection-webrtc.js';
 import { renderSecurityForensicsContent } from './security-forensics/security-forensics.js';
 import {
   initGeneralSystemRuntime,
@@ -28,8 +30,6 @@ export function renderSettingsMainContent(tabId: SettingsTabId): HTMLElement {
       return renderAudioVoiceIntercomContent();
     case 'surveillance':
       return renderSurveillanceDvrContent();
-    case 'connection':
-      return renderConnectionWebrtcContent();
     case 'security':
       return renderSecurityForensicsContent();
     case 'general':
@@ -57,8 +57,10 @@ export function mountSettingsMainContent(container: HTMLElement, tabId: Settings
  */
 export function initSettingsMainContentRuntime(onOpenSettings?: () => void): () => void {
   const disposeGeneralSystem = initGeneralSystemRuntime(onOpenSettings);
+  const disposeAudioVoiceIntercom = initAudioVoiceIntercomRuntime();
 
   return () => {
     disposeGeneralSystem();
+    disposeAudioVoiceIntercom();
   };
 }

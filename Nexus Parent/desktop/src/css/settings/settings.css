@@ -318,6 +318,13 @@
   line-height: 1.35;
 }
 
+.settings-label-hint {
+  font-size: 10px;
+  color: #f59e0b;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
 /* Form Controls: Inputs & Selects */
 .settings-select,
 .settings-input {
@@ -476,11 +483,13 @@
   font-weight: 700;
 }
 
-/* File Picker Group */
-.settings-file-picker-group {
+/* File Picker & Device Select Groups */
+.settings-file-picker-group,
+.settings-device-select-group {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Checkbox Lists */

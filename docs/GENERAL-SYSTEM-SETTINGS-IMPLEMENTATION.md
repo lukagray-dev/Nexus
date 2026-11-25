@@ -19,12 +19,11 @@ Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TA
 | Order | Tab ID | Sidebar Label | Default Active |
 | :---: | :--- | :--- | :---: |
 | 1 | `general` | **General & System** | Yes |
-| 2 | `connection` | **Connection & WebRTC** | - |
-| 3 | `audio` | **Audio & Intercom** | - |
-| 4 | `surveillance` | **Surveillance & DVR** | - |
-| 5 | `security` | **Security & App Lock** | - |
-| 6 | `devices` | **Paired Devices** | - |
-| 7 | `diagnostics` | **Diagnostics & Storage** | - |
+| 2 | `audio` | **Audio & Intercom** | - |
+| 3 | `surveillance` | **Surveillance & DVR** | - |
+| 4 | `security` | **Security & App Lock** | - |
+| 5 | `devices` | **Paired Devices** | - |
+| 6 | `diagnostics` | **Diagnostics & Storage** | - |
 
 > Desktop Alert Notifications (`Intruder Selfie Triggered`, `Child Device Low Battery`, `Child Device Disconnection`) are hosted on **Security & App Lock** (`security-forensics/desktop-alerts.ts`) as toggle switches rather than checkboxes.
 

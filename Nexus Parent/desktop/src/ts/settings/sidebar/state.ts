@@ -18,6 +18,19 @@ import {
 
 export const SETTINGS_STORAGE_KEY = 'nexus_parent_settings_v1';
 
+/**
+ * Legacy Connection & WebRTC setting keys removed from the schema.
+ * Stripped on load so stale dummy entries do not remain in localStorage.
+ */
+const REMOVED_LEGACY_SETTING_KEYS = [
+  'autoReconnect',
+  'primaryStunServer',
+  'secondaryTurnServer',
+  'iceTransportPolicy',
+  'iceGatherTimeout',
+  'signalingHeartbeat',
+] as const;
+
 export class SettingsState {
   private activeTab: SettingsTabId = 'general';
   private values: SettingsValues;
@@ -147,6 +160,13 @@ export class SettingsState {
             }
           }
           delete merged.launchMinimized;
+
+          // Strip legacy Connection & WebRTC keys removed from the Settings schema
+          const mutableRecord = merged as unknown as Record<string, unknown>;
+          for (const legacyKey of REMOVED_LEGACY_SETTING_KEYS) {
+            delete mutableRecord[legacyKey];
+          }
+
           return merged;
         }
       }

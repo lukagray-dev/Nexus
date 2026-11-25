@@ -42,7 +42,7 @@ export class VoiceChangerEngine {
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private destinationNode: MediaStreamAudioDestinationNode | null = null;
   private activeChain: ActiveEffectChain | null = null;
-  private currentVoiceId: VoicePresetId = 'original';
+  private currentVoiceId: VoicePresetId = getSavedVoicePresetId();
   private isInitialized = false;
 
   /**
@@ -81,6 +81,34 @@ export class VoiceChangerEngine {
     } catch (error) {
       console.error('[VoiceChanger] Failed to initialize VoiceChangerEngine:', error);
       this.cleanup();
+      return false;
+    }
+  }
+
+  /**
+   * Hot-swaps the raw microphone MediaStream feeding the active DSP graph without
+   * replacing the outbound `MediaStreamDestinationNode` track or dropping WebRTC speech.
+   */
+  public updateInputStream(inputStream: MediaStream): boolean {
+    if (!this.isInitialized || !this.audioContext || !this.activeChain) {
+      return false;
+    }
+
+    try {
+      if (this.sourceNode) {
+        try {
+          this.sourceNode.disconnect();
+        } catch {
+          // Ignore disconnect errors on stale source node
+        }
+      }
+
+      this.sourceNode = this.audioContext.createMediaStreamSource(inputStream);
+      this.sourceNode.connect(this.activeChain.inputNode);
+      console.log('[VoiceChanger] Hot-swapped microphone input stream into active DSP chain.');
+      return true;
+    } catch (error) {
+      console.error('[VoiceChanger] Failed to hot-swap input stream:', error);
       return false;
     }
   }

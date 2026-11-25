@@ -23,12 +23,17 @@
 
 import { sidebarState } from '../../left-sidebar/state.js';
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { settingsState } from '../../settings/sidebar/state.js';
+import { showToast } from '../../shared/toast.js';
 import { parentAudioController } from './parent-audio-controller.js';
+import {
+  EVENT_AUDIO_OUTPUT_CHANGED,
+  applyAudioOutputDevice,
+} from './audio-device-service.js';
 import {
   VoicePresetId,
   VOICE_PRESETS,
   getVoicePreset,
-  getSavedVoicePresetId,
 } from './voice-presets.js';
 
 // Cache the active floating panel DOM instance and its coordinates
@@ -149,7 +154,7 @@ export function renderMicPanel(): HTMLElement {
   panel.id = 'mic-floating-panel';
   panel.className = 'mic-floating-panel';
 
-  const initialVoiceId = getSavedVoicePresetId();
+  const initialVoiceId = settingsState.getValue('defaultVoicePreset');
   const initialVoice = getVoicePreset(initialVoiceId);
 
   panel.innerHTML = `
@@ -269,8 +274,31 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   let confirmationTimeout: ReturnType<typeof setTimeout> | null = null;
   let speakTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Track the active voice preset
-  let activeVoiceId: VoicePresetId = parentAudioController.getActiveVoice();
+  // Track the active voice preset synced with Settings
+  let activeVoiceId: VoicePresetId = settingsState.getValue('defaultVoicePreset');
+
+  /**
+   * Synchronizes the Speak badge and voice dropdown item highlights to `presetId`.
+   */
+  function syncVoiceUi(presetId: VoicePresetId): void {
+    activeVoiceId = presetId;
+    const preset = getVoicePreset(presetId);
+    if (micSpeakVoiceBadge) {
+      micSpeakVoiceBadge.textContent = preset.name;
+    }
+
+    if (micVoiceDropdownList) {
+      const items = micVoiceDropdownList.querySelectorAll<HTMLElement>('.mic-voice-item');
+      items.forEach((item) => {
+        const isMatch = item.dataset.voiceId === presetId;
+        item.classList.toggle('is-active', isMatch);
+        const checkIcon = item.querySelector<HTMLImageElement>('.mic-voice-item-check');
+        if (checkIcon) {
+          checkIcon.style.display = isMatch ? 'block' : 'none';
+        }
+      });
+    }
+  }
 
   /**
    * Refreshes the dropdown items DOM list with all 10 presets and marks the active voice.
@@ -310,27 +338,9 @@ function bindMicPanelEvents(panel: HTMLElement): void {
    * Activates a chosen voice preset, updates badges, and crossfades Web Audio DSP.
    */
   function selectVoicePreset(presetId: VoicePresetId): void {
-    activeVoiceId = presetId;
     parentAudioController.setVoice(presetId);
-
-    const preset = getVoicePreset(presetId);
-    if (micSpeakVoiceBadge) {
-      micSpeakVoiceBadge.textContent = preset.name;
-    }
-
-    // Refresh active highlights in dropdown list
-    if (micVoiceDropdownList) {
-      const items = micVoiceDropdownList.querySelectorAll<HTMLElement>('.mic-voice-item');
-      items.forEach((item) => {
-        const isMatch = item.dataset.voiceId === presetId;
-        item.classList.toggle('is-active', isMatch);
-        const checkIcon = item.querySelector<HTMLImageElement>('.mic-voice-item-check');
-        if (checkIcon) {
-          checkIcon.style.display = isMatch ? 'block' : 'none';
-        }
-      });
-    }
-
+    settingsState.setValue('defaultVoicePreset', presetId);
+    syncVoiceUi(presetId);
     closeVoiceDropdown();
   }
 
@@ -532,6 +542,14 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     }
 
     audioElement.srcObject = stream;
+    void applyAudioOutputDevice(
+      audioElement as unknown as { setSinkId?: (sinkId: string) => Promise<void> },
+      settingsState.getValue('outputDeviceId')
+    ).then((res) => {
+      if (res.fellBackToDefault) {
+        showToast('Selected speaker unavailable — using System Default Output');
+      }
+    });
     audioElement.play().catch((err) => {
       console.warn('[Mic] Audio autoplay prevented by browser policy:', err);
     });
@@ -779,6 +797,31 @@ function bindMicPanelEvents(panel: HTMLElement): void {
   };
   window.addEventListener('nexus-mic-stream', onMicStreamReceived);
 
+  // Sync voice preset changes made inside Settings (including Reset Defaults)
+  const onIntercomVoiceSync = (event: Event) => {
+    const customEvent = event as CustomEvent<{ voiceId: VoicePresetId }>;
+    if (customEvent.detail?.voiceId) {
+      syncVoiceUi(customEvent.detail.voiceId);
+    }
+  };
+  window.addEventListener('nexus-intercom-voice-sync', onIntercomVoiceSync);
+
+  // Route incoming child audio to the newly chosen Monitoring Output Speaker live
+  const onAudioOutputChanged = (event: Event) => {
+    const customEvent = event as CustomEvent<{ deviceId: string }>;
+    if (!audioElement) return;
+    const targetDeviceId = customEvent.detail?.deviceId ?? settingsState.getValue('outputDeviceId');
+    void applyAudioOutputDevice(
+      audioElement as unknown as { setSinkId?: (sinkId: string) => Promise<void> },
+      targetDeviceId
+    ).then((res) => {
+      if (res.fellBackToDefault) {
+        showToast('Selected speaker unavailable — using System Default Output');
+      }
+    });
+  };
+  window.addEventListener(EVENT_AUDIO_OUTPUT_CHANGED, onAudioOutputChanged);
+
   // 2. Click to Speak Control (Microphone Intercom)
   btnSpeak?.addEventListener('click', async () => {
     closeVoiceDropdown();
@@ -902,6 +945,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
       unbindDataChannel();
       unbindConnectionState();
       window.removeEventListener('nexus-mic-stream', onMicStreamReceived);
+      window.removeEventListener('nexus-intercom-voice-sync', onIntercomVoiceSync);
+      window.removeEventListener(EVENT_AUDIO_OUTPUT_CHANGED, onAudioOutputChanged);
       stopAudioPlayback();
       globalMicState = 'IDLE';
       sidebarState.setFeatureLive('mic', false);

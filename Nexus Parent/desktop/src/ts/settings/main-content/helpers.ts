@@ -8,6 +8,18 @@
  */
 
 /**
+ * Escapes HTML special characters for safe interpolation inside template literals.
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
  * Builds the top category header block (title + subtitle description).
  */
 export function createSettingsSectionHeader(title: string, description: string): HTMLElement {

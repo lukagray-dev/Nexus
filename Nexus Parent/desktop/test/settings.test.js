@@ -3,11 +3,11 @@
  * @description Comprehensive unit tests for Nexus Parent Settings Panel (Master-Detail Dialog).
  *
  * Hey friend! These tests verify:
- * 1. Category Registry: All 7 required categories are registered with proper labels, descriptions, and vector icons.
- * 2. Default Configuration: Baseline factory defaults across Audio, Surveillance, WebRTC, Security,
- *    General, Devices, and Diagnostics are complete and valid.
+ * 1. Category Registry: All 6 required categories are registered with proper labels, descriptions, and vector icons.
+ * 2. Default Configuration: Baseline factory defaults across General, Audio, Surveillance, Security,
+ *    Devices, and Diagnostics are complete and valid (with Connection & WebRTC removed).
  * 3. State & Auto-Save: Tab switching, property mutations, instant localStorage persistence,
- *    and resetToDefaults recovery.
+ *    legacy key cleanup, and resetToDefaults recovery.
  * 4. Navigation Sidebar: DOM structure, aria accessibility attributes, and reactive active item updates.
  * 5. Dialog Orchestrator: Idempotent modal opening, clean unmounting, Escape dismissal, and click-outside dismissal.
  */
@@ -25,12 +25,11 @@ import {
 import { SettingsSidebar } from '../src/js/settings/sidebar/sidebar.js';
 
 describe('Settings Category Registry & Default Values Tests', () => {
-  it('Must register exactly 7 settings categories in the requested sidebar order', () => {
-    assert.strictEqual(SETTINGS_TABS.length, 7);
+  it('Must register exactly 6 settings categories in the requested sidebar order without Connection & WebRTC', () => {
+    assert.strictEqual(SETTINGS_TABS.length, 6);
 
     const expectedIds = [
       'general',
-      'connection',
       'audio',
       'surveillance',
       'security',
@@ -40,7 +39,6 @@ describe('Settings Category Registry & Default Values Tests', () => {
 
     const expectedLabels = [
       'General & System',
-      'Connection & WebRTC',
       'Audio & Intercom',
       'Surveillance & DVR',
       'Security & App Lock',
@@ -50,6 +48,7 @@ describe('Settings Category Registry & Default Values Tests', () => {
 
     assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.id), expectedIds);
     assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.label), expectedLabels);
+    assert.strictEqual(SETTINGS_TABS.some((t) => t.id === 'connection'), false);
   });
 
   it('Each category tab must possess non-empty label, description, and valid SVG iconPath without emojis', () => {
@@ -65,11 +64,13 @@ describe('Settings Category Registry & Default Values Tests', () => {
     });
   });
 
-  it('getDefaultSettingsValues returns valid baseline configurations across all 7 domains', () => {
+  it('getDefaultSettingsValues returns valid baseline configurations across all 6 domains', () => {
     const defaults = getDefaultSettingsValues();
 
     // 1. Audio
     assert.strictEqual(defaults.defaultVoicePreset, 'original');
+    assert.strictEqual(defaults.inputDeviceId, 'default');
+    assert.strictEqual(defaults.outputDeviceId, 'default');
     assert.strictEqual(defaults.loudspeakerVolume, 'max');
     assert.strictEqual(defaults.noiseSuppression, true);
 
@@ -80,14 +81,15 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.dvrClipFormat, 'mp4');
     assert.strictEqual(defaults.hardwareAcceleration, true);
 
-    // 3. Connection
-    assert.strictEqual(defaults.autoReconnect, true);
-    assert.ok(defaults.primaryStunServer.includes('stun.l.google.com'));
-    assert.strictEqual(defaults.iceTransportPolicy, 'all');
-    assert.strictEqual(defaults.iceGatherTimeout, 400);
-    assert.strictEqual(defaults.signalingHeartbeat, 30);
+    // Removed Connection & WebRTC keys must not exist
+    assert.strictEqual('autoReconnect' in defaults, false);
+    assert.strictEqual('primaryStunServer' in defaults, false);
+    assert.strictEqual('secondaryTurnServer' in defaults, false);
+    assert.strictEqual('iceTransportPolicy' in defaults, false);
+    assert.strictEqual('iceGatherTimeout' in defaults, false);
+    assert.strictEqual('signalingHeartbeat' in defaults, false);
 
-    // 4. Security
+    // 3. Security
     assert.strictEqual(defaults.remotePin, '123456');
     assert.strictEqual(defaults.intruderSelfie, true);
     assert.strictEqual(defaults.lockoutStrikes, '3');
@@ -147,13 +149,13 @@ describe('Settings State Machine & Auto-Save Tests', () => {
       reportedTab = newTab;
     });
 
-    state.setActiveTab('connection');
-    assert.strictEqual(state.getActiveTab(), 'connection');
-    assert.strictEqual(reportedTab, 'connection');
+    state.setActiveTab('audio');
+    assert.strictEqual(state.getActiveTab(), 'audio');
+    assert.strictEqual(reportedTab, 'audio');
 
     // Setting same tab should be a no-op
     reportedTab = null;
-    state.setActiveTab('connection');
+    state.setActiveTab('audio');
     assert.strictEqual(reportedTab, null);
 
     unsubscribe();
@@ -216,6 +218,28 @@ describe('Settings State Machine & Auto-Save Tests', () => {
 
     assert.strictEqual(state.getValue('launchOnStartup'), true);
     assert.strictEqual(state.getValue('startMinimized'), true);
+  });
+
+  it('Strips removed legacy Connection & WebRTC keys when loading persisted settings', () => {
+    mockStorage[SETTINGS_STORAGE_KEY] = JSON.stringify({
+      defaultVoicePreset: 'echo',
+      autoReconnect: false,
+      primaryStunServer: 'stun:custom.example:3478',
+      secondaryTurnServer: 'turn:custom.example:3478',
+      iceTransportPolicy: 'relay',
+      iceGatherTimeout: 900,
+      signalingHeartbeat: 45,
+    });
+    const state = new SettingsState();
+    const values = state.getValues();
+
+    assert.strictEqual(values.defaultVoicePreset, 'echo');
+    assert.strictEqual('autoReconnect' in values, false);
+    assert.strictEqual('primaryStunServer' in values, false);
+    assert.strictEqual('secondaryTurnServer' in values, false);
+    assert.strictEqual('iceTransportPolicy' in values, false);
+    assert.strictEqual('iceGatherTimeout' in values, false);
+    assert.strictEqual('signalingHeartbeat' in values, false);
   });
 });
 
@@ -287,13 +311,13 @@ describe('Settings Navigation Sidebar Component Tests', () => {
     global.document = mockDoc;
   });
 
-  it('SettingsSidebar renders 7 navigation tabs with accessibility attributes', () => {
+  it('SettingsSidebar renders 6 navigation tabs with accessibility attributes', () => {
     const sidebar = new SettingsSidebar();
     const nav = sidebar.render();
 
     assert.strictEqual(nav.tagName, 'NAV');
     assert.strictEqual(nav.attributes['role'], 'tablist');
-    assert.strictEqual(nav.children.length, 7);
+    assert.strictEqual(nav.children.length, 6);
 
     // Initial tab 'general' should be selected
     const firstTab = nav.children[0];

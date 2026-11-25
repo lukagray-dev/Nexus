@@ -7,11 +7,19 @@
  */
 
 import { settingsState } from '../../sidebar/state.js';
+import { showToast } from '../../../shared/toast.js';
+
+let unsubscribeNoiseSync: (() => void) | null = null;
 
 /**
  * Renders the Hardware Noise Suppression & AEC toggle setting row.
  */
 export function renderNoiseSuppressionSetting(): HTMLElement {
+  if (unsubscribeNoiseSync) {
+    unsubscribeNoiseSync();
+    unsubscribeNoiseSync = null;
+  }
+
   const row = document.createElement('div');
   row.className = 'settings-row';
 
@@ -31,6 +39,22 @@ export function renderNoiseSuppressionSetting(): HTMLElement {
   const noiseToggle = row.querySelector<HTMLInputElement>('#setting-noise-suppression');
   noiseToggle?.addEventListener('change', () => {
     settingsState.setValue('noiseSuppression', noiseToggle.checked);
+    showToast(
+      noiseToggle.checked
+        ? 'Hardware noise suppression and AEC enabled'
+        : 'Hardware noise suppression and AEC disabled'
+    );
+  });
+
+  unsubscribeNoiseSync = settingsState.onValuesChange((values) => {
+    if (row.isConnected === false) {
+      unsubscribeNoiseSync?.();
+      unsubscribeNoiseSync = null;
+      return;
+    }
+    if (noiseToggle && noiseToggle.checked !== values.noiseSuppression) {
+      noiseToggle.checked = values.noiseSuppression;
+    }
   });
 
   return row;

@@ -215,11 +215,11 @@ describe('General & System Window/Tray Settings & Modular Wiring Tests', () => {
     };
   });
 
-  it('Modular main-content router renders all 7 settings categories cleanly', async () => {
+  it('Modular main-content router renders all 6 settings categories cleanly', async () => {
     const { SETTINGS_TABS } = await import('../src/js/settings/sidebar/types.js');
     const { renderSettingsMainContent } = await import('../src/js/settings/main-content/main-content.js');
 
-    assert.strictEqual(SETTINGS_TABS.length, 7);
+    assert.strictEqual(SETTINGS_TABS.length, 6);
     for (const tab of SETTINGS_TABS) {
       const view = renderSettingsMainContent(tab.id);
       assert.ok(view, `Category ${tab.id} should return an element`);

@@ -13,6 +13,12 @@
  *    pipeline with GainNode volume and mute controls, ensuring zero stutter and low latency!
  */
 
+import { settingsState } from '../../settings/sidebar/state.js';
+import {
+  EVENT_AUDIO_OUTPUT_CHANGED,
+  applyAudioOutputDevice,
+} from '../mic/audio-device-service.js';
+
 export class OpusAudioPlayer {
   private audioContext: AudioContext | null = null;
   private gainNode: GainNode | null = null;
@@ -22,6 +28,7 @@ export class OpusAudioPlayer {
   private volume = 1.0;
   private isRunning = false;
   private packetCount = 0;
+  private outputChangeListener: ((event: Event) => void) | null = null;
 
   constructor() {
     this.initPipeline();
@@ -40,6 +47,17 @@ export class OpusAudioPlayer {
         this.gainNode = this.audioContext.createGain();
         this.gainNode.gain.setValueAtTime(this.isMuted ? 0 : this.volume, this.audioContext.currentTime);
         this.gainNode.connect(this.audioContext.destination);
+
+        // Apply configured Monitoring Output Speaker immediately and listen for live changes
+        void this.applyConfiguredOutputDevice(settingsState.getValue('outputDeviceId'));
+        this.outputChangeListener = (event: Event) => {
+          const customEvent = event as CustomEvent<{ deviceId?: string }>;
+          const targetId = customEvent.detail?.deviceId ?? settingsState.getValue('outputDeviceId');
+          void this.applyConfiguredOutputDevice(targetId);
+        };
+        if (typeof window.addEventListener === 'function') {
+          window.addEventListener(EVENT_AUDIO_OUTPUT_CHANGED, this.outputChangeListener);
+        }
       }
 
       if (typeof AudioDecoder !== 'undefined') {
@@ -192,11 +210,31 @@ export class OpusAudioPlayer {
   }
 
   /**
+   * Routes the internal AudioContext destination to the chosen Monitoring Output Speaker.
+   */
+  public async applyConfiguredOutputDevice(deviceId: string): Promise<void> {
+    if (!this.audioContext) return;
+    await applyAudioOutputDevice(
+      this.audioContext as unknown as { setSinkId?: (sinkId: string) => Promise<void> },
+      deviceId
+    );
+  }
+
+  /**
    * Tears down decoder and AudioContext.
    */
   public stop(): void {
     this.isRunning = false;
     this.reset();
+
+    if (
+      this.outputChangeListener &&
+      typeof window !== 'undefined' &&
+      typeof window.removeEventListener === 'function'
+    ) {
+      window.removeEventListener(EVENT_AUDIO_OUTPUT_CHANGED, this.outputChangeListener);
+      this.outputChangeListener = null;
+    }
 
     if (this.decoder && this.decoder.state !== 'closed') {
       try {
