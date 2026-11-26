@@ -59,8 +59,8 @@ Unlike traditional commercial monitoring tools that upload camera feeds, audio r
 
 Nexus is partitioned into two specialized subsystems:
 
-1. **Nexus Parent (Desktop Dashboard)**: A resource-efficient desktop workstation powered by **Tauri v2**, running a zero-dependency static TypeScript and CSS frontend rendered directly inside the native OS WebView.
-2. **Nexus Child (Mobile Client)**: An autonomous Android client written in **Kotlin** integrating device-level telemetry, background accessibility hooks, hardware media capture, and a 5-tier process survival engine.
+1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and a scaffolded **Android Parent** client (`Nexus Parent/android`).
+2. **Nexus Child (Mobile Client)**: An autonomous Android client written in **Kotlin** integrating device-level telemetry, background accessibility hooks, hardware media capture, Digital Wellbeing usage tracking, active call alerting, and a 5-tier process survival engine.
 
 ## **Why Nexus?**
 
@@ -83,24 +83,27 @@ graph TB
         direction TB
         subgraph P_UI["Tactical B&W Frontend (Pure Static TS + CSS)"]
             direction TB
-            SURV_CAM["Camera Surveillance<br/>• Rear / Front Lens Switch<br/>• Zero-Renegotiation Track<br/>• 30-Min Rolling DVR Buffer<br/>• YouTube-Style Scrubber & Snap-to-Live"]
-            SURV_SCR["Screen & System Audio<br/>• 1080p @ 30fps Hardware Stream<br/>• Autonomous Consent Clicker<br/>• Opus WebCodecs Audio Decoder<br/>• 30-Min DVR Buffer"]
-            SURV_MIC["Microphone & Voice Intercom<br/>• Live Environmental PCM Audio<br/>• 36-Bar Spectrum Visualizer<br/>• Push-to-Talk Loudspeaker Boost<br/>• AudioTrack Role-Reversal"]
+            SURV_CAM["Camera Surveillance<br/>• Rear / Front Lens Default & Switch<br/>• Zero-Renegotiation Track<br/>• 15m/30m/60m Rolling DVR Buffer<br/>• Scrubber, Snap-to-Live & Save Clip"]
+            SURV_SCR["Screen & System Audio<br/>• Configurable 1080p/720p/540p Stream<br/>• Autonomous Consent Clicker<br/>• Opus WebCodecs Audio (Sink Routed)<br/>• Rolling DVR & MP4/WebM Clip Export"]
+            SURV_MIC["Microphone & Voice Intercom<br/>• Live Environmental PCM Audio<br/>• 36-Bar Spectrum & 10-Preset Voice DSP<br/>• Hardware Mic/Speaker & AEC Routing<br/>• Loudspeaker Target Volume (Max/High/Preserve)"]
             SURV_LOC["Tactical Geolocation<br/>• Free Esri Satellite Hybrid Map<br/>• 5m Movement Displacement Filter<br/>• Nominatim Reverse Geocoding<br/>• Tactical Markers & Accuracy Halo"]
             
             AUD_SMS["SMS & Call History<br/>• Latest 100 Initial Snapshot<br/>• Live Telephony ContentObserver<br/>• ContactsContract PhoneLookup"]
             AUD_NOTIF["Notification Interceptor<br/>• Status Bar Snapshot<br/>• Real-Time Push Ingestion<br/>• BigTextStyle & MessagingStyle<br/>• Live Dismissal Synchronization"]
             AUD_KEYS["Keystroke & Input Auditor<br/>• 1500ms Debounced Session Flush<br/>• Window / Focus Shift Commit<br/>• Sensitive Password Masking<br/>• 100-Record Ring Buffer"]
-            AUD_FS["Remote Storage Explorer<br/>• 40-Item Progressive Pagination<br/>• Double Cache (Dir + Preview)<br/>• 64KB High-Speed SCTP Stream<br/>• Native OS Save Picker & Deletion"]
+            AUD_FS["Remote Storage Explorer<br/>• 40-Item Progressive Pagination<br/>• Double Cache (Dir + Preview)<br/>• 64KB High-Speed SCTP Stream<br/>• Atomic .nexuspart Disk Downloads"]
+            AUD_WELL["Digital Wellbeing Monitor<br/>• Today & 7-Day Usage Timelines<br/>• Hourly/Daily Activity Histograms<br/>• Unlocks, Launches & Active App<br/>• Category Filters & App Breakdown"]
+            AUD_ALERTS["Desktop Alerts & Call Guard<br/>• Active Call Banner + 1-Click Mic Listen<br/>• Native OS Tray Notifications<br/>• Low Battery, Selfie & Disconnect Alerts"]
             AUD_LOCK["App Lock & Remote Guard<br/>• 6-Digit SHA-256 Numeric PIN<br/>• 3-Strike Lockout (60s Timer)<br/>• Silent Camera2 Selfie Capture<br/>• Remote Lock / PIN Override"]
             
             ACT_WALL["Wallpaper Management<br/>• Mobile HUD Multi-Screen View<br/>• System vs Lock Differentiation<br/>• Real-Time OnColorsChanged Stream<br/>• 16KB Chunked Remote Push"]
             ACT_HARD["Hardware Actuators<br/>• Vibrator Waveforms (SOS, Pulse)<br/>• Camera Torch (Strobe, Beacon)<br/>• Combined Emergency Alerts"]
             ACT_STEALTH["Stealth Controller<br/>• ARMED / ACTIVE State Badges<br/>• Danger Confirmation Dialog<br/>• Remote Unstealth Broadcast"]
+            P_PREFS["5-Tab Preferences Console<br/>• General & System / Auto-Updates<br/>• Audio & Intercom / Surveillance & DVR<br/>• Paired Devices History & About"]
         end
         
         subgraph P_CORE["Tauri v2 OS Runtime (Rust)"]
-            RUST_HOST["Rust Core & Native Window<br/>• Sub-45MB RAM Footprint<br/>• Native OS WebView2 Bridge<br/>• Zero-IPC Video Streaming"]
+            RUST_HOST["Rust Core & Native Services<br/>• System Tray, Autostart & Always-on-Top<br/>• Display Wake Lock (keepawake)<br/>• Atomic Chunked Downloads & Notifications<br/>• GitHub Stable Release Auto-Updater"]
         end
     end
 
@@ -130,7 +133,7 @@ graph TB
             HW_SCR["ScreenCapturerAndroid<br/>• MediaProjection Hardware Hook<br/>• MediaProjectionAutoClickHelper<br/>• SystemAudioCapturer (Opus)"]
             HW_MIC["Microphone & Speaker<br/>• AudioRecord Hardware Driver<br/>• ParentAudioSpeakerManager<br/>• Max Loudspeaker Override"]
             HW_LOC["LocationController<br/>• FusedLocationProviderClient<br/>• 5m Movement Displacement<br/>• Instant Cached Last-Location"]
-            HW_AUDIT["Audit & Telemetry Hooks<br/>• NexusAccessibilityService<br/>• NexusNotificationListenerService<br/>• Telephony ContentObservers<br/>• AppLock SelfieCapturer (Offscreen)"]
+            HW_AUDIT["Audit & Telemetry Hooks<br/>• NexusAccessibilityService<br/>• NexusNotificationListenerService<br/>• Telephony, CallAlert & UsageEvents<br/>• 27-Field DeviceTelemetry & SelfieCapturer"]
             HW_ACT["Actuator Controllers<br/>• WallpaperManager Observer<br/>• Vibrator Waveform Engine<br/>• CameraManager Torch Driver"]
         end
     end
@@ -149,13 +152,15 @@ graph TB
     AUD_NOTIF <== "Push Snapshots" ==> DATA_CH
     AUD_KEYS <== "Debounced Keys" ==> DATA_CH
     AUD_FS <== "64KB File Chunks" ==> DATA_CH
+    AUD_WELL <== "Usage Snapshots" ==> DATA_CH
+    AUD_ALERTS <== "Call State & Alerts" ==> DATA_CH
     AUD_LOCK <== "Lock & Selfies" ==> DATA_CH
     ACT_WALL <== "Wallpaper Chunks" ==> DATA_CH
     ACT_HARD <== "Actuator Commands" ==> DATA_CH
     ACT_STEALTH <== "Stealth State" ==> DATA_CH
 
     DATA_CH <== "Displacement Telemetry" ==> HW_LOC
-    DATA_CH <== "Telephony Provider Data" ==> HW_AUDIT
+    DATA_CH <== "Telephony, CallAlert & UsageStats" ==> HW_AUDIT
     DATA_CH <== "Status Bar Notifications" ==> HW_AUDIT
     DATA_CH <== "Accessibility Key Events" ==> HW_AUDIT
     DATA_CH <== "Filesystem & MediaStore" ==> HW_AUDIT
@@ -186,20 +191,23 @@ Nexus unifies live surveillance, forensic auditing, remote device actuation, and
 
 | Domain | Subsystem | Capabilities & Core Mechanics | Underlying Engine | Transport & Protocol | Latency / SLA | Cloud Storage |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Live Surveillance** | **Camera Feed** | Edge-to-edge hardware video, Rear/Front lens switch (zero-renegotiation), 30-min rolling DVR buffer with YouTube-style scrubber and instant snap-to-live, 90° rotation, MP4/WebM clip recording. | Android Camera2 API, WebRTC Native VideoTrack, Chromium Hardware Decoder | SRTP (H.264 / VP8) | $\le 100\text{ ms}$ | **Zero (P2P Direct)** |
-| | **Screen Mirror & Audio** | Full HD 1080p @ 30fps screen mirror, autonomous consent auto-clicker via accessibility (`MediaProjectionAutoClickHelper`), synchronized internal system audio, 30-min DVR rolling buffer. | Android MediaProjection, EGL Textures, MediaCodec Opus, WebCodecs AudioDecoder | SRTP (Video) + DataChannel (`OPUS_AUDIO`) | $\le 120\text{ ms}$ | **Zero (P2P Direct)** |
-| | **Mic & Intercom** | Live environmental PCM audio, 36-bar canvas spectrum visualizer, push-to-talk voice intercom overriding phone loudspeaker to maximum volume (bypassing silent/DND). | Android AudioRecord, AudioManager Loudspeaker Routing, Web Audio API | SRTP (48kHz Opus PCM Transceiver) | $\le 60\text{ ms}$ | **Zero (P2P Direct)** |
+| **Live Surveillance** | **Camera Feed** | Edge-to-edge hardware video, configurable Rear/Front default & live lens switch, configurable `15m`/`30m`/`60m` rolling DVR buffer, YouTube-style scrubber & snap-to-live, 90° rotation, **Save Clip** (`MP4`/`WebM`) export. | Android Camera2 API, WebRTC Native VideoTrack, MediaRecorder DVR, Chromium Hardware Decoder | SRTP (H.264 / VP8) | $\le 100\text{ ms}$ | **Zero (P2P Direct)** |
+| | **Screen Mirror & Audio** | Configurable `1080p`/`720p`/`540p` screen mirror with live quality switching, autonomous consent clicker (`MediaProjectionAutoClickHelper`), synchronized internal system audio routed to chosen PC output speaker, rolling DVR & **Save Clip** export. | Android MediaProjection, EGL Textures, MediaCodec Opus, WebCodecs AudioDecoder, `AudioContext.setSinkId` | SRTP (Video) + DataChannel (`OPUS_AUDIO`) | $\le 120\text{ ms}$ | **Zero (P2P Direct)** |
+| | **Mic & Intercom** | Live environmental PCM audio, 36-bar canvas spectrum visualizer, 10-preset real-time Web Audio Voice Changer DSP, hardware mic/speaker selection, AEC/noise suppression toggle, configurable child loudspeaker target volume (`Max`/`High`/`Preserve`), 1-click launch from Active Call Alerts. | Android AudioRecord, AudioManager Loudspeaker Routing, Web Audio API DSP, `MediaDevices` + `setSinkId` | SRTP (48kHz Opus PCM Transceiver) | $\le 60\text{ ms}$ | **Zero (P2P Direct)** |
 | | **Tactical Location** | Real-time GPS tracking with 5-meter movement displacement filter, free Esri Satellite Hybrid map (zero API keys), cached Nominatim reverse geocoding, speed & accuracy halos. | Google Play FusedLocationProviderClient, Leaflet, OpenStreetMap Nominatim | SCTP DataChannel (`LOCATION_UPDATE`) | Real-time | **Zero (P2P Direct)** |
-| **Telemetry & Auditing** | **SMS & Call Logs** | Instant snapshot of latest 100 SMS messages and 100 call records, real-time background ContentObserver streaming, full contact name & caller ID resolution via PhoneLookup. | Android Telephony Provider, ContactsContract.PhoneLookup, ContentObservers | SCTP DataChannel (`SMS_*`, `CALLLOG_*`) | Real-time | **Zero (P2P Direct)** |
+| **Telemetry & Auditing** | **Digital Wellbeing** | Exact foreground session reconstruction (`Today` & `7 Days`), 24-hour / 7-day activity histograms, screen time, device unlocks, app launches, active foreground app tracking, and category filtering. | Android `UsageEvents` (`WellbeingUsageAggregator`), `AppOpsManager` Usage Access | SCTP DataChannel (`WELLBEING_*`) | Real-time Poll | **Zero (P2P Direct)** |
+| | **Active Call & Desktop Alerts** | Real-time cellular call state alerts (`ringing`, `active`, `idle`) with incoming/outgoing direction, phone number & contact resolution, 30s repeating reminders, actionable banner with 1-click **Turn On Mic**, plus native OS alerts for Intruder Selfies, Low Battery, and Disconnections. | Android `TelephonyCallback` / `PhoneStateListener`, `ContactsContract.PhoneLookup`, Tauri Notification Plugin | SCTP DataChannel (`CALL_STATE`, `CALL_ALERT_*`) | Instant Alert | **Zero (P2P Direct)** |
+| | **SMS & Call Logs** | Instant snapshot of latest 100 SMS messages and 100 call records, real-time background ContentObserver streaming, full contact name & caller ID resolution via PhoneLookup. | Android Telephony Provider, ContactsContract.PhoneLookup, ContentObservers | SCTP DataChannel (`SMS_*`, `CALLLOG_*`) | Real-time | **Zero (P2P Direct)** |
 | | **Notifications** | Status bar snapshot of active alerts, real-time interception across all apps (WhatsApp, Telegram, etc.), BigTextStyle & MessagingStyle extraction, live dismissal tracking. | Android NotificationListenerService, StatusBarNotification Bridge | SCTP DataChannel (`NOTIFICATION_*`) | Real-time Push | **Zero (P2P Direct)** |
 | | **Keystroke Auditor** | 1500ms debounced session aggregation, instant flush on focus/window change, sensitive password & credential masking (`••••••••`), 100-entry in-memory ring buffer. | NexusAccessibilityService, Android InputType / Password Detection | SCTP DataChannel (`KEYBOARD_*`) | Real-time Stream | **Zero (P2P Direct)** |
-| | **Storage Explorer** | Progressive 40-item directory pagination, double-layer caching (directoryCache + imagePreviewCache) with delta checks, 160x160 JPEG thumbnails, native OS save picker, remote deletion. | Android Storage Access Framework, MediaScannerConnection, File APIs | SCTP DataChannel (64KB Chunks) | Up to 12 MB/s | **Zero (P2P Direct)** |
+| | **Storage Explorer** | Progressive 40-item directory pagination, double-layer caching (directoryCache + imagePreviewCache) with delta checks, 160x160 JPEG thumbnails, universal atomic `.nexuspart` disk downloads (default folder or Ask Every Time), remote deletion. | Android Storage Access Framework, File APIs, Rust Chunked `BufWriter` (`downloads.rs`) | SCTP DataChannel (64KB Chunks) | Up to 12 MB/s | **Zero (P2P Direct)** |
 | | **App Lock Guard** | 6-digit SHA-256 numeric PIN, 3-strike hardware lockout with 60s persistent timer, silent Camera2 front-camera selfie capture (offscreen ImageReader), remote lock override. | Android Camera2 Offscreen ImageReader, SharedPreferences SHA-256 | SCTP DataChannel (`APPLOCK_*`) | Instant Alert | **Zero (P2P Direct)** |
 | **Remote Control & Actuation** | **Wallpaper Control** | Remote Mobile HUD preview distinguishing Home (`FLAG_SYSTEM`) vs Lock (`FLAG_LOCK`) wallpapers, real-time OnColorsChanged streaming, 16KB chunked remote wallpaper push ($\le 10\text{MB}$). | Android WallpaperManager, OnColorsChangedListener | SCTP DataChannel (16KB Chunks) | Instant Sync | **Zero (P2P Direct)** |
 | | **Hardware Actuators** | Single-tap vibration patterns (`short`, `double`, `pulse`, `sos`), camera torch modes (`on`, `off`, `strobe`, `beacon`), combined emergency alerts with execution feedback. | Android Vibrator (VibrationEffect waveforms), CameraManager Torch | SCTP DataChannel (`VIBRATE:*`, `FLASH:*`) | $\le 50\text{ ms}$ | **Zero (P2P Direct)** |
 | | **Stealth & Widget** | Dynamic app drawer / launcher icon hiding via PackageManager, uninterrupted background daemon execution, 1x1 fail-safe home screen recovery widget, remote desktop sync. | Android PackageManager Component Enabling, StealthWidgetProvider | SCTP DataChannel (`STEALTH_*`) | Instant Toggle | **Zero (P2P Direct)** |
-| **Resilience & Infrastructure** | **Process Survival** | 5-tier process revival (Boot/Update receiver, Screen Unlock receiver, Task Kill AlarmManager, 15-min Persistent JobService, System Accessibility keep-alive). | Android 14+ Foreground Service (`dataSync`, `location`), JobScheduler, AlarmManager, CPU WakeLock | Internal OS Lifecycle & IPC | Autonomous | **Zero (Local Engine)** |
-| | **Presence & Signaling** | Fast Non-Trickle ICE with embedded SDP candidates (200-400ms GATHER_ONCE), persistent Firebase presence with `/.info/connected`, 30s heartbeat, atomic onDisconnect hooks. | Firebase Realtime Database (RTDB), Google STUN Infrastructure | HTTPS / WSS Non-Trickle SDP | 200–400 ms | Ephemeral SDP Only |
+| **Workstation & Infrastructure** | **Desktop Preferences & Lifecycle** | 5-tab Settings console (`General & System`, `Audio & Intercom`, `Surveillance & DVR`, `Paired Devices` multi-device history + 27-field telemetry, `About Nexus Parent`), system tray close-to-tray, OS autostart, `Always on Top`, `Keep Screen On`, GPU toggle, and GitHub stable release auto-updater. | Tauri v2 Plugins (`autostart`, `dialog`, `notification`, `single-instance`), `keepawake`, Rust `tray.rs` & `updater.rs` | Native Tauri IPC + GitHub Releases API | Instant / Background | **Zero (Local Config)** |
+| | **Process Survival** | 5-tier process revival (Boot/Update receiver, Screen Unlock receiver, Task Kill AlarmManager, 15-min Persistent JobService, System Accessibility keep-alive). | Android 14+ Foreground Service (`dataSync`, `location`), JobScheduler, AlarmManager, CPU WakeLock | Internal OS Lifecycle & IPC | Autonomous | **Zero (Local Engine)** |
+| | **Presence & Signaling** | Fast Non-Trickle ICE with embedded SDP candidates (200-400ms GATHER_ONCE), persistent Firebase presence with `/.info/connected`, 30s heartbeat, atomic onDisconnect hooks, 9-attempt backoff auto-reconnect. | Firebase Realtime Database (RTDB), Google STUN Infrastructure | HTTPS / WSS Non-Trickle SDP | 200–400 ms | Ephemeral SDP Only |
 
 ## **Monorepo Layout**
 
@@ -213,10 +221,11 @@ graph TD
         ASSETS[assets/<br/>Logos, Branding Assets]
     end
 
-    subgraph "Nexus Parent (Desktop)"
-        DESKTOP_TAURI[desktop/src-tauri/<br/>Rust Tauri v2 Backend<br/>Window, Capabilities, IPC Handlers]
+    subgraph "Nexus Parent"
+        DESKTOP_TAURI[desktop/src-tauri/<br/>Rust Tauri v2 Backend<br/>Window, Tray, Downloads, Updater]
         DESKTOP_UI[desktop/src/<br/>Pure Static Frontend<br/>TS / CSS / HTML / Webview Assets]
         DESKTOP_CONF[desktop/package.json<br/>tsconfig.json, tauri.conf.json]
+        PARENT_ANDROID[android/<br/>Kotlin Android Client Scaffold]
     end
 
     subgraph "Nexus Child (Mobile)"
@@ -236,6 +245,7 @@ graph TD
     style DESKTOP_TAURI fill:#DD6B20,stroke:#C05621,color:#fff
     style DESKTOP_UI fill:#3182CE,stroke:#2B6CB0,color:#fff
     style DESKTOP_CONF fill:#3182CE,stroke:#2B6CB0,color:#fff
+    style PARENT_ANDROID fill:#2B6CB0,stroke:#1A365D,color:#fff
     style ANDROID_APP fill:#22543D,stroke:#1C4532,color:#fff
     style GRADLE_CONF fill:#22543D,stroke:#1C4532,color:#fff
 ```
@@ -249,18 +259,25 @@ D:\Nexus\
 │   └── screenshots/           # Architecture diagrams and UI captures
 │
 ├── docs/                      # Architectural blueprints & implementation specs
+│   ├── ABOUT-SETTINGS-IMPLEMENTATION.md
 │   ├── APPLOCK-SECURITY-IMPLEMENTATION.md
+│   ├── AUDIO-INTERCOM-SETTINGS-IMPLEMENTATION.md
 │   ├── BACKGROUND-SERVICE-REVIVAL-IMPLEMENTATION.md
+│   ├── CALL-ALERT-IMPLEMENTATION.md
 │   ├── CAMERA-IMPLEMENTATION.md
+│   ├── DIGITAL-WELLBEING-IMPLEMENTATION.md
 │   ├── FOLDER-STRUCTURE.md
+│   ├── GENERAL-SYSTEM-SETTINGS-IMPLEMENTATION.md
 │   ├── KEYBOARD-MONITORING-IMPLEMENTATION.md
 │   ├── LOCATION-IMPLEMENTATION.md
 │   ├── MICROPHONE-IMPLEMENTATION.md
 │   ├── NOTIFICATION-MONITORING-IMPLEMENTATION.md
+│   ├── PAIRED-DEVICES-SETTINGS-IMPLEMENTATION.md
 │   ├── SCREEN-IMPLEMENTATION.md
 │   ├── SMS-CALLLOG-IMPLEMENTATION.md
 │   ├── STEALTH-MODE-IMPLEMENTATION.md
 │   ├── STORAGE-IMPLEMENTATION.md
+│   ├── SURVEILLANCE-DVR-SETTINGS-IMPLEMENTATION.md
 │   ├── UI-PREFERENCES.md
 │   ├── WALLPAPER-VIBRATEFLASH-IMPLEMENTATION.md
 │   ├── WEBRTC-ARCHITECTURE.md
@@ -273,18 +290,20 @@ D:\Nexus\
 │   │   └── build.gradle.kts   # App build dependencies & SDK configs
 │   └── gradle/                # Gradle wrapper & catalog files
 │
-├── Nexus Parent/              # Parent Monitoring Workstation
+├── Nexus Parent/              # Parent Monitoring Clients
+│   ├── android/               # Scaffolded Android Parent client (Kotlin)
 │   └── desktop/               # Tauri v2 Desktop Application
-│       ├── package.json       # Build scripts (npm run build, tsc)
+│       ├── package.json       # Build scripts (npm run build, npm test, tsc)
 │       ├── tsconfig.json      # Strict ESNext/Bundler TypeScript configuration
-│       ├── src-tauri/         # Rust backend (OS window, capabilities, IPC)
-│       │   ├── src/           # main.rs, lib.rs
+│       ├── src-tauri/         # Rust backend (window, tray, downloads, power, updater, IPC)
+│       │   ├── src/           # main.rs, lib.rs, commands.rs, downloads.rs, power.rs, tray.rs, updater.rs
 │       │   └── tauri.conf.json# Tauri runtime configuration
-│       └── src/               # Pure static frontend (HTML, CSS, TS, Assets)
-│           ├── assets/icons/  # Lucide vector icons (SVG)
-│           ├── css/           # 1:1 Sibling stylesheets
-│           ├── ts/            # 1:1 Sibling TypeScript controllers
-│           └── index.html     # Edge-to-edge hardware canvas host
+│       ├── src/               # Pure static frontend (HTML, CSS, TS, Assets)
+│       │   ├── assets/icons/  # Lucide vector icons (SVG)
+│       │   ├── css/           # 1:1 Sibling stylesheets
+│       │   ├── ts/            # 1:1 Sibling TypeScript controllers & 5-tab settings
+│       │   └── index.html     # Edge-to-edge hardware canvas host
+│       └── test/              # Node.js unit & integration test suites
 │
 ├── scripts/                   # One-click execution & debug launchers
 │   ├── run-desktop.bat        # Automated one-click desktop app runner
@@ -339,6 +358,22 @@ Run the automated launcher script from PowerShell or command prompt:
 2. Press `Ctrl + Shift + D` to open the **Run and Debug** view.
 3. Select **"Nexus Parent Desktop (Dev)"** from the dropdown menu.
 4. Press `F5` to trigger the automated build pipeline and attach the debugger.
+
+#### Running Tests
+
+```powershell
+# Nexus Parent (Desktop) — TypeScript build + Node.js test suite
+cd "Nexus Parent\desktop"
+npm test
+
+# Nexus Parent (Desktop) — Rust backend unit tests
+cd "Nexus Parent\desktop\src-tauri"
+cargo test
+
+# Nexus Child (Android) — Kotlin unit tests
+cd "Nexus Child"
+.\gradlew.bat testDebugUnitTest
+```
 
 ## **License & Contributing**
 
