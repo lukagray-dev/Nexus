@@ -128,3 +128,15 @@ Desktop Parent                                                          Android 
       |-- 22. Flip loading.svg spinner to play.svg ("Start Monitoring")       |
       |-- 23. Footer updates to "Monitoring Paused"                           |
 ```
+
+
+---
+
+## 4. Nexus Parent Android (`Nexus Parent/android`)
+
+Android Parent implements identical `SMS` and `Call Log` surveillance over `nexus-control`:
+- **Protocol & Parsing**: `MonitorProtocol.kt` (`CMD_SMS_ON/OFF`, `CMD_CALLLOG_ON/OFF`, `formatSimSlot()`, `formatCallDuration()`, `formatRelativeTime()`) and `MonitorPayloadParser.kt` parse multi-chunk `SMS_HISTORY`, `SMS_NEW`, `CALLLOG_HISTORY`, and `CALLLOG_NEW` packets deterministically.
+- **Coordinator & Confirmation Spinner**: `MonitorCoordinator.kt` manages `IDLE -> STARTING -> LIVE -> STOPPING -> IDLE` states with 20s confirmation timeouts; `MonitorHostScreen.kt` renders `SpinningLoaderIcon` (`ic_loading_ring_track` + `ic_loading_ring_arc`, matching Desktop `loading.svg` 750ms rotation) between Play and Pause while awaiting Child confirmation.
+- **Compose Panels**:
+  - `ui/monitor/sms/SmsPanel.kt`: Live search filtering across sender/address/body, incoming/outgoing/unread/SIM badges, and full-message modal showing received timestamp and delivery/SIM metadata.
+  - `ui/monitor/calllog/CallLogPanel.kt`: Dynamic count pills (`All`, `Missed`, `Incoming`, `Outgoing`, `Declined`) and expandable per-call drawer showing SIM slot, location, `VIDEO`/`HD` feature badges, direction, exact time, and `MM:SS` duration.

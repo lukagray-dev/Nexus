@@ -191,3 +191,12 @@ The following advanced capabilities are scheduled for subsequent iterations to e
   3. Register `MediaController.Callback` to stream real-time playback state transitions and metadata.
   4. Execute remote transport controls using `mediaController.transportControls.play()`, `pause()`, etc.
 
+---
+
+## 6. Nexus Parent Android (`Nexus Parent/android`)
+
+Android Parent mirrors Desktop's Notification Interceptor over `nexus-control`:
+- **Protocol & Coordinator**: `MonitorProtocol.mapNotificationCategory()` reproduces Desktop's category filter buckets (`All`, `Messages`, `Social`, `System`, `Media`); `MonitorPayloadParser` parses `NOTIFICATION_SNAPSHOT`, `NOTIFICATION_NEW`, and `NOTIFICATION_REMOVED` (including `bigText`, `subText`, and `messages`).
+- **State Sync**: `MonitorCoordinator` handles `NOTIFICATION_ON` / `NOTIFICATION_OFF`, 20s confirmation timeouts with Desktop-exact `SpinningLoaderIcon` in `MonitorHostScreen`, upserts updated notifications by `key`, removes dismissed keys live, and resets state cleanly on disconnect.
+- **Compose UI**: `ui/monitor/notifications/NotificationsPanel.kt` provides keyword search, category pills with dynamic counts, and an inspection modal displaying `subText`, full `bigText`, and `MessagingStyle` thread lines.
+

@@ -64,7 +64,17 @@ Instead of relying solely on `UsageStatsManager.queryUsageStats(INTERVAL_DAILY)`
 
 ---
 
-## 5. Verification
+## 5. Android Parent UI & Coordinator (`Nexus Parent/android`)
+
+- **`data/monitor/MonitorCoordinator.kt` & `MonitorPayloadParser.kt`**:
+  - Dispatches `{"type":"WELLBEING_ON","range":"today|7d"}`, `WELLBEING_OFF`, `WELLBEING_RANGE:<today|7d>`, and `{"type":"WELLBEING_REFRESH","range":...}` over `nexus-control` with 20s confirmation timeouts.
+  - Reassembles multi-chunk `WELLBEING_SNAPSHOT` packets, flattens and sorts apps descending by `totalTimeMs`, normalizes histogram bars (`0.08f..1.0f` against peak duration), and captures `WELLBEING_ERROR:` inline permission messages.
+- **`ui/monitor/wellbeing/WellbeingPanel.kt`**:
+  - `Today` / `7 Days` segmented switcher, inline `Refresh` trigger, inline Usage Access error banner, 2x2 KPI cards (`SCREEN TIME`, `UNLOCKS`, `LAUNCHES`, `ACTIVE`), `Canvas` activity histogram, search bar, category pills (`All`, `Social`, `Video`, `Games`, `Productivity`, `Other`), and ranked app rows with launch counts and progress fills.
+
+---
+
+## 6. Verification
 
 ```powershell
 # Desktop Parent TypeScript build + Node test suite
@@ -74,4 +84,8 @@ npm test
 # Android Child Kotlin compilation + JUnit tests
 Set-Location "d:\Nexus\Nexus Child"
 .\gradlew.bat testDebugUnitTest compileDebugKotlin
+
+# Android Parent Kotlin build, JUnit tests & Lint
+Set-Location "d:\Nexus\Nexus Parent\android"
+.\gradlew.bat assembleDebug testDebugUnitTest compileDebugAndroidTestKotlin lintDebug --console=plain
 ```

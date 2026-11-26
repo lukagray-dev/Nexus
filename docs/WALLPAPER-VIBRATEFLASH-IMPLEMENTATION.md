@@ -84,3 +84,14 @@ Desktop Parent                                                          Android 
 2. **Zero Battery Leakage**: Disconnecting from WebRTC automatically unregisters `OnColorsChangedListener` and halts any running flashlight strobe coroutine loops.
 3. **No-Emoji Surveillance Design**: Adheres to the strict monochrome aesthetic; Lucide SVGs are used on Desktop, and native Vector Drawables on Android.
 4. **Memory Hygiene**: Temporary bitmaps are aggressively recycled on Android, preventing OutOfMemory errors during repeated wallpaper fetches or uploads.
+
+---
+
+## 4. Nexus Parent Android Implementation (`Nexus Parent/android`)
+
+- **Vibrate & Flash (`ui/monitor/vibrateflash/VibrateFlashPanel.kt`, `MonitorCoordinator.kt`)**:
+  - Hides the footer Play/Pause dock (`showPlayPauseDock = false`) and dispatches exact typed wire triggers (`VIBRATE:<short|double|pulse|sos>`, `FLASH:<on|off|strobe|beacon>`, `VIBRATE_FLASH:<alert|sos|pulse>`), updating the inline status indicator banner and tactical toast upon `*_SUCCESS:` / `*_ERROR:` acknowledgements.
+- **Wallpaper Surveillance & Push (`ui/monitor/wallpaper/WallpaperPanel.kt`, `MainActivity.kt`, `MonitorImageHelpers.kt`)**:
+  - Tapping the phone mockup dispatches `WALLPAPER_GET` (15s timeout), while Play/Pause toggles continuous `WALLPAPER_ON` / `WALLPAPER_OFF` monitoring (20s timeout with `SpinningLoaderIcon`).
+  - Reassembles incoming `WALLPAPER_CHUNK` packets into Home and Lock `ByteArray` bitmaps (sharing when `isSame == true`) and renders the decoded image inside the phone frame via `ImageBitmap`.
+  - `"Push Wallpaper to Device"` launches Android's `ActivityResultContracts.PickVisualMedia(ImageOnly)` System Photo Picker (supporting PNG/JPEG/WebP up to 10 MB with zero extra storage permissions), encodes with `Base64.NO_WRAP`, and streams `PUSH_WALLPAPER_START` + `16,384`-character `PUSH_WALLPAPER_CHUNK` frames (exact multiple of 4 for Child's per-chunk Base64 decoder) with a live progress bar until `WALLPAPER_SET_SUCCESS` (30s fallback timeout).

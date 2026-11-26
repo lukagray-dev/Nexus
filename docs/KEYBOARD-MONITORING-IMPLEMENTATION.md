@@ -121,3 +121,7 @@ Child safety and privacy require that sensitive account credentials and banking 
 * **`state.ts`**: Implements reactive `keyboardMonitoringState` (`IDLE`, `STARTING`, `LIVE`, `STOPPING`) and in-memory `keyboardRecords` store.
 * **`keyboard.ts`**: Renders pure Black & White audit panel with live telemetry counter, client-side search filtering, session history clearing, and empty states.
 * **`right-sidebar.ts`**: Binds the bottom dock Play/Pause button with loading spinners, routes incoming DataChannel packets, and handles auto-reset on peer disconnection.
+
+### Android Parent Components (`Nexus Parent/android`)
+* **`data/monitor/MonitorPayloadParser.kt` & `MonitorCoordinator.kt`**: Sends `KEYBOARD_ON`/`KEYBOARD_OFF` with 20s confirmation timers, ingests `KEYBOARD_SNAPSHOT` and live `KEYBOARD_NEW` (capped at 500 entries matching Desktop), and shows masked toasts (`[PASSWORD]`) when `isPassword` is true.
+* **`ui/monitor/keyboard/KeyboardPanel.kt`**: Renders live counter (`REAL-TIME KEYSTROKE CAPTURE • N LOGGED`), search filtering across app name, package name, captured text, and `fieldHint`, monospace input cards with `PASSWORD` danger badges, and local `Clear` action inside `MonitorHostScreen`.

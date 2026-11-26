@@ -99,7 +99,17 @@ This document specifies the architecture, protocols, data schemas, and lifecycle
 
 ---
 
-## 3. Verification & Test Suite
+## 3. Nexus Parent Android Components (`Nexus Parent/android`)
+
+- **Protocol & Coordinator (`data/monitor/MonitorCoordinator.kt`, `MonitorPayloadParser.kt`)**:
+  - Handles `APPLOCK_ON` / `APPLOCK_OFF` (20s start / 10s stop timeout) with Desktop-exact `SpinningLoaderIcon` while awaiting `APPLOCK_STARTED` / `APPLOCK_STOPPED`.
+  - Dispatches `APPLOCK_TOGGLE`, `APPLOCK_SET_PIN`, and `APPLOCK_CLEAR`; merges `APPLOCK_STATUS` (`enabled`, `isLockedOut`), chunked `APPLOCK_SNAPSHOT` (chunks of 5 with Base64 `selfie`), `APPLOCK_NEW`, and `APPLOCK_PIN_CHANGED`.
+- **UI & Media Decoding (`ui/monitor/applock/AppLockPanel.kt`, `ui/monitor/MonitorImageHelpers.kt`)**:
+  - Renders `ACTIVE` / `DISABLED` status + `LOCKED OUT` badge, `Change PIN` modal (dual 6-digit PIN + confirmation fields with validation), `Clear` action, 4 stat tiles, search bar, `56dp` Base64-decoded intruder thumbnail on each attempt card, and full-screen selfie + timestamp/result/lockout inspection modal.
+
+---
+
+## 4. Verification & Test Suite
 
 ### Android JVM Unit Tests
 - `AppLockManagerTest.kt`: 6-digit validation, SHA-256 verification, 3-attempt failure progression, 60s lockout, and session state.
