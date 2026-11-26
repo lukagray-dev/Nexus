@@ -2,6 +2,7 @@ package com.nexus.parent.data
 
 import android.content.Context
 import android.util.Log
+import com.nexus.parent.data.monitor.MonitorCoordinator
 import com.nexus.parent.service.ParentConnectionService
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.DeviceRecord
@@ -50,6 +51,12 @@ class DeviceStateCoordinator(
     private val reconnectManager = ReconnectManager(scope)
     private val startupAttempted = AtomicBoolean(false)
 
+    val monitorCoordinator: MonitorCoordinator = MonitorCoordinator(
+        context = appContext,
+        scope = scope,
+        sendCommand = webRtcManager::sendCommand
+    )
+
     private var stateHolder: ParentStateHolder? = null
     private var activeSessionDevice: DeviceRecord? = null
     private var lastStealthBeforeWait: StealthStatus = StealthStatus.ARMED
@@ -66,6 +73,7 @@ class DeviceStateCoordinator(
 
     fun attachStateHolder(holder: ParentStateHolder) {
         stateHolder = holder
+        monitorCoordinator.attachStateHolder(holder)
     }
 
     fun buildInitialUiState(): ParentUiState {
@@ -230,6 +238,7 @@ class DeviceStateCoordinator(
         disconnectGraceJob = null
         activeSessionDevice = null
 
+        monitorCoordinator.onPeerDisconnected()
         reconnectManager.cancel(silent = true)
         webRtcManager.disconnect(clearRemoteSignaling = true)
         ParentConnectionService.stop(appContext)
@@ -247,6 +256,7 @@ class DeviceStateCoordinator(
         disconnectGraceJob?.cancel()
         disconnectGraceJob = null
         activeSessionDevice = null
+        monitorCoordinator.onPeerDisconnected()
         reconnectManager.cancel(silent = false)
         webRtcManager.disconnect(clearRemoteSignaling = false)
         ParentConnectionService.stop(appContext)
@@ -391,6 +401,7 @@ class DeviceStateCoordinator(
         if (reconnectManager.isReconnecting()) return
 
         Log.w(TAG, "Unexpected WebRTC drop for ${active.rawId}; starting 9-attempt backoff")
+        monitorCoordinator.onPeerDisconnected()
         webRtcManager.setActiveVideoType(null)
         webRtcManager.disconnect(clearRemoteSignaling = false)
 
@@ -420,6 +431,7 @@ class DeviceStateCoordinator(
             disconnectGraceJob?.cancel()
             disconnectGraceJob = null
             activeSessionDevice = null
+            monitorCoordinator.onPeerDisconnected()
             reconnectManager.cancel(silent = true)
             webRtcManager.disconnect(clearRemoteSignaling = false)
             ParentConnectionService.stop(appContext)
@@ -456,7 +468,10 @@ class DeviceStateCoordinator(
                 record = updatedRecord,
                 history = updatedHistory
             )
+            return
         }
+
+        monitorCoordinator.handleIncomingMessage(trimmed)
     }
 
     private fun updateCachedStealthFlag(isStealth: Boolean) {

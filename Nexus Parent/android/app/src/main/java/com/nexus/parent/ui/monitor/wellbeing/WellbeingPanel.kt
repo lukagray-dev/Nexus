@@ -107,6 +107,23 @@ fun WellbeingPanel(
                 )
             }
 
+            if (!state.errorMessage.isNullOrBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(NexusDimens.RadiusMd))
+                        .background(NexusColors.DangerRedSubtle)
+                        .border(NexusDimens.BorderHairline, NexusColors.DangerRedBorder, RoundedCornerShape(NexusDimens.RadiusMd))
+                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = state.errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = NexusColors.DangerRed
+                    )
+                }
+            }
+
             // 2x2 KPI Cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -120,7 +137,11 @@ fun WellbeingPanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 WellbeingKpiCard("LAUNCHES", state.totalLaunches.toString(), Modifier.weight(1f))
-                WellbeingKpiCard("ACTIVE APP", state.activeAppName, Modifier.weight(1f))
+                WellbeingKpiCard(
+                    label = if (state.syncedLabel != null) "ACTIVE (${state.syncedLabel})" else "ACTIVE APP",
+                    value = state.activeAppName,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             // Activity Histogram
@@ -166,8 +187,17 @@ fun WellbeingPanel(
         if (filteredApps.isEmpty()) {
             TacticalEmptyState(
                 iconRes = R.drawable.ic_activity,
-                title = "No Wellbeing Telemetry",
-                description = "Tap the Play button in the bottom dock to sync screen time, device unlocks, and per-app usage histograms.",
+                title = when {
+                    !state.errorMessage.isNullOrBlank() -> "Usage Access Required"
+                    state.apps.isNotEmpty() -> "No Matching Apps"
+                    else -> "No Wellbeing Telemetry"
+                },
+                description = state.errorMessage
+                    ?: if (state.apps.isNotEmpty()) {
+                        "Try clearing the search query or switching category filters."
+                    } else {
+                        "Tap the Play button in the bottom dock to sync screen time, device unlocks, and per-app usage histograms."
+                    },
                 modifier = Modifier.weight(1f)
             )
         } else {

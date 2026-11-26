@@ -13,6 +13,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -130,6 +131,14 @@ fun NexusParentRoot(
         }
     }
 
+    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            stateHolder.pushWallpaperFromUri(uri)
+        }
+    }
+
     val requestNotificationsIfNeeded: () -> Unit = {
         if (hasLiveCoordinator && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
@@ -212,7 +221,18 @@ fun NexusParentRoot(
                     stateHolder = stateHolder,
                     activeVideoTrack = activeVideoTrack,
                     eglContext = eglContext,
-                    onBeforeConnect = requestNotificationsIfNeeded
+                    onBeforeConnect = requestNotificationsIfNeeded,
+                    onPickWallpaperClick = {
+                        if (hasLiveCoordinator && state.connectionPhase != ConnectionPhase.CONNECTED) {
+                            stateHolder.showToast("Cannot push: DataChannel not connected")
+                        } else if (hasLiveCoordinator) {
+                            wallpaperPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        } else {
+                            stateHolder.showToast("Select an image once WebRTC link is active")
+                        }
+                    }
                 )
 
                 // 2. Floating Three-Capsule Top Toolbar (hidden in fullscreen video mode)
@@ -299,7 +319,8 @@ private fun MainContentRouter(
     stateHolder: ParentStateHolder,
     activeVideoTrack: VideoTrack?,
     eglContext: EglBase.Context?,
-    onBeforeConnect: () -> Unit
+    onBeforeConnect: () -> Unit,
+    onPickWallpaperClick: () -> Unit
 ) {
     val active = state.activeFeature
     if (active == null) {
@@ -396,6 +417,7 @@ private fun MainContentRouter(
 
             MonitorHostScreen(
                 monitoringState = monitoringState,
+                featureTitle = active.title,
                 showPlayPauseDock = showDock,
                 onToggleMonitoring = { stateHolder.toggleMonitorPanelPlayPause(active) }
             ) {
@@ -436,7 +458,7 @@ private fun MainContentRouter(
                     FeatureId.WELLBEING -> WellbeingPanel(
                         state = state.monitor.wellbeing,
                         onSelectRange = stateHolder::setWellbeingRange,
-                        onRefreshClick = { stateHolder.showToast("Wellbeing refresh queued") },
+                        onRefreshClick = stateHolder::refreshWellbeing,
                         onSearchChange = stateHolder::setWellbeingSearchQuery,
                         onSelectCategory = stateHolder::setWellbeingCategory
                     )
@@ -445,22 +467,22 @@ private fun MainContentRouter(
                         onToggleRemoteLock = stateHolder::toggleRemoteAppLock,
                         onOpenChangePin = { stateHolder.setChangePinDialogVisible(true) },
                         onDismissChangePin = { stateHolder.setChangePinDialogVisible(false) },
-                        onConfirmNewPin = {
-                            stateHolder.setChangePinDialogVisible(false)
-                            stateHolder.showToast("6-digit PIN update queued")
-                        },
+                        onConfirmNewPin = stateHolder::confirmNewAppLockPin,
+                        onClearAttempts = stateHolder::clearAppLockRecords,
                         onSearchChange = stateHolder::setAppLockSearchQuery,
                         onSelectSelfiePreview = stateHolder::setSelfiePreviewAttempt
                     )
                     FeatureId.VIBRATEFLASH -> VibrateFlashPanel(
                         state = state.monitor.vibrateFlash,
-                        onTriggerAction = stateHolder::triggerVibrateFlashAction
+                        onVibrateClick = stateHolder::triggerVibrate,
+                        onFlashClick = stateHolder::triggerFlash,
+                        onCombinedClick = stateHolder::triggerCombined
                     )
                     FeatureId.WALLPAPER -> WallpaperPanel(
                         state = state.monitor.wallpaper,
                         onPreviewTap = stateHolder::requestWallpaperPreview,
                         onSelectTarget = stateHolder::setWallpaperTarget,
-                        onPushWallpaperClick = { stateHolder.showToast("Select an image once WebRTC link is active") }
+                        onPushWallpaperClick = onPickWallpaperClick
                     )
                     FeatureId.WHATSAPP,
                     FeatureId.TELEGRAM,

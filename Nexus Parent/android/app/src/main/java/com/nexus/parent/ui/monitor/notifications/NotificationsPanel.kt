@@ -185,11 +185,25 @@ fun NotificationsPanel(
                 style = MaterialTheme.typography.labelSmall,
                 color = NexusColors.TextMuted
             )
+            if (!selectedNotification.subText.isNullOrBlank()) {
+                TacticalBadgePill(text = selectedNotification.subText)
+            }
             Text(
-                text = selectedNotification.body,
+                text = selectedNotification.bigText ?: selectedNotification.body,
                 style = MaterialTheme.typography.bodyMedium,
                 color = NexusColors.TextSecondary
             )
+            if (selectedNotification.messages.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    selectedNotification.messages.forEach { line ->
+                        Text(
+                            text = line,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NexusColors.TextPrimary
+                        )
+                    }
+                }
+            }
         }
     }
 }

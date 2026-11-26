@@ -8,6 +8,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,6 +40,7 @@ import com.nexus.parent.ui.theme.NexusDimens
 /**
  * CallLogPanel.kt - Call Log Monitor UI matching Desktop `right-sidebar/calllog/calllog.ts`.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CallLogPanel(
     monitoringState: MonitoringState,
@@ -169,14 +172,33 @@ fun CallLogPanel(
                         }
 
                         AnimatedVisibility(visible = isExpanded) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                if (call.simSlot.isNotBlank()) {
-                                    TacticalBadgePill(text = call.simSlot)
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    if (call.simSlot.isNotBlank()) {
+                                        TacticalBadgePill(text = call.simSlot)
+                                    }
+                                    if (!call.location.isNullOrBlank()) {
+                                        TacticalBadgePill(text = call.location)
+                                    }
+                                    if (call.features.any { it.equals("VIDEO", ignoreCase = true) }) {
+                                        TacticalBadgePill(text = "VIDEO")
+                                    }
+                                    if (call.features.any { it.equals("HD_VOICE", ignoreCase = true) }) {
+                                        TacticalBadgePill(text = "HD")
+                                    }
+                                    if (call.directionLabel.isNotBlank()) {
+                                        TacticalBadgePill(text = call.directionLabel.uppercase())
+                                    }
                                 }
-                                TacticalBadgePill(text = call.fullDateTime)
+                                Text(
+                                    text = "${call.fullDateTime} • ${call.durationSeconds}s (${call.durationLabel})",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = NexusColors.TextMuted
+                                )
                             }
                         }
                     }

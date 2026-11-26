@@ -46,6 +46,7 @@ fun MonitorHostScreen(
     monitoringState: MonitoringState,
     onToggleMonitoring: () -> Unit,
     modifier: Modifier = Modifier,
+    featureTitle: String = "",
     showPlayPauseDock: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -82,19 +83,23 @@ fun MonitorHostScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     StatusPulseDot(
-                        color = if (isLive) NexusColors.LiveGreen else NexusColors.TextMuted,
-                        isPulsing = isLive,
+                        color = when (monitoringState) {
+                            MonitoringState.LIVE -> NexusColors.LiveGreen
+                            MonitoringState.STARTING, MonitoringState.STOPPING -> NexusColors.TextPrimary
+                            MonitoringState.IDLE -> NexusColors.TextMuted
+                        },
+                        isPulsing = isLive || isBusy,
                         size = 7.dp
                     )
                     Text(
                         text = when (monitoringState) {
-                            MonitoringState.LIVE -> "Live Stream Active"
-                            MonitoringState.STARTING -> "Starting Monitor..."
-                            MonitoringState.STOPPING -> "Stopping Monitor..."
+                            MonitoringState.LIVE -> "Live Monitoring"
+                            MonitoringState.STARTING -> if (featureTitle.isNotBlank()) "Connecting $featureTitle..." else "Connecting..."
+                            MonitoringState.STOPPING -> "Stopping..."
                             MonitoringState.IDLE -> "Monitoring Paused"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isLive) NexusColors.TextPrimary else NexusColors.TextMuted
+                        color = if (isLive || isBusy) NexusColors.TextPrimary else NexusColors.TextMuted
                     )
                 }
 
@@ -113,7 +118,7 @@ fun MonitorHostScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     when {
-                        isBusy -> SpinningLoaderIcon(size = 15.dp)
+                        isBusy -> SpinningLoaderIcon(size = 16.dp, tint = NexusColors.TextPrimary)
                         isLive -> Icon(
                             painter = painterResource(id = R.drawable.ic_pause),
                             contentDescription = "Pause monitoring",

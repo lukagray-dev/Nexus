@@ -23,6 +23,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nexus.parent.R
+import com.nexus.parent.data.monitor.CombinedPattern
+import com.nexus.parent.data.monitor.FlashAction
+import com.nexus.parent.data.monitor.VibratePattern
 import com.nexus.parent.state.VibrateFlashUiState
 import com.nexus.parent.ui.components.StatusPulseDot
 import com.nexus.parent.ui.theme.NexusColors
@@ -35,7 +38,9 @@ import com.nexus.parent.ui.theme.NexusTypography
 @Composable
 fun VibrateFlashPanel(
     state: VibrateFlashUiState,
-    onTriggerAction: (String) -> Unit,
+    onVibrateClick: (VibratePattern) -> Unit,
+    onFlashClick: (FlashAction) -> Unit,
+    onCombinedClick: (CombinedPattern) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -74,67 +79,67 @@ fun VibrateFlashPanel(
 
         ActuatorSection(title = "VIBRATION PATTERNS") {
             ActuatorRow(
-                leftLabel = "Short Buzz",
+                leftLabel = VibratePattern.SHORT.displayLabel,
                 leftIcon = R.drawable.ic_vibrate,
                 leftDanger = false,
-                onLeftClick = { onTriggerAction("Vibration: Short Buzz") },
-                rightLabel = "Double Tap",
+                onLeftClick = { onVibrateClick(VibratePattern.SHORT) },
+                rightLabel = VibratePattern.DOUBLE.displayLabel,
                 rightIcon = R.drawable.ic_vibrate,
                 rightDanger = false,
-                onRightClick = { onTriggerAction("Vibration: Double Tap") }
+                onRightClick = { onVibrateClick(VibratePattern.DOUBLE) }
             )
             ActuatorRow(
-                leftLabel = "Pulse Wave",
+                leftLabel = VibratePattern.PULSE.displayLabel,
                 leftIcon = R.drawable.ic_vibrate,
                 leftDanger = false,
-                onLeftClick = { onTriggerAction("Vibration: Pulse Wave") },
-                rightLabel = "SOS Pattern",
+                onLeftClick = { onVibrateClick(VibratePattern.PULSE) },
+                rightLabel = VibratePattern.SOS.displayLabel,
                 rightIcon = R.drawable.ic_vibrate,
                 rightDanger = true,
-                onRightClick = { onTriggerAction("Vibration: SOS Pattern") }
+                onRightClick = { onVibrateClick(VibratePattern.SOS) }
             )
         }
 
         ActuatorSection(title = "CAMERA FLASHLIGHT STROBE") {
             ActuatorRow(
-                leftLabel = "Flashlight On",
+                leftLabel = FlashAction.ON.displayLabel,
                 leftIcon = R.drawable.ic_flashlight,
                 leftDanger = false,
-                onLeftClick = { onTriggerAction("Flashlight On") },
-                rightLabel = "Flashlight Off",
+                onLeftClick = { onFlashClick(FlashAction.ON) },
+                rightLabel = FlashAction.OFF.displayLabel,
                 rightIcon = R.drawable.ic_flashlight,
                 rightDanger = false,
-                onRightClick = { onTriggerAction("Flashlight Off") }
+                onRightClick = { onFlashClick(FlashAction.OFF) }
             )
             ActuatorRow(
-                leftLabel = "Strobe (4 Hz)",
+                leftLabel = FlashAction.STROBE.displayLabel,
                 leftIcon = R.drawable.ic_zap,
                 leftDanger = false,
-                onLeftClick = { onTriggerAction("Flashlight Strobe (4 Hz)") },
-                rightLabel = "Emergency Beacon",
+                onLeftClick = { onFlashClick(FlashAction.STROBE) },
+                rightLabel = FlashAction.BEACON.displayLabel,
                 rightIcon = R.drawable.ic_zap,
                 rightDanger = true,
-                onRightClick = { onTriggerAction("Emergency Beacon") }
+                onRightClick = { onFlashClick(FlashAction.BEACON) }
             )
         }
 
         ActuatorSection(title = "COMBINED VIBRATE & FLASH") {
             ActuatorRow(
-                leftLabel = "Alert Alarm",
+                leftLabel = CombinedPattern.ALERT.displayLabel,
                 leftIcon = R.drawable.ic_bell,
                 leftDanger = false,
-                onLeftClick = { onTriggerAction("Combined Alert Alarm") },
-                rightLabel = "Panic SOS",
+                onLeftClick = { onCombinedClick(CombinedPattern.ALERT) },
+                rightLabel = CombinedPattern.SOS.displayLabel,
                 rightIcon = R.drawable.ic_zap,
                 rightDanger = true,
-                onRightClick = { onTriggerAction("Combined Panic SOS") }
+                onRightClick = { onCombinedClick(CombinedPattern.SOS) }
             )
             Row(modifier = Modifier.fillMaxWidth()) {
                 ActuatorButton(
-                    label = "Pulse Strobe",
+                    label = CombinedPattern.PULSE.displayLabel,
                     iconRes = R.drawable.ic_activity,
                     isDanger = false,
-                    onClick = { onTriggerAction("Combined Pulse Strobe") },
+                    onClick = { onCombinedClick(CombinedPattern.PULSE) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

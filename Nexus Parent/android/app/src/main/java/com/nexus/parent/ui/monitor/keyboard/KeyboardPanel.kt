@@ -49,7 +49,10 @@ fun KeyboardPanel(
         items
     } else {
         items.filter {
-            it.appName.lowercase().contains(q) || it.text.lowercase().contains(q)
+            it.appName.lowercase().contains(q) ||
+                it.packageName.lowercase().contains(q) ||
+                it.text.lowercase().contains(q) ||
+                (it.fieldHint?.lowercase()?.contains(q) == true)
         }
     }
 

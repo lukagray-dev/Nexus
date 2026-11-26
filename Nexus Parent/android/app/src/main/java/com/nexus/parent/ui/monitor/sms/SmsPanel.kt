@@ -139,6 +139,8 @@ fun SmsPanel(
     }
 
     if (selectedSms != null) {
+        val statusLabel = if (selectedSms.isIncoming) "Delivered to Child" else "Sent from Child"
+        val simLabel = selectedSms.simSlot.ifBlank { "Default SIM" }
         TacticalModalDialog(
             title = selectedSms.senderName.ifBlank { selectedSms.address },
             onDismiss = { onSelectSms(null) },
@@ -147,7 +149,7 @@ fun SmsPanel(
             }
         ) {
             Text(
-                text = "${selectedSms.address} • ${selectedSms.fullDateTime}",
+                text = selectedSms.address,
                 style = MaterialTheme.typography.labelSmall,
                 color = NexusColors.TextMuted
             )
@@ -155,6 +157,16 @@ fun SmsPanel(
                 text = selectedSms.body,
                 style = MaterialTheme.typography.bodyMedium,
                 color = NexusColors.TextPrimary
+            )
+            Text(
+                text = "Received: ${selectedSms.fullDateTime}",
+                style = MaterialTheme.typography.labelSmall,
+                color = NexusColors.TextMuted
+            )
+            Text(
+                text = "Status & SIM: $statusLabel • $simLabel",
+                style = MaterialTheme.typography.labelSmall,
+                color = NexusColors.TextMuted
             )
         }
     }

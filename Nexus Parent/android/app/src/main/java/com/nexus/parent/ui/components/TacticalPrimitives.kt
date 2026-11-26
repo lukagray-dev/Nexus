@@ -140,6 +140,7 @@ fun SpinningLoaderIcon(
     size: Dp = 16.dp,
     tint: Color = NexusColors.TextPrimary
 ) {
+    // 0.75s linear 360-degree rotation matching Desktop assets/icons/animations/loading.svg
     val transition = rememberInfiniteTransition(label = "spinner")
     val angle by transition.animateFloat(
         initialValue = 0f,
@@ -150,14 +151,25 @@ fun SpinningLoaderIcon(
         ),
         label = "spinnerAngle"
     )
-    Icon(
-        painter = painterResource(id = R.drawable.ic_refresh_cw),
-        contentDescription = null,
-        tint = tint,
-        modifier = modifier
-            .size(size)
-            .rotate(angle)
-    )
+    Box(
+        modifier = modifier.size(size),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_loading_ring_track),
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(size)
+        )
+        Icon(
+            painter = painterResource(id = R.drawable.ic_loading_ring_arc),
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier
+                .size(size)
+                .rotate(angle)
+        )
+    }
 }
 
 @Composable
