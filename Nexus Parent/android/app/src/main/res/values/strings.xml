@@ -1,3 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Nexus Parent</string>
+    <string name="cd_menu">Toggle navigation drawer</string>
+    <string name="cd_mic_toggle">Toggle microphone monitor</string>
+    <string name="cd_settings">Open settings</string>
+    <string name="cd_close">Close</string>
 </resources>

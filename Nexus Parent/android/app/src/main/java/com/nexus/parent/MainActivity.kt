@@ -1,47 +1,380 @@
 package com.nexus.parent
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nexus.parent.state.ConnectionPhase
+import com.nexus.parent.state.FeatureId
+import com.nexus.parent.state.FeatureTarget
+import com.nexus.parent.state.MonitoringState
+import com.nexus.parent.state.ParentStateHolder
+import com.nexus.parent.state.ParentUiState
+import com.nexus.parent.ui.components.ActiveCallBanner
+import com.nexus.parent.ui.components.TacticalToastHost
+import com.nexus.parent.ui.home.ConnectedDashboardScreen
+import com.nexus.parent.ui.home.PairingScreen
+import com.nexus.parent.ui.monitor.MonitorHostScreen
+import com.nexus.parent.ui.monitor.applock.AppLockPanel
+import com.nexus.parent.ui.monitor.calllog.CallLogPanel
+import com.nexus.parent.ui.monitor.keyboard.KeyboardPanel
+import com.nexus.parent.ui.monitor.notifications.NotificationsPanel
+import com.nexus.parent.ui.monitor.sms.SmsPanel
+import com.nexus.parent.ui.monitor.staged.StagedActivityPanel
+import com.nexus.parent.ui.monitor.vibrateflash.VibrateFlashPanel
+import com.nexus.parent.ui.monitor.wallpaper.WallpaperPanel
+import com.nexus.parent.ui.monitor.wellbeing.WellbeingPanel
+import com.nexus.parent.ui.settings.SettingsScreen
+import com.nexus.parent.ui.shell.LeftDrawerContent
+import com.nexus.parent.ui.shell.PushDrawerScaffold
+import com.nexus.parent.ui.shell.TopCapsuleBar
+import com.nexus.parent.ui.stealth.StealthDialogsHost
+import com.nexus.parent.ui.surveillance.camera.CameraFeedScreen
+import com.nexus.parent.ui.surveillance.location.LocationScreen
+import com.nexus.parent.ui.surveillance.mic.FloatingMicOverlay
+import com.nexus.parent.ui.surveillance.screen.ScreenFeedScreen
+import com.nexus.parent.ui.surveillance.storage.StorageScreen
+import com.nexus.parent.ui.theme.NexusColors
 import com.nexus.parent.ui.theme.NexusParentTheme
+import kotlinx.coroutines.delay
 
+/**
+ * MainActivity.kt - Single-Activity Compose entry point for Nexus Parent Android.
+ *
+ * Hey friend! Here is how the entire UI shell fits together:
+ * 1. `PushDrawerScaffold` implements the legacy ChatGPT-style push drawer with swipe-anywhere support.
+ * 2. `TopCapsuleBar` renders the floating three-capsule toolbar above the active viewport.
+ * 3. `MainContentRouter` switches cleanly between Phase 1 Pairing, Phase 2 Connected Dashboard,
+ *    full-viewport Surveillance Feeds, and Monitor/Control Panels.
+ * 4. `FloatingMicOverlay`, `ActiveCallBanner`, `TacticalToastHost`, `StealthDialogsHost`, and
+ *    `SettingsScreen` layer cleanly above everything with zero SurfaceView window-hole blockers.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.BLACK)
+        )
         setContent {
+            val stateHolder = remember { ParentStateHolder() }
             NexusParentTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                NexusParentRoot(stateHolder = stateHolder)
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
+fun NexusParentRoot(stateHolder: ParentStateHolder) {
+    val state by stateHolder.uiState.collectAsStateWithLifecycle()
+
+    // Auto-dismiss transient toast notifications after 2.6 seconds
+    LaunchedEffect(state.toastMessage) {
+        if (state.toastMessage != null) {
+            delay(2600)
+            stateHolder.clearToast()
+        }
+    }
+
+    // Back press exits active feature back to Dashboard before closing the app
+    BackHandler(enabled = state.activeFeature != null && !state.isDrawerOpen && !state.isSettingsOpen) {
+        stateHolder.closeActiveFeature()
+    }
+
+    val isVideoFullscreen =
+        (state.activeFeature == FeatureId.CAMERA && state.camera.isFullscreen) ||
+            (state.activeFeature == FeatureId.SCREEN && state.screen.isFullscreen)
+
+    PushDrawerScaffold(
+        isDrawerOpen = state.isDrawerOpen,
+        onDrawerOpenChange = stateHolder::setDrawerOpen,
+        swipeEnabled = !isVideoFullscreen,
+        drawerContent = {
+            LeftDrawerContent(
+                state = state,
+                onPairOrDeviceButtonClick = {
+                    if (state.connectionPhase == ConnectionPhase.CONNECTED ||
+                        state.connectionPhase == ConnectionPhase.RECONNECTING
+                    ) {
+                        stateHolder.toggleDevicePopover()
+                    } else {
+                        stateHolder.closeActiveFeature()
+                        stateHolder.setDrawerOpen(false)
+                    }
+                },
+                onDisconnectClick = stateHolder::disconnectDevice,
+                onCancelReconnectClick = stateHolder::cancelReconnection,
+                onSearchQueryChange = stateHolder::setDrawerSearchQuery,
+                onToggleSection = stateHolder::toggleSectionCollapsed,
+                onSelectFeature = stateHolder::selectFeature,
+                onStealthClick = stateHolder::onStealthButtonClicked,
+                onSettingsClick = { stateHolder.openSettings() }
+            )
+        },
+        mainContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(NexusColors.CanvasBlack)
+            ) {
+                // 1. Primary Main Viewport Router
+                MainContentRouter(
+                    state = state,
+                    stateHolder = stateHolder
+                )
+
+                // 2. Floating Three-Capsule Top Toolbar (hidden in fullscreen video mode)
+                if (!isVideoFullscreen) {
+                    TopCapsuleBar(
+                        activeFeature = state.activeFeature,
+                        connectionPhase = state.connectionPhase,
+                        isMicLive = state.mic.listenState == MonitoringState.LIVE,
+                        isMicOverlayOpen = state.mic.isOverlayOpen,
+                        isActiveFeatureLive = state.activeFeature != null && state.activeFeature in state.liveFeatures,
+                        onMenuClick = stateHolder::toggleDrawer,
+                        onCloseFeature = stateHolder::closeActiveFeature,
+                        onMicClick = { stateHolder.selectFeature(FeatureId.MIC) },
+                        onSettingsClick = { stateHolder.openSettings() },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding()
+                    )
+                }
+
+                // 3. Compact Floating Draggable Microphone HUD
+                FloatingMicOverlay(
+                    state = state.mic,
+                    onClose = { stateHolder.setMicOverlayOpen(false) },
+                    onToggleListen = stateHolder::toggleMicListen,
+                    onToggleSpeak = stateHolder::toggleMicSpeak,
+                    onToggleVoiceMenu = stateHolder::toggleVoiceMenu,
+                    onSelectVoice = stateHolder::selectVoicePreset
+                )
+
+                // 4. Floating Active Cellular Call Alert Banner
+                ActiveCallBanner(
+                    alert = state.activeCallAlert,
+                    onTurnOnMic = stateHolder::acceptCallAlertAndListenMic,
+                    onDismiss = stateHolder::dismissCallAlert,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding()
+                        .padding(top = 64.dp)
+                )
+
+                // 5. Global Floating Feedback Toast
+                TacticalToastHost(
+                    message = state.toastMessage,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = 86.dp)
+                )
+            }
+        }
+    )
+
+    // Modals: Stealth Confirmation & 5-Tab Settings Console
+    StealthDialogsHost(
+        showConfirmDialog = state.showStealthConfirmDialog,
+        showNotConnectedDialog = state.showStealthNotConnectedDialog,
+        currentStatus = state.stealthStatus,
+        onConfirmToggle = stateHolder::confirmStealthToggle,
+        onDismiss = stateHolder::dismissStealthDialogs
+    )
+
+    SettingsScreen(
+        state = state,
+        onSelectTab = stateHolder::selectSettingsTab,
+        onUpdateSettings = stateHolder::updateSettings,
+        onResetDefaults = stateHolder::resetSettingsToDefaults,
+        onResetWorkspaceToast = {
+            stateHolder.showToast("Local UI workspace cache cleared")
+        },
+        onDismiss = stateHolder::closeSettings
     )
 }
 
-@Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    NexusParentTheme {
-        Greeting("Android")
+private fun MainContentRouter(
+    state: ParentUiState,
+    stateHolder: ParentStateHolder
+) {
+    val active = state.activeFeature
+    if (active == null) {
+        if (state.connectionPhase == ConnectionPhase.CONNECTED ||
+            state.connectionPhase == ConnectionPhase.RECONNECTING
+        ) {
+            ConnectedDashboardScreen(
+                device = state.connectedDevice ?: state.lastPairedDevice,
+                onOpenDrawerClick = { stateHolder.setDrawerOpen(true) }
+            )
+        } else {
+            PairingScreen(
+                digits = state.pairingInputDigits,
+                statusMessage = state.pairingStatusMessage,
+                errorMessage = state.pairingErrorMessage,
+                lastPairedDevice = state.lastPairedDevice,
+                onDigitsChange = stateHolder::updatePairingDigits,
+                onClearDigits = stateHolder::clearPairingDigits,
+                onConnectClick = { stateHolder.submitPairingPreview() },
+                onQuickConnectRecent = { rawId -> stateHolder.submitPairingPreview(rawId) }
+            )
+        }
+        return
+    }
+
+    when (active) {
+        FeatureId.CAMERA -> CameraFeedScreen(
+            state = state.camera,
+            onPlayPauseClick = stateHolder::toggleCameraStream,
+            onRotateClick = stateHolder::rotateCameraFeed,
+            onSwitchLensClick = stateHolder::toggleCameraLens,
+            onScrubDvr = stateHolder::scrubCameraDvr,
+            onJumpToLive = stateHolder::jumpCameraToLive,
+            onSaveClipClick = { stateHolder.showToast("DVR clip export ready once connected") },
+            onToggleFullscreen = stateHolder::toggleCameraFullscreen
+        )
+        FeatureId.SCREEN -> ScreenFeedScreen(
+            state = state.screen,
+            onPlayPauseClick = stateHolder::toggleScreenStream,
+            onRotateClick = stateHolder::rotateScreenFeed,
+            onScrubDvr = stateHolder::scrubScreenDvr,
+            onJumpToLive = stateHolder::jumpScreenToLive,
+            onSaveClipClick = { stateHolder.showToast("DVR clip export ready once connected") },
+            onToggleFullscreen = stateHolder::toggleScreenFullscreen
+        )
+        FeatureId.LOCATION -> LocationScreen(
+            state = state.location,
+            onToggleTracking = stateHolder::toggleLocationTracking,
+            onCenterTarget = { stateHolder.showToast("Map camera centered on target") },
+            onToggleLayer = stateHolder::toggleMapLayer
+        )
+        FeatureId.STORAGE -> StorageScreen(
+            state = state.storage,
+            onRefreshClick = { stateHolder.showToast("Directory refresh queued") },
+            onParentDirClick = stateHolder::navigateStorageUp,
+            onBreadcrumbClick = stateHolder::navigateStorageBreadcrumb,
+            onSearchChange = stateHolder::setStorageSearchQuery,
+            onSelectCategory = stateHolder::selectStorageCategory,
+            onSelectItem = stateHolder::selectStorageItem,
+            onDownloadItem = { item -> stateHolder.showToast("Download queued: ${item.name}") },
+            onDeleteItem = { item -> stateHolder.showToast("Delete queued: ${item.name}") }
+        )
+        FeatureId.MIC -> {
+            // Mic renders as a persistent floating overlay rather than replacing the main viewport
+            ConnectedDashboardScreen(
+                device = state.connectedDevice ?: state.lastPairedDevice,
+                onOpenDrawerClick = { stateHolder.setDrawerOpen(true) }
+            )
+        }
+        else -> {
+            val monitoringState = when (active) {
+                FeatureId.SMS -> state.monitor.smsState
+                FeatureId.CALLLOG -> state.monitor.callLogState
+                FeatureId.NOTIFICATION -> state.monitor.notificationState
+                FeatureId.KEYBOARD -> state.monitor.keyboardState
+                FeatureId.WELLBEING -> state.monitor.wellbeing.monitoringState
+                FeatureId.APPLOCK -> state.monitor.appLock.monitoringState
+                FeatureId.WALLPAPER -> state.monitor.wallpaper.monitoringState
+                else -> MonitoringState.IDLE
+            }
+            val showDock = active != FeatureId.VIBRATEFLASH && active.target != FeatureTarget.STAGED_PANEL
+
+            MonitorHostScreen(
+                monitoringState = monitoringState,
+                showPlayPauseDock = showDock,
+                onToggleMonitoring = { stateHolder.toggleMonitorPanelPlayPause(active) }
+            ) {
+                when (active) {
+                    FeatureId.SMS -> SmsPanel(
+                        monitoringState = state.monitor.smsState,
+                        searchQuery = state.monitor.smsSearchQuery,
+                        items = state.monitor.smsItems,
+                        selectedSms = state.monitor.selectedSms,
+                        onSearchChange = stateHolder::setSmsSearchQuery,
+                        onSelectSms = stateHolder::selectSmsItem
+                    )
+                    FeatureId.CALLLOG -> CallLogPanel(
+                        monitoringState = state.monitor.callLogState,
+                        activeFilter = state.monitor.callFilter,
+                        expandedCallId = state.monitor.expandedCallId,
+                        items = state.monitor.callItems,
+                        onSelectFilter = stateHolder::setCallFilter,
+                        onToggleExpand = stateHolder::toggleExpandedCall
+                    )
+                    FeatureId.NOTIFICATION -> NotificationsPanel(
+                        monitoringState = state.monitor.notificationState,
+                        searchQuery = state.monitor.notificationSearchQuery,
+                        activeFilter = state.monitor.notificationFilter,
+                        items = state.monitor.notificationItems,
+                        selectedNotification = state.monitor.selectedNotification,
+                        onSearchChange = stateHolder::setNotificationSearchQuery,
+                        onSelectFilter = stateHolder::setNotificationFilter,
+                        onSelectNotification = stateHolder::selectNotificationItem
+                    )
+                    FeatureId.KEYBOARD -> KeyboardPanel(
+                        monitoringState = state.monitor.keyboardState,
+                        searchQuery = state.monitor.keyboardSearchQuery,
+                        items = state.monitor.keyboardItems,
+                        onSearchChange = stateHolder::setKeyboardSearchQuery,
+                        onClearAll = stateHolder::clearKeyboardRecords
+                    )
+                    FeatureId.WELLBEING -> WellbeingPanel(
+                        state = state.monitor.wellbeing,
+                        onSelectRange = stateHolder::setWellbeingRange,
+                        onRefreshClick = { stateHolder.showToast("Wellbeing refresh queued") },
+                        onSearchChange = stateHolder::setWellbeingSearchQuery,
+                        onSelectCategory = stateHolder::setWellbeingCategory
+                    )
+                    FeatureId.APPLOCK -> AppLockPanel(
+                        state = state.monitor.appLock,
+                        onToggleRemoteLock = stateHolder::toggleRemoteAppLock,
+                        onOpenChangePin = { stateHolder.setChangePinDialogVisible(true) },
+                        onDismissChangePin = { stateHolder.setChangePinDialogVisible(false) },
+                        onConfirmNewPin = {
+                            stateHolder.setChangePinDialogVisible(false)
+                            stateHolder.showToast("6-digit PIN update queued")
+                        },
+                        onSearchChange = stateHolder::setAppLockSearchQuery,
+                        onSelectSelfiePreview = stateHolder::setSelfiePreviewAttempt
+                    )
+                    FeatureId.VIBRATEFLASH -> VibrateFlashPanel(
+                        state = state.monitor.vibrateFlash,
+                        onTriggerAction = stateHolder::triggerVibrateFlashAction
+                    )
+                    FeatureId.WALLPAPER -> WallpaperPanel(
+                        state = state.monitor.wallpaper,
+                        onPreviewTap = stateHolder::requestWallpaperPreview,
+                        onSelectTarget = stateHolder::setWallpaperTarget,
+                        onPushWallpaperClick = { stateHolder.showToast("Select an image once WebRTC link is active") }
+                    )
+                    FeatureId.WHATSAPP,
+                    FeatureId.TELEGRAM,
+                    FeatureId.CHATGPT,
+                    FeatureId.CLAUDE,
+                    FeatureId.GROK -> StagedActivityPanel(feature = active)
+                    else -> Unit
+                }
+            }
+        }
     }
 }
