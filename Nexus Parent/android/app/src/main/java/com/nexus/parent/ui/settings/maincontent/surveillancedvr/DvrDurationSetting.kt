@@ -11,16 +11,18 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSegmentedRow
 @Composable
 fun DvrDurationSetting(
     selectedDuration: DvrDuration,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     SettingsSegmentedRow(
-        title = "Rolling DVR Buffer Duration",
-        subtitle = "Time-shift history window retained during live Camera and Screen sessions.",
+        title = "Rolling DVR Memory Retention",
+        subtitle = "Timeline depth retained during live Camera and Screen sessions for instant rewinds.",
         options = DvrDuration.entries,
         selected = selectedDuration,
-        labelProvider = { it.label },
+        labelProvider = { it.displayLabel },
         onSelect = { duration ->
             onUpdateSettings { it.copy(dvrBufferDuration = duration) }
+            onShowToast("Rolling DVR retention set to ${duration.label.replace("m", " minutes")}")
         }
     )
 }

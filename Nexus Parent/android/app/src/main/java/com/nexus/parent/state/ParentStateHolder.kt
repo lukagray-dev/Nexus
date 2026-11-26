@@ -198,7 +198,8 @@ class ParentStateHolder(
     fun onConnectionEstablished(
         record: DeviceRecord,
         history: List<DeviceRecord>,
-        toastMessage: String?
+        toastMessage: String?,
+        sessionHardwareAcceleration: Boolean = _uiState.value.settings.hardwareAcceleration
     ) {
         val isSwitchingDevice = _uiState.value.connectedDevice?.rawId?.let { it != record.rawId } ?: false
         val (usageLabel, usageFraction) = StorageProtocol.formatStorageCapacityStrip(
@@ -216,6 +217,7 @@ class ParentStateHolder(
                 connectedDevice = record,
                 lastPairedDevice = record,
                 pairedDevicesHistory = history,
+                sessionHardwareAcceleration = sessionHardwareAcceleration,
                 activeFeature = if (isSwitchingDevice) null else state.activeFeature,
                 storage = if (isSwitchingDevice) {
                     StorageUiState(storageUsageText = usageLabel, storageUsedPercent = usageFraction)
@@ -331,6 +333,7 @@ class ParentStateHolder(
             state.copy(
                 connectionPhase = ConnectionPhase.DISCONNECTED,
                 connectedDevice = null,
+                sessionHardwareAcceleration = null,
                 connectingProgressMessage = null,
                 connectingFromHistoryId = null,
                 isDevicePopoverOpen = false,
@@ -1412,13 +1415,21 @@ class ParentStateHolder(
         latestSettings?.let { coordinator?.saveSettings(it) }
     }
 
+    fun reconnectActiveDevice() {
+        coordinator?.reconnectCurrentDevice()
+    }
+
     fun resetSettingsToDefaults() {
         val defaults = SettingsValues()
         coordinator?.saveSettings(defaults)
         _uiState.update {
             it.copy(
                 settings = defaults,
-                camera = it.camera.copy(lens = defaults.preferredCameraLens),
+                camera = if (it.camera.state == MonitoringState.IDLE && !it.camera.isSwitchingLens) {
+                    it.camera.copy(lens = defaults.preferredCameraLens)
+                } else {
+                    it.camera
+                },
                 screen = it.screen.copy(quality = defaults.screenQuality),
                 mic = it.mic.copy(selectedVoice = defaults.defaultVoicePreset),
                 toastMessage = "All settings restored to factory defaults"

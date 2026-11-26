@@ -436,6 +436,7 @@ fun NexusParentRoot(
             stateHolder.showToast("Output devices refreshed")
         },
         onShowToast = stateHolder::showToast,
+        onReconnectForHardwareAccel = stateHolder::reconnectActiveDevice,
         onSelectPairedDevice = stateHolder::selectPairedDevice,
         onClearSelectedPairedDevice = stateHolder::clearSelectedPairedDevice,
         onConnectPairedDevice = { targetId ->
@@ -501,6 +502,7 @@ private fun MainContentRouter(
             onJumpToLive = stateHolder::jumpCameraToLive,
             onSaveClipClick = stateHolder::exportCameraDvrClip,
             onToggleFullscreen = stateHolder::toggleCameraFullscreen,
+            hardwareAccelerationActive = state.sessionHardwareAcceleration ?: state.settings.hardwareAcceleration,
             videoTrack = if (state.camera.state == MonitoringState.LIVE) activeVideoTrack else null,
             eglContext = eglContext,
             onDvrSegmentPositionMs = { posMs -> stateHolder.onDvrSegmentPosition(VideoFeedType.CAMERA, posMs) },

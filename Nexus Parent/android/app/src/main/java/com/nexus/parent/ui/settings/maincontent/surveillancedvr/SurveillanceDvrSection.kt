@@ -14,11 +14,18 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSectionGroup
 
 /**
  * SurveillanceDvrSection.kt - Tab 3 of Settings Console (`surveillance-dvr/surveillance-dvr.ts`).
+ *
+ * Hey friend! Matches Desktop's two-group hierarchy:
+ * 1. Live Streaming Fidelity: Screen Mirror Quality, Preferred Camera Lens, Hardware Video Acceleration.
+ * 2. Rolling DVR Timeline Buffer: Buffer Memory Retention (`15m`/`30m`/`60m`) and Clip Export Container (`MP4`/`WebM`).
  */
 @Composable
 fun SurveillanceDvrSection(
     settings: SettingsValues,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    isHardwareAccelReconnectPending: Boolean = false,
+    onReconnectForHardwareAccel: () -> Unit = {},
+    onShowToast: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -27,29 +34,36 @@ fun SurveillanceDvrSection(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        SettingsSectionGroup(title = "Live Video Capture") {
+        SettingsSectionGroup(title = "Live Streaming Fidelity") {
             ScreenQualitySetting(
                 selectedQuality = settings.screenQuality,
-                onUpdateSettings = onUpdateSettings
+                onUpdateSettings = onUpdateSettings,
+                onShowToast = onShowToast
             )
             CameraLensSetting(
                 selectedLens = settings.preferredCameraLens,
-                onUpdateSettings = onUpdateSettings
-            )
-        }
-
-        SettingsSectionGroup(title = "Rolling DVR & Export") {
-            DvrDurationSetting(
-                selectedDuration = settings.dvrBufferDuration,
-                onUpdateSettings = onUpdateSettings
-            )
-            ClipFormatSetting(
-                selectedFormat = settings.dvrClipFormat,
-                onUpdateSettings = onUpdateSettings
+                onUpdateSettings = onUpdateSettings,
+                onShowToast = onShowToast
             )
             HardwareAccelerationSetting(
                 checked = settings.hardwareAcceleration,
-                onUpdateSettings = onUpdateSettings
+                onUpdateSettings = onUpdateSettings,
+                isReconnectPending = isHardwareAccelReconnectPending,
+                onReconnectNow = onReconnectForHardwareAccel,
+                onShowToast = onShowToast
+            )
+        }
+
+        SettingsSectionGroup(title = "Rolling DVR Timeline Buffer") {
+            DvrDurationSetting(
+                selectedDuration = settings.dvrBufferDuration,
+                onUpdateSettings = onUpdateSettings,
+                onShowToast = onShowToast
+            )
+            ClipFormatSetting(
+                selectedFormat = settings.dvrClipFormat,
+                onUpdateSettings = onUpdateSettings,
+                onShowToast = onShowToast
             )
         }
     }

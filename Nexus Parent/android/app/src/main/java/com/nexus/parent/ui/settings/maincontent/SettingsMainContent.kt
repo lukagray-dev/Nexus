@@ -22,6 +22,7 @@ fun SettingsMainContent(
     onDetectOrRefreshInputs: () -> Unit = {},
     onRefreshOutputs: () -> Unit = {},
     onShowToast: (String) -> Unit = {},
+    onReconnectForHardwareAccel: () -> Unit = {},
     onSelectPairedDevice: (String) -> Unit,
     onClearSelectedPairedDevice: () -> Unit,
     onConnectPairedDevice: (String) -> Unit,
@@ -47,7 +48,12 @@ fun SettingsMainContent(
         )
         SettingsTabId.SURVEILLANCE -> SurveillanceDvrSection(
             settings = state.settings,
-            onUpdateSettings = onUpdateSettings
+            onUpdateSettings = onUpdateSettings,
+            isHardwareAccelReconnectPending = state.connectionPhase == com.nexus.parent.state.ConnectionPhase.CONNECTED &&
+                state.sessionHardwareAcceleration != null &&
+                state.sessionHardwareAcceleration != state.settings.hardwareAcceleration,
+            onReconnectForHardwareAccel = onReconnectForHardwareAccel,
+            onShowToast = onShowToast
         )
         SettingsTabId.DEVICES -> PairedDevicesSection(
             connectionPhase = state.connectionPhase,

@@ -75,6 +75,7 @@ class WebRtcManager(context: Context) {
 
     private val eglBase: EglBase
     private val audioDeviceModule: JavaAudioDeviceModule
+    private val videoDecoderFactory: NexusVideoDecoderFactory
     private val peerConnectionFactory: PeerConnectionFactory
 
     val voiceChangerDsp = VoiceChangerDspEngine()
@@ -108,6 +109,9 @@ class WebRtcManager(context: Context) {
 
     private val _remoteAudioTrack = MutableStateFlow<AudioTrack?>(null)
     val remoteAudioTrack: StateFlow<AudioTrack?> = _remoteAudioTrack.asStateFlow()
+
+    private val _activeSessionHardwareAccel = MutableStateFlow<Boolean?>(null)
+    val activeSessionHardwareAccel: StateFlow<Boolean?> = _activeSessionHardwareAccel.asStateFlow()
 
     private val _dataChannelMessages = MutableSharedFlow<String>(
         extraBufferCapacity = 128,
@@ -144,13 +148,13 @@ class WebRtcManager(context: Context) {
 
         eglBase = EglBase.create()
         val encoderFactory = DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)
-        val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
+        videoDecoderFactory = NexusVideoDecoderFactory(eglBase.eglBaseContext)
 
         peerConnectionFactory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
             .setAudioDeviceModule(audioDeviceModule)
             .setVideoEncoderFactory(encoderFactory)
-            .setVideoDecoderFactory(decoderFactory)
+            .setVideoDecoderFactory(videoDecoderFactory)
             .createPeerConnectionFactory()
     }
 
@@ -277,6 +281,8 @@ class WebRtcManager(context: Context) {
         signalingClient.clearSignalingSession(rawId)
 
         onProgress?.invoke("Establishing peer connection...")
+        videoDecoderFactory.setHardwareAccelerationEnabled(hardwareAcceleration)
+        _activeSessionHardwareAccel.value = hardwareAcceleration
         val pc = createFreshPeerConnection()
 
         // 1. Add Video (recvonly) and Audio (sendrecv) transceivers matching Desktop
@@ -454,6 +460,7 @@ class WebRtcManager(context: Context) {
         activeVideoType = null
         _activeVideoTrack.value = null
         _remoteAudioTrack.value = null
+        _activeSessionHardwareAccel.value = null
         iceGatheringDeferred?.cancel()
         iceGatheringDeferred = null
 

@@ -11,16 +11,18 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSegmentedRow
 @Composable
 fun ClipFormatSetting(
     selectedFormat: ClipFormat,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     SettingsSegmentedRow(
-        title = "Export Clip Format",
-        subtitle = "Container format used by Save Clip exports.",
+        title = "DVR Clip Export Container",
+        subtitle = "Format used when saving downloaded video clips via Save Clip.",
         options = ClipFormat.entries,
         selected = selectedFormat,
-        labelProvider = { it.label },
+        labelProvider = { it.displayLabel },
         onSelect = { format ->
             onUpdateSettings { it.copy(dvrClipFormat = format) }
+            onShowToast("DVR clip export container set to ${format.label}")
         }
     )
 }

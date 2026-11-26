@@ -49,6 +49,7 @@ fun CameraFeedScreen(
     onSaveClipClick: () -> Unit,
     onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    hardwareAccelerationActive: Boolean = true,
     videoTrack: VideoTrack? = null,
     eglContext: EglBase.Context? = null,
     onDvrSegmentPositionMs: (Int) -> Unit = {},
@@ -114,7 +115,7 @@ fun CameraFeedScreen(
                 backgroundColor = NexusColors.SurfaceSidebar.copy(alpha = 0.88f)
             )
             TacticalBadgePill(
-                text = "H.264 / SRTP",
+                text = if (hardwareAccelerationActive) "HW: H.264 / SRTP" else "SW: VP8 / SRTP",
                 textColor = NexusColors.TextMuted,
                 backgroundColor = NexusColors.SurfaceSidebar.copy(alpha = 0.88f)
             )

@@ -60,9 +60,13 @@ class DvrAndOpusHelpersTest {
         assertEquals("seg_2.mp4", rewind.segmentFile?.name)
         assertEquals(2000, rewind.offsetWithinSegmentMs)
 
-        val fileName = DvrBufferPolicy.buildClipFileName(VideoFeedType.CAMERA, ClipFormat.MP4, Date(1764160000000L))
-        assertTrue(fileName.startsWith("nexus-camera-"))
-        assertTrue(fileName.endsWith(".mp4"))
+        val mp4Name = DvrBufferPolicy.buildClipFileName(VideoFeedType.CAMERA, ClipFormat.MP4, Date(1764160000000L))
+        assertTrue(mp4Name.startsWith("nexus-camera-"))
+        assertTrue(mp4Name.endsWith(".mp4"))
+
+        val webmName = DvrBufferPolicy.buildClipFileName(VideoFeedType.SCREEN, ClipFormat.WEBM, Date(1764160000000L))
+        assertTrue(webmName.startsWith("nexus-screen-"))
+        assertTrue(webmName.endsWith(".webm"))
     }
 
     @Test

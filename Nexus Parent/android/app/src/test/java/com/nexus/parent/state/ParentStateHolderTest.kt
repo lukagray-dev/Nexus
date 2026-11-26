@@ -207,11 +207,44 @@ class ParentStateHolderTest {
         holder.zoomLocationOut()
         assertEquals(-1, holder.uiState.value.location.zoomDeltaSteps)
 
-        // While Camera is LIVE on Front lens, changing Settings preferredCameraLens should NOT override live lens
+        // While Camera is LIVE on Front lens, changing Settings preferredCameraLens OR resetting
+        // defaults should NOT overwrite the active live lens
         holder.toggleCameraStream()
         holder.updateCameraState { it.copy(lens = CameraLens.FRONT) }
         holder.updateSettings { it.copy(preferredCameraLens = CameraLens.REAR) }
         assertEquals(CameraLens.FRONT, holder.uiState.value.camera.lens)
+        holder.resetSettingsToDefaults()
+        assertEquals(CameraLens.FRONT, holder.uiState.value.camera.lens)
+    }
+
+    @Test
+    fun `sessionHardwareAcceleration tracks connection lifecycle and detects pending reconnect`() {
+        val holder = ParentStateHolder()
+        assertNull(holder.uiState.value.sessionHardwareAcceleration)
+
+        val dev = DeviceRecord(
+            rawId = "482194021104",
+            formattedId = "4821 9402 1104",
+            name = "Child Phone",
+            model = "Pixel 8 Pro",
+            lastSyncedLabel = "Online",
+            telemetry = DeviceTelemetry()
+        )
+        holder.onConnectionEstablished(
+            record = dev,
+            history = listOf(dev),
+            toastMessage = null,
+            sessionHardwareAcceleration = true
+        )
+        assertEquals(true, holder.uiState.value.sessionHardwareAcceleration)
+
+        // Toggle off while connected -> mismatch detected for inline Reconnect banner
+        holder.updateSettings { it.copy(hardwareAcceleration = false) }
+        assertFalse(holder.uiState.value.settings.hardwareAcceleration)
+        assertEquals(true, holder.uiState.value.sessionHardwareAcceleration)
+
+        holder.applyDisconnectedState(toastMessage = null)
+        assertNull(holder.uiState.value.sessionHardwareAcceleration)
     }
 
     @Test

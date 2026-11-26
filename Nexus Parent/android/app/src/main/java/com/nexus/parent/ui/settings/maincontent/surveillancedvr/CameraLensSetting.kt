@@ -11,16 +11,18 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSegmentedRow
 @Composable
 fun CameraLensSetting(
     selectedLens: CameraLens,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     SettingsSegmentedRow(
         title = "Preferred Default Camera Lens",
-        subtitle = "Sensor selected initially when Camera Feed starts.",
+        subtitle = "Initial optical sensor engaged when starting live camera surveillance.",
         options = CameraLens.entries,
         selected = selectedLens,
-        labelProvider = { it.label },
+        labelProvider = { it.settingsLabel },
         onSelect = { lens ->
             onUpdateSettings { it.copy(preferredCameraLens = lens) }
+            onShowToast("Preferred default camera lens set to ${lens.settingsLabel}")
         }
     )
 }

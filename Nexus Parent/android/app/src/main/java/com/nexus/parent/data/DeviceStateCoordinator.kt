@@ -309,7 +309,8 @@ class DeviceStateCoordinator(
             holder.onConnectionEstablished(
                 record = mergedRecord,
                 history = updatedHistory,
-                toastMessage = if (isAutoReconnectAttempt) null else "Connected to ${mergedRecord.name}"
+                toastMessage = if (isAutoReconnectAttempt) null else "Connected to ${mergedRecord.name}",
+                sessionHardwareAcceleration = hwAccel
             )
             updateServiceNotification(
                 title = "Connected to ${mergedRecord.name}",
@@ -354,6 +355,15 @@ class DeviceStateCoordinator(
         lastServiceText = ""
 
         holder.applyDisconnectedState(toastMessage = "Device disconnected")
+    }
+
+    fun reconnectCurrentDevice() {
+        val targetId = activeSessionDevice?.rawId
+            ?: stateHolder?.uiState?.value?.connectedDevice?.rawId
+            ?: return
+        if (isAttemptingConnection) return
+        disconnectManual()
+        connectFromUi(targetId)
     }
 
     fun retryReconnectNow() {

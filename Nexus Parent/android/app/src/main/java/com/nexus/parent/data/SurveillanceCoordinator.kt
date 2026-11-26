@@ -19,6 +19,7 @@ import com.nexus.parent.ui.surveillance.location.NominatimGeocoder
 import com.nexus.parent.webrtc.VideoFeedType
 import com.nexus.parent.webrtc.WebRtcManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 data class PendingDocumentExportRequest(
@@ -103,6 +105,13 @@ class SurveillanceCoordinator(
 
         if (prev?.dvrBufferDuration != next.dvrBufferDuration) {
             rollingDvrEngine.updateRetention(next.dvrBufferDuration)
+        }
+
+        if (prev?.dvrClipFormat != next.dvrClipFormat) {
+            val rotatedLive = rollingDvrEngine.updateClipFormat(next.dvrClipFormat)
+            if (rotatedLive) {
+                holder.showToast("DVR container switched to ${next.dvrClipFormat.label}")
+            }
         }
 
         if (prev?.screenQuality != next.screenQuality && holder.uiState.value.screen.state == MonitoringState.LIVE) {
@@ -430,16 +439,18 @@ class SurveillanceCoordinator(
         }
         if (isAlreadyExporting) return
 
-        val (segments, container) = rollingDvrEngine.snapshotExportSegments()
-        if (segments.isEmpty()) {
-            holder.showToast("No recorded DVR footage available yet")
-            return
-        }
-
         setExportingFlag(feedType, exporting = true)
         val settingsSnapshot = holder.uiState.value.settings
 
         scope.launch {
+            val (segments, container) = withContext(Dispatchers.IO) {
+                rollingDvrEngine.snapshotExportSegments()
+            }
+            if (segments.isEmpty()) {
+                setExportingFlag(feedType, exporting = false)
+                holder.showToast("No recorded DVR footage available yet")
+                return@launch
+            }
             val outcome = ClipExportManager.exportClip(
                 context = appContext,
                 feedType = feedType,
@@ -726,7 +737,10 @@ class SurveillanceCoordinator(
             track = track,
             eglContext = webRtcManager.getEglBaseContext(),
             bufferDuration = settings.dvrBufferDuration,
-            clipFormat = settings.dvrClipFormat
+            clipFormat = settings.dvrClipFormat,
+            onFallbackToMp4 = {
+                stateHolder?.showToast("Hardware VP8 encoder unavailable; recording DVR in MP4")
+            }
         )
     }
 

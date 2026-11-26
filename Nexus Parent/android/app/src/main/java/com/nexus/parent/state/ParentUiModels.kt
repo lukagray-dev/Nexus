@@ -74,26 +74,26 @@ enum class MonitoringState {
     STOPPING
 }
 
-enum class CameraLens(val label: String) {
-    REAR("Rear"),
-    FRONT("Front")
+enum class CameraLens(val label: String, val settingsLabel: String) {
+    REAR("Rear", "Rear Lens"),
+    FRONT("Front", "Front Lens")
 }
 
-enum class ScreenQuality(val label: String) {
-    P1080("1080p"),
-    P720("720p"),
-    P540("540p")
+enum class ScreenQuality(val label: String, val displayLabel: String) {
+    P1080("1080p", "1080p @ 30fps"),
+    P720("720p", "720p @ 30fps"),
+    P540("540p", "540p @ 24fps")
 }
 
-enum class DvrDuration(val label: String) {
-    M15("15m"),
-    M30("30m"),
-    M60("60m")
+enum class DvrDuration(val label: String, val displayLabel: String) {
+    M15("15m", "15m (~140 MB)"),
+    M30("30m", "30m (Default)"),
+    M60("60m", "60m (~560 MB)")
 }
 
-enum class ClipFormat(val label: String) {
-    MP4("MP4"),
-    WEBM("WebM")
+enum class ClipFormat(val label: String, val displayLabel: String) {
+    MP4("MP4", "MP4 (H.264)"),
+    WEBM("WebM", "WebM (VP8)")
 }
 
 enum class LoudspeakerVolume(val label: String) {
@@ -599,6 +599,7 @@ data class ParentUiState(
     val isSettingsOpen: Boolean = false,
     val activeSettingsTab: SettingsTabId = SettingsTabId.GENERAL,
     val settings: SettingsValues = SettingsValues(),
+    val sessionHardwareAcceleration: Boolean? = null,
     val availableAudioInputs: List<AudioDeviceOption> = emptyList(),
     val availableAudioOutputs: List<AudioDeviceOption> = emptyList(),
 

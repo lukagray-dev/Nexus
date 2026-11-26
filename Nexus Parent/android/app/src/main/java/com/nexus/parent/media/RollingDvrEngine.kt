@@ -26,6 +26,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class DvrSegmentMeta(
@@ -181,17 +183,22 @@ class RollingDvrEngine(
     @Volatile
     private var activeContainer: ClipFormat = ClipFormat.MP4
 
+    @Volatile
+    private var onFallbackToMp4Callback: (() -> Unit)? = null
+
     fun start(
         feedType: VideoFeedType,
         track: VideoTrack,
         eglContext: EglBase.Context,
         bufferDuration: DvrDuration,
-        clipFormat: ClipFormat
+        clipFormat: ClipFormat,
+        onFallbackToMp4: (() -> Unit)? = null
     ) {
         stop()
         activeFeedType = feedType
         maxBufferMs = DvrBufferPolicy.resolveMaxBufferMs(bufferDuration)
         activeContainer = clipFormat
+        onFallbackToMp4Callback = onFallbackToMp4
         sessionStartWallMs = System.currentTimeMillis()
         attachedTrack = track
         sharedEglContext = eglContext
@@ -221,6 +228,30 @@ class RollingDvrEngine(
         }
     }
 
+    fun updateClipFormat(nextFormat: ClipFormat): Boolean {
+        if (nextFormat == activeContainer) return false
+        if (!isRecording.get()) {
+            activeContainer = nextFormat
+            return false
+        }
+        val handler = encoderHandler
+        if (handler == null) {
+            activeContainer = nextFormat
+            return false
+        }
+        handler.post {
+            releaseEncoderLocked()
+            closedSegments.forEach { runCatching { it.file.delete() } }
+            closedSegments.clear()
+            segmentCounter = 0
+            sessionStartWallMs = System.currentTimeMillis()
+            lastFrameEncodedMs = 0L
+            currentSegmentStartMs = 0L
+            activeContainer = nextFormat
+        }
+        return true
+    }
+
     fun getProgressSnapshot(): DvrProgressSnapshot {
         val elapsedSec = if (sessionStartWallMs > 0L && isRecording.get()) {
             ((System.currentTimeMillis() - sessionStartWallMs) / 1000f).coerceAtLeast(0f)
@@ -248,7 +279,18 @@ class RollingDvrEngine(
     fun getSegmentAt(index: Int): DvrSegmentMeta? = closedSegments.getOrNull(index)
 
     fun snapshotExportSegments(): Pair<List<File>, ClipFormat> {
-        // Rotate once on next drain if active file already has data, or use completed segments cleanly
+        val handler = encoderHandler
+        if (isRecording.get() && handler != null) {
+            val latch = CountDownLatch(1)
+            handler.post {
+                if (muxerStarted && lastFrameEncodedMs > currentSegmentStartMs) {
+                    closeCurrentSegmentLocked(lastFrameEncodedMs)
+                    openNextSegmentLocked(lastFrameEncodedMs)
+                }
+                latch.countDown()
+            }
+            runCatching { latch.await(600L, TimeUnit.MILLISECONDS) }
+        }
         val files = closedSegments.map { it.file }.filter { it.exists() && it.length() > 0L }
         return files to activeContainer
     }
@@ -339,7 +381,10 @@ class RollingDvrEngine(
             val codec = runCatching {
                 createAndConfigureCodec(mime, width, height)
             }.getOrElse {
-                activeContainer = ClipFormat.MP4
+                if (useWebm) {
+                    activeContainer = ClipFormat.MP4
+                    onFallbackToMp4Callback?.invoke()
+                }
                 createAndConfigureCodec(MediaFormat.MIMETYPE_VIDEO_AVC, width, height)
             }
 

@@ -11,16 +11,18 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSegmentedRow
 @Composable
 fun ScreenQualitySetting(
     selectedQuality: ScreenQuality,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     SettingsSegmentedRow(
         title = "Screen Mirror Quality",
-        subtitle = "Resolution preset requested from child MediaProjection stream.",
+        subtitle = "Higher quality increases detail; lower saves child phone battery.",
         options = ScreenQuality.entries,
         selected = selectedQuality,
-        labelProvider = { it.label },
+        labelProvider = { it.displayLabel },
         onSelect = { quality ->
             onUpdateSettings { it.copy(screenQuality = quality) }
+            onShowToast("Screen mirror quality set to ${quality.displayLabel}")
         }
     )
 }
