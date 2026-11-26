@@ -11,6 +11,7 @@ firebaseBom = "34.4.0"
 kotlinxCoroutines = "1.10.2"
 webrtc = "123.0.0"
 orgJson = "20240303"
+osmdroid = "6.1.20"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ firebase-database = { module = "com.google.firebase:firebase-database" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
+osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 webrtc = { module = "com.dafruits:webrtc", version.ref = "webrtc" }
 
 [plugins]

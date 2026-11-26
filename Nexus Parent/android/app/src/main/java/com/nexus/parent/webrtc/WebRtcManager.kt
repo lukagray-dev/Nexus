@@ -120,6 +120,8 @@ class WebRtcManager(context: Context) {
 
     fun getEglBaseContext(): EglBase.Context = eglBase.eglBaseContext
 
+    fun getActiveVideoType(): VideoFeedType? = activeVideoType
+
     fun setActiveVideoType(type: VideoFeedType?) {
         if (activeVideoType == type) return
         activeVideoType = type

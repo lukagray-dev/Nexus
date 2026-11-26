@@ -23,6 +23,7 @@ import com.nexus.parent.R
 import com.nexus.parent.state.CameraFeedUiState
 import com.nexus.parent.state.MonitoringState
 import com.nexus.parent.ui.components.TacticalBadgePill
+import com.nexus.parent.ui.surveillance.video.DvrPlaybackTextureView
 import com.nexus.parent.ui.surveillance.video.LiveFeedPlayerBar
 import com.nexus.parent.ui.surveillance.video.NexusVideoSurface
 import com.nexus.parent.ui.surveillance.video.PausedStreamOverlay
@@ -49,20 +50,34 @@ fun CameraFeedScreen(
     onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
     videoTrack: VideoTrack? = null,
-    eglContext: EglBase.Context? = null
+    eglContext: EglBase.Context? = null,
+    onDvrSegmentPositionMs: (Int) -> Unit = {},
+    onDvrSegmentCompleted: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(NexusColors.CanvasBlack)
     ) {
-        // 1. Zero-Blocker TextureView WebRTC Video Surface
-        NexusVideoSurface(
-            videoTrack = videoTrack,
-            eglContext = eglContext,
-            rotationDegrees = state.rotationDegrees,
-            modifier = Modifier.fillMaxSize()
-        )
+        // 1. Live WebRTC TextureView Surface (active when at live edge)
+        if (state.isAtLiveEdge) {
+            NexusVideoSurface(
+                videoTrack = videoTrack,
+                eglContext = eglContext,
+                rotationDegrees = state.rotationDegrees,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            DvrPlaybackTextureView(
+                segmentPath = state.dvrActiveSegmentPath,
+                offsetMs = state.dvrSegmentOffsetMs,
+                seekTriggerId = state.dvrSeekTriggerId,
+                rotationDegrees = state.rotationDegrees,
+                onSegmentPositionMs = onDvrSegmentPositionMs,
+                onSegmentCompleted = onDvrSegmentCompleted,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         // 2. Placeholder visual indicator when LIVE in UI-only preview without an active track
         if (state.state == MonitoringState.LIVE && videoTrack == null) {
@@ -122,6 +137,9 @@ fun CameraFeedScreen(
             rotationDegrees = state.rotationDegrees,
             isFullscreen = state.isFullscreen,
             lensLabel = state.lens.label,
+            isLensSwitching = state.isSwitchingLens,
+            isSaveClipEnabled = state.hasDvrClips && !state.isExportingClip,
+            isExportingClip = state.isExportingClip,
             onPlayPauseClick = onPlayPauseClick,
             onJumpToLiveClick = onJumpToLive,
             onScrub = onScrubDvr,

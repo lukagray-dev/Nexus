@@ -1,6 +1,7 @@
 package com.nexus.parent.ui.surveillance.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import com.nexus.parent.R
 import com.nexus.parent.state.MonitoringState
 import com.nexus.parent.state.ScreenFeedUiState
 import com.nexus.parent.ui.components.TacticalBadgePill
+import com.nexus.parent.ui.surveillance.video.DvrPlaybackTextureView
 import com.nexus.parent.ui.surveillance.video.LiveFeedPlayerBar
 import com.nexus.parent.ui.surveillance.video.NexusVideoSurface
 import com.nexus.parent.ui.surveillance.video.PausedStreamOverlay
@@ -42,19 +44,34 @@ fun ScreenFeedScreen(
     onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
     videoTrack: VideoTrack? = null,
-    eglContext: EglBase.Context? = null
+    eglContext: EglBase.Context? = null,
+    onToggleSystemAudio: () -> Unit = {},
+    onDvrSegmentPositionMs: (Int) -> Unit = {},
+    onDvrSegmentCompleted: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(NexusColors.CanvasBlack)
     ) {
-        NexusVideoSurface(
-            videoTrack = videoTrack,
-            eglContext = eglContext,
-            rotationDegrees = state.rotationDegrees,
-            modifier = Modifier.fillMaxSize()
-        )
+        if (state.isAtLiveEdge) {
+            NexusVideoSurface(
+                videoTrack = videoTrack,
+                eglContext = eglContext,
+                rotationDegrees = state.rotationDegrees,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            DvrPlaybackTextureView(
+                segmentPath = state.dvrActiveSegmentPath,
+                offsetMs = state.dvrSegmentOffsetMs,
+                seekTriggerId = state.dvrSeekTriggerId,
+                rotationDegrees = state.rotationDegrees,
+                onSegmentPositionMs = onDvrSegmentPositionMs,
+                onSegmentCompleted = onDvrSegmentCompleted,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         if (state.state == MonitoringState.LIVE && videoTrack == null) {
             Column(
@@ -90,8 +107,9 @@ fun ScreenFeedScreen(
             )
             TacticalBadgePill(
                 text = if (state.isSystemAudioEnabled) "SYSTEM AUDIO: OPUS" else "AUDIO MUTED",
-                textColor = NexusColors.TextMuted,
-                backgroundColor = NexusColors.SurfaceSidebar.copy(alpha = 0.88f)
+                textColor = if (state.isSystemAudioEnabled) NexusColors.TextSecondary else NexusColors.TextMuted,
+                backgroundColor = NexusColors.SurfaceSidebar.copy(alpha = 0.88f),
+                modifier = Modifier.clickable(onClick = onToggleSystemAudio)
             )
         }
 
@@ -110,6 +128,8 @@ fun ScreenFeedScreen(
             rotationDegrees = state.rotationDegrees,
             isFullscreen = state.isFullscreen,
             lensLabel = null,
+            isSaveClipEnabled = state.hasDvrClips && !state.isExportingClip,
+            isExportingClip = state.isExportingClip,
             onPlayPauseClick = onPlayPauseClick,
             onJumpToLiveClick = onJumpToLive,
             onScrub = onScrubDvr,

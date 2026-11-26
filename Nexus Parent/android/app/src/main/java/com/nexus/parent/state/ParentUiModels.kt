@@ -180,10 +180,19 @@ data class ActiveCallAlert(
 data class CameraFeedUiState(
     val state: MonitoringState = MonitoringState.IDLE,
     val lens: CameraLens = CameraLens.REAR,
+    val isSwitchingLens: Boolean = false,
     val rotationDegrees: Int = 0,
     val dvrProgress: Float = 1f,
     val isAtLiveEdge: Boolean = true,
     val elapsedLabel: String = "00:00",
+    val hasDvrClips: Boolean = false,
+    val isExportingClip: Boolean = false,
+    val dvrBufferStartSeconds: Float = 0f,
+    val dvrTotalSeconds: Float = 0f,
+    val dvrCurrentSeconds: Float = 0f,
+    val dvrActiveSegmentPath: String? = null,
+    val dvrSegmentOffsetMs: Int = 0,
+    val dvrSeekTriggerId: Long = 0L,
     val isFullscreen: Boolean = false
 )
 
@@ -195,6 +204,14 @@ data class ScreenFeedUiState(
     val isAtLiveEdge: Boolean = true,
     val elapsedLabel: String = "00:00",
     val isSystemAudioEnabled: Boolean = true,
+    val hasDvrClips: Boolean = false,
+    val isExportingClip: Boolean = false,
+    val dvrBufferStartSeconds: Float = 0f,
+    val dvrTotalSeconds: Float = 0f,
+    val dvrCurrentSeconds: Float = 0f,
+    val dvrActiveSegmentPath: String? = null,
+    val dvrSegmentOffsetMs: Int = 0,
+    val dvrSeekTriggerId: Long = 0L,
     val isFullscreen: Boolean = false
 )
 
@@ -215,6 +232,17 @@ enum class MapLayerMode(val label: String) {
 data class LocationUiState(
     val state: MonitoringState = MonitoringState.IDLE,
     val mapLayer: MapLayerMode = MapLayerMode.SATELLITE,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val accuracyMeters: Float = 0f,
+    val speedMps: Float = 0f,
+    val altitudeMeters: Double = 0.0,
+    val bearingDegrees: Float = 0f,
+    val lastTimestampMs: Long? = null,
+    val centerRequestToken: Long = 0L,
+    val zoomDeltaRequestId: Long = 0L,
+    val zoomDeltaSteps: Int = 0,
+    val errorMessage: String? = null,
     val address: String = "Waiting for position fix...",
     val coordinatesLabel: String = "--",
     val accuracyLabel: String = "--",

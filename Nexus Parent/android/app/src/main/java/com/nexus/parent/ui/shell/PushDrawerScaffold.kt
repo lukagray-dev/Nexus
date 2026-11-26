@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -42,6 +43,7 @@ fun PushDrawerScaffold(
     isDrawerOpen: Boolean,
     onDrawerOpenChange: (Boolean) -> Unit,
     swipeEnabled: Boolean = true,
+    edgeOnlySwipe: Boolean = false,
     drawerContent: @Composable () -> Unit,
     mainContent: @Composable () -> Unit
 ) {
@@ -76,6 +78,26 @@ fun PushDrawerScaffold(
             }
         }
 
+        val finishDrag: (Float) -> Unit = { velocity ->
+            val shouldOpen = when {
+                velocity > 420f -> true
+                velocity < -420f -> false
+                else -> progress.value >= 0.45f
+            }
+            if (shouldOpen != isDrawerOpen) {
+                onDrawerOpenChange(shouldOpen)
+            } else {
+                scope.launch {
+                    progress.animateTo(
+                        targetValue = if (shouldOpen) 1f else 0f,
+                        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
+                    )
+                }
+            }
+        }
+
+        val fullDragEnabled = swipeEnabled && (!edgeOnlySwipe || isDrawerOpen)
+
         // 1. Main Content Surface (pushed right as drawer opens)
         Box(
             modifier = Modifier
@@ -84,27 +106,26 @@ fun PushDrawerScaffold(
                 .draggable(
                     state = dragState,
                     orientation = Orientation.Horizontal,
-                    enabled = swipeEnabled,
-                    onDragStopped = { velocity ->
-                        val shouldOpen = when {
-                            velocity > 420f -> true
-                            velocity < -420f -> false
-                            else -> progress.value >= 0.45f
-                        }
-                        if (shouldOpen != isDrawerOpen) {
-                            onDrawerOpenChange(shouldOpen)
-                        } else {
-                            scope.launch {
-                                progress.animateTo(
-                                    targetValue = if (shouldOpen) 1f else 0f,
-                                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
-                                )
-                            }
-                        }
-                    }
+                    enabled = fullDragEnabled,
+                    onDragStopped = { velocity -> finishDrag(velocity) }
                 )
         ) {
             mainContent()
+
+            // When interactive map is active, restrict drawer-open swipe to a 24dp left bezel
+            if (swipeEnabled && edgeOnlySwipe && !isDrawerOpen) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .width(24.dp)
+                        .fillMaxHeight()
+                        .draggable(
+                            state = dragState,
+                            orientation = Orientation.Horizontal,
+                            onDragStopped = { velocity -> finishDrag(velocity) }
+                        )
+                )
+            }
 
             // Tap-to-close overlay when drawer is open (transparent, zero dim scrim)
             if (isDrawerOpen) {

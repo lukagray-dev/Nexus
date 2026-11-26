@@ -96,6 +96,9 @@ fun LiveFeedPlayerBar(
     onFullscreenClick: () -> Unit,
     modifier: Modifier = Modifier,
     lensLabel: String? = null,
+    isLensSwitching: Boolean = false,
+    isSaveClipEnabled: Boolean = state == MonitoringState.LIVE,
+    isExportingClip: Boolean = false,
     onLensSwitchClick: (() -> Unit)? = null
 ) {
     val isLive = state == MonitoringState.LIVE
@@ -173,7 +176,7 @@ fun LiveFeedPlayerBar(
                                 size = 7.dp
                             )
                             Text(
-                                text = if (isAtLiveEdge) "Live" else "DVR",
+                                text = if (isAtLiveEdge) "Live" else "Go Live",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = NexusColors.TextPrimary
                             )
@@ -212,13 +215,20 @@ fun LiveFeedPlayerBar(
                     }
 
                     if (lensLabel != null && onLensSwitchClick != null) {
-                        FeedActionButton(onClick = onLensSwitchClick) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_camera),
-                                contentDescription = "Switch lens",
-                                tint = NexusColors.TextPrimary,
-                                modifier = Modifier.size(14.dp)
-                            )
+                        FeedActionButton(
+                            onClick = onLensSwitchClick,
+                            enabled = !isLensSwitching
+                        ) {
+                            if (isLensSwitching) {
+                                SpinningLoaderIcon(size = 14.dp)
+                            } else {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_camera),
+                                    contentDescription = "Switch lens",
+                                    tint = NexusColors.TextPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = lensLabel,
@@ -230,14 +240,18 @@ fun LiveFeedPlayerBar(
 
                     FeedActionButton(
                         onClick = onSaveClipClick,
-                        enabled = isLive
+                        enabled = isSaveClipEnabled && !isExportingClip
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_download),
-                            contentDescription = "Save DVR clip",
-                            tint = if (isLive) NexusColors.TextPrimary else NexusColors.TextMuted,
-                            modifier = Modifier.size(14.dp)
-                        )
+                        if (isExportingClip) {
+                            SpinningLoaderIcon(size = 14.dp)
+                        } else {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_download),
+                                contentDescription = "Save DVR clip",
+                                tint = if (isSaveClipEnabled) NexusColors.TextPrimary else NexusColors.TextMuted,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
 
                     FeedActionButton(onClick = onFullscreenClick) {

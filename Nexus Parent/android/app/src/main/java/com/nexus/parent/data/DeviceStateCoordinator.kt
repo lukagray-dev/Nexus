@@ -57,6 +57,12 @@ class DeviceStateCoordinator(
         sendCommand = webRtcManager::sendCommand
     )
 
+    val surveillanceCoordinator: SurveillanceCoordinator = SurveillanceCoordinator(
+        appContext = appContext,
+        scope = scope,
+        webRtcManager = webRtcManager
+    )
+
     private var stateHolder: ParentStateHolder? = null
     private var activeSessionDevice: DeviceRecord? = null
     private var lastStealthBeforeWait: StealthStatus = StealthStatus.ARMED
@@ -74,6 +80,7 @@ class DeviceStateCoordinator(
     fun attachStateHolder(holder: ParentStateHolder) {
         stateHolder = holder
         monitorCoordinator.attachStateHolder(holder)
+        surveillanceCoordinator.attachStateHolder(holder)
     }
 
     fun buildInitialUiState(): ParentUiState {
@@ -239,6 +246,7 @@ class DeviceStateCoordinator(
         activeSessionDevice = null
 
         monitorCoordinator.onPeerDisconnected()
+        surveillanceCoordinator.onPeerDisconnected()
         reconnectManager.cancel(silent = true)
         webRtcManager.disconnect(clearRemoteSignaling = true)
         ParentConnectionService.stop(appContext)
@@ -257,6 +265,7 @@ class DeviceStateCoordinator(
         disconnectGraceJob = null
         activeSessionDevice = null
         monitorCoordinator.onPeerDisconnected()
+        surveillanceCoordinator.onPeerDisconnected()
         reconnectManager.cancel(silent = false)
         webRtcManager.disconnect(clearRemoteSignaling = false)
         ParentConnectionService.stop(appContext)
@@ -280,6 +289,7 @@ class DeviceStateCoordinator(
 
     fun saveSettings(settings: SettingsValues) {
         storage.saveSettings(settings)
+        surveillanceCoordinator.onSettingsUpdated(settings)
     }
 
     fun clearLocalWorkspaceHistory() {
@@ -402,6 +412,7 @@ class DeviceStateCoordinator(
 
         Log.w(TAG, "Unexpected WebRTC drop for ${active.rawId}; starting 9-attempt backoff")
         monitorCoordinator.onPeerDisconnected()
+        surveillanceCoordinator.onPeerDisconnected()
         webRtcManager.setActiveVideoType(null)
         webRtcManager.disconnect(clearRemoteSignaling = false)
 
@@ -423,6 +434,8 @@ class DeviceStateCoordinator(
     }
 
     private fun handleDataChannelMessage(rawMessage: String) {
+        if (surveillanceCoordinator.handleIncomingMessage(rawMessage)) return
+
         val holder = stateHolder ?: return
         val trimmed = rawMessage.trim()
 
@@ -432,6 +445,7 @@ class DeviceStateCoordinator(
             disconnectGraceJob = null
             activeSessionDevice = null
             monitorCoordinator.onPeerDisconnected()
+            surveillanceCoordinator.onPeerDisconnected()
             reconnectManager.cancel(silent = true)
             webRtcManager.disconnect(clearRemoteSignaling = false)
             ParentConnectionService.stop(appContext)

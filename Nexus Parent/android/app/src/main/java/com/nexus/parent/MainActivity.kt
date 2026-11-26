@@ -2,6 +2,7 @@ package com.nexus.parent
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
@@ -32,12 +33,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nexus.parent.data.PendingDocumentExportRequest
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.FeatureId
 import com.nexus.parent.state.FeatureTarget
 import com.nexus.parent.state.MonitoringState
 import com.nexus.parent.state.ParentStateHolder
 import com.nexus.parent.state.ParentUiState
+import com.nexus.parent.webrtc.VideoFeedType
 import com.nexus.parent.ui.components.ActiveCallBanner
 import com.nexus.parent.ui.components.TacticalToastHost
 import com.nexus.parent.ui.home.ConnectedDashboardScreen
@@ -65,7 +68,9 @@ import com.nexus.parent.ui.surveillance.storage.StorageScreen
 import com.nexus.parent.ui.theme.NexusColors
 import com.nexus.parent.ui.theme.NexusParentTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.webrtc.EglBase
 import org.webrtc.VideoTrack
@@ -94,6 +99,10 @@ class MainActivity : ComponentActivity() {
             val videoTrackFlow = remember(app) {
                 app?.coordinator?.webRtcManager?.activeVideoTrack ?: MutableStateFlow<VideoTrack?>(null)
             }
+            val pendingExportFlow = remember(app) {
+                app?.coordinator?.surveillanceCoordinator?.pendingExportRequests
+                    ?: MutableSharedFlow<PendingDocumentExportRequest>()
+            }
             val eglContext = remember(app) { app?.coordinator?.getEglBaseContext() }
 
             LaunchedEffect(app) {
@@ -104,6 +113,7 @@ class MainActivity : ComponentActivity() {
                 NexusParentRoot(
                     stateHolder = stateHolder,
                     videoTrackFlow = videoTrackFlow,
+                    pendingExportFlow = pendingExportFlow,
                     eglContext = eglContext,
                     hasLiveCoordinator = app != null
                 )
@@ -116,6 +126,7 @@ class MainActivity : ComponentActivity() {
 fun NexusParentRoot(
     stateHolder: ParentStateHolder,
     videoTrackFlow: StateFlow<VideoTrack?> = remember { MutableStateFlow(null) },
+    pendingExportFlow: SharedFlow<PendingDocumentExportRequest> = remember { MutableSharedFlow() },
     eglContext: EglBase.Context? = null,
     hasLiveCoordinator: Boolean = false
 ) {
@@ -136,6 +147,24 @@ fun NexusParentRoot(
     ) { uri ->
         if (uri != null) {
             stateHolder.pushWallpaperFromUri(uri)
+        }
+    }
+
+    val saveClipDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
+        stateHolder.completeCreateDocumentExport(uri)
+    }
+
+    LaunchedEffect(pendingExportFlow) {
+        pendingExportFlow.collect { req ->
+            val createIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = req.mimeType
+                putExtra(Intent.EXTRA_TITLE, req.fileName)
+            }
+            saveClipDocumentLauncher.launch(createIntent)
         }
     }
 
@@ -186,6 +215,7 @@ fun NexusParentRoot(
         isDrawerOpen = state.isDrawerOpen,
         onDrawerOpenChange = stateHolder::setDrawerOpen,
         swipeEnabled = !isVideoFullscreen,
+        edgeOnlySwipe = state.activeFeature == FeatureId.LOCATION,
         drawerContent = {
             LeftDrawerContent(
                 state = state,
@@ -362,10 +392,12 @@ private fun MainContentRouter(
             onSwitchLensClick = stateHolder::toggleCameraLens,
             onScrubDvr = stateHolder::scrubCameraDvr,
             onJumpToLive = stateHolder::jumpCameraToLive,
-            onSaveClipClick = { stateHolder.showToast("DVR clip export ready once connected") },
+            onSaveClipClick = stateHolder::exportCameraDvrClip,
             onToggleFullscreen = stateHolder::toggleCameraFullscreen,
             videoTrack = if (state.camera.state == MonitoringState.LIVE) activeVideoTrack else null,
-            eglContext = eglContext
+            eglContext = eglContext,
+            onDvrSegmentPositionMs = { posMs -> stateHolder.onDvrSegmentPosition(VideoFeedType.CAMERA, posMs) },
+            onDvrSegmentCompleted = { stateHolder.onDvrSegmentCompleted(VideoFeedType.CAMERA) }
         )
         FeatureId.SCREEN -> ScreenFeedScreen(
             state = state.screen,
@@ -373,16 +405,21 @@ private fun MainContentRouter(
             onRotateClick = stateHolder::rotateScreenFeed,
             onScrubDvr = stateHolder::scrubScreenDvr,
             onJumpToLive = stateHolder::jumpScreenToLive,
-            onSaveClipClick = { stateHolder.showToast("DVR clip export ready once connected") },
+            onSaveClipClick = stateHolder::exportScreenDvrClip,
             onToggleFullscreen = stateHolder::toggleScreenFullscreen,
             videoTrack = if (state.screen.state == MonitoringState.LIVE) activeVideoTrack else null,
-            eglContext = eglContext
+            eglContext = eglContext,
+            onToggleSystemAudio = stateHolder::toggleSystemAudio,
+            onDvrSegmentPositionMs = { posMs -> stateHolder.onDvrSegmentPosition(VideoFeedType.SCREEN, posMs) },
+            onDvrSegmentCompleted = { stateHolder.onDvrSegmentCompleted(VideoFeedType.SCREEN) }
         )
         FeatureId.LOCATION -> LocationScreen(
             state = state.location,
             onToggleTracking = stateHolder::toggleLocationTracking,
-            onCenterTarget = { stateHolder.showToast("Map camera centered on target") },
-            onToggleLayer = stateHolder::toggleMapLayer
+            onCenterTarget = stateHolder::centerLocationTarget,
+            onToggleLayer = stateHolder::toggleMapLayer,
+            onZoomIn = stateHolder::zoomLocationIn,
+            onZoomOut = stateHolder::zoomLocationOut
         )
         FeatureId.STORAGE -> StorageScreen(
             state = state.storage,

@@ -425,10 +425,33 @@ class ParentStateHolder(
     }
 
     // -------------------------------------------------------------------------
-    // CAMERA & SCREEN LIVE SURVEILLANCE UI CONTROLS
+    // CAMERA & SCREEN LIVE SURVEILLANCE CONTROLS
     // -------------------------------------------------------------------------
 
+    fun updateCameraState(transform: (CameraFeedUiState) -> CameraFeedUiState) {
+        _uiState.update { it.copy(camera = transform(it.camera)) }
+    }
+
+    fun updateScreenState(transform: (ScreenFeedUiState) -> ScreenFeedUiState) {
+        _uiState.update { it.copy(screen = transform(it.screen)) }
+    }
+
+    fun updateLocationState(transform: (LocationUiState) -> LocationUiState) {
+        _uiState.update { it.copy(location = transform(it.location)) }
+    }
+
+    fun setFeatureLive(featureId: FeatureId, isLive: Boolean) {
+        _uiState.update { state ->
+            val updated = if (isLive) state.liveFeatures + featureId else state.liveFeatures - featureId
+            state.copy(liveFeatures = updated)
+        }
+    }
+
     fun toggleCameraStream() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.toggleCameraStream()
+            return
+        }
         var nextState = MonitoringState.IDLE
         _uiState.update { state ->
             val next = if (state.camera.state == MonitoringState.LIVE) {
@@ -457,9 +480,8 @@ class ParentStateHolder(
                 liveFeatures = liveSet
             )
         }
-        coordinator?.webRtcManager?.setActiveVideoType(
-            if (nextState == MonitoringState.LIVE) VideoFeedType.CAMERA else null
-        )
+        @Suppress("UNUSED_VARIABLE")
+        val unused = nextState
     }
 
     fun rotateCameraFeed() {
@@ -470,6 +492,10 @@ class ParentStateHolder(
     }
 
     fun toggleCameraLens() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.toggleCameraLens()
+            return
+        }
         _uiState.update { state ->
             val nextLens = if (state.camera.lens == CameraLens.REAR) CameraLens.FRONT else CameraLens.REAR
             state.copy(
@@ -480,6 +506,10 @@ class ParentStateHolder(
     }
 
     fun scrubCameraDvr(fraction: Float) {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.scrubDvr(VideoFeedType.CAMERA, fraction)
+            return
+        }
         val clamped = fraction.coerceIn(0f, 1f)
         val atLive = clamped >= 0.98f
         _uiState.update {
@@ -493,6 +523,10 @@ class ParentStateHolder(
     }
 
     fun jumpCameraToLive() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.jumpToLive(VideoFeedType.CAMERA)
+            return
+        }
         _uiState.update {
             it.copy(camera = it.camera.copy(dvrProgress = 1f, isAtLiveEdge = true))
         }
@@ -504,15 +538,25 @@ class ParentStateHolder(
         }
     }
 
+    fun exportCameraDvrClip() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.exportActiveDvrClip(VideoFeedType.CAMERA)
+        } else {
+            showToast("Connect a child device and stream Camera to export DVR clip")
+        }
+    }
+
     fun toggleScreenStream() {
-        var nextState = MonitoringState.IDLE
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.toggleScreenStream()
+            return
+        }
         _uiState.update { state ->
             val next = if (state.screen.state == MonitoringState.LIVE) {
                 MonitoringState.IDLE
             } else {
                 MonitoringState.LIVE
             }
-            nextState = next
             val liveSet = if (next == MonitoringState.LIVE) {
                 state.liveFeatures + FeatureId.SCREEN - FeatureId.CAMERA
             } else {
@@ -533,9 +577,6 @@ class ParentStateHolder(
                 liveFeatures = liveSet
             )
         }
-        coordinator?.webRtcManager?.setActiveVideoType(
-            if (nextState == MonitoringState.LIVE) VideoFeedType.SCREEN else null
-        )
     }
 
     fun rotateScreenFeed() {
@@ -545,7 +586,25 @@ class ParentStateHolder(
         }
     }
 
+    fun toggleSystemAudio() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.toggleSystemAudio()
+            return
+        }
+        _uiState.update { state ->
+            val next = !state.screen.isSystemAudioEnabled
+            state.copy(
+                screen = state.screen.copy(isSystemAudioEnabled = next),
+                toastMessage = if (next) "System audio enabled" else "System audio muted"
+            )
+        }
+    }
+
     fun scrubScreenDvr(fraction: Float) {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.scrubDvr(VideoFeedType.SCREEN, fraction)
+            return
+        }
         val clamped = fraction.coerceIn(0f, 1f)
         val atLive = clamped >= 0.98f
         _uiState.update {
@@ -559,6 +618,10 @@ class ParentStateHolder(
     }
 
     fun jumpScreenToLive() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.jumpToLive(VideoFeedType.SCREEN)
+            return
+        }
         _uiState.update {
             it.copy(screen = it.screen.copy(dvrProgress = 1f, isAtLiveEdge = true))
         }
@@ -568,6 +631,26 @@ class ParentStateHolder(
         _uiState.update {
             it.copy(screen = it.screen.copy(isFullscreen = !it.screen.isFullscreen))
         }
+    }
+
+    fun exportScreenDvrClip() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.exportActiveDvrClip(VideoFeedType.SCREEN)
+        } else {
+            showToast("Connect a child device and stream Screen to export DVR clip")
+        }
+    }
+
+    fun onDvrSegmentPosition(feedType: VideoFeedType, offsetMs: Int) {
+        coordinator?.surveillanceCoordinator?.onDvrSegmentPlaybackPosition(feedType, offsetMs)
+    }
+
+    fun onDvrSegmentCompleted(feedType: VideoFeedType) {
+        coordinator?.surveillanceCoordinator?.onDvrSegmentCompleted(feedType)
+    }
+
+    fun completeCreateDocumentExport(uri: Uri?) {
+        coordinator?.surveillanceCoordinator?.completeCreateDocumentExport(uri)
     }
 
     // -------------------------------------------------------------------------
@@ -636,6 +719,10 @@ class ParentStateHolder(
     // -------------------------------------------------------------------------
 
     fun toggleLocationTracking() {
+        if (coordinator != null) {
+            coordinator.surveillanceCoordinator.toggleLocationTracking()
+            return
+        }
         _uiState.update { state ->
             val next = if (state.location.state == MonitoringState.LIVE) {
                 MonitoringState.IDLE
@@ -655,6 +742,38 @@ class ParentStateHolder(
                     lastPingLabel = if (next == MonitoringState.LIVE) "Live" else "--"
                 ),
                 liveFeatures = liveSet
+            )
+        }
+    }
+
+    fun centerLocationTarget() {
+        _uiState.update { state ->
+            state.copy(
+                location = state.location.copy(
+                    centerRequestToken = state.location.centerRequestToken + 1L
+                )
+            )
+        }
+    }
+
+    fun zoomLocationIn() {
+        _uiState.update { state ->
+            state.copy(
+                location = state.location.copy(
+                    zoomDeltaRequestId = state.location.zoomDeltaRequestId + 1L,
+                    zoomDeltaSteps = 1
+                )
+            )
+        }
+    }
+
+    fun zoomLocationOut() {
+        _uiState.update { state ->
+            state.copy(
+                location = state.location.copy(
+                    zoomDeltaRequestId = state.location.zoomDeltaRequestId + 1L,
+                    zoomDeltaSteps = -1
+                )
             )
         }
     }
@@ -1059,7 +1178,11 @@ class ParentStateHolder(
             latestSettings = updated
             state.copy(
                 settings = updated,
-                camera = state.camera.copy(lens = updated.preferredCameraLens),
+                camera = if (state.camera.state == MonitoringState.IDLE && !state.camera.isSwitchingLens) {
+                    state.camera.copy(lens = updated.preferredCameraLens)
+                } else {
+                    state.camera
+                },
                 screen = state.screen.copy(quality = updated.screenQuality),
                 mic = state.mic.copy(selectedVoice = updated.defaultVoicePreset)
             )

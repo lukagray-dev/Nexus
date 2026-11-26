@@ -180,4 +180,27 @@ class ParentStateHolderTest {
         assertEquals(2, holder.uiState.value.reconnectAttempt)
         assertEquals(30, holder.uiState.value.reconnectSecondsRemaining)
     }
+
+    @Test
+    fun `system audio mute, location map actions, and active camera lens guard behave deterministically`() {
+        val holder = ParentStateHolder()
+        holder.submitPairingPreview("482194021104")
+
+        assertTrue(holder.uiState.value.screen.isSystemAudioEnabled)
+        holder.toggleSystemAudio()
+        assertFalse(holder.uiState.value.screen.isSystemAudioEnabled)
+
+        holder.centerLocationTarget()
+        assertEquals(1L, holder.uiState.value.location.centerRequestToken)
+        holder.zoomLocationIn()
+        assertEquals(1, holder.uiState.value.location.zoomDeltaSteps)
+        holder.zoomLocationOut()
+        assertEquals(-1, holder.uiState.value.location.zoomDeltaSteps)
+
+        // While Camera is LIVE on Front lens, changing Settings preferredCameraLens should NOT override live lens
+        holder.toggleCameraStream()
+        holder.updateCameraState { it.copy(lens = CameraLens.FRONT) }
+        holder.updateSettings { it.copy(preferredCameraLens = CameraLens.REAR) }
+        assertEquals(CameraLens.FRONT, holder.uiState.value.camera.lens)
+    }
 }

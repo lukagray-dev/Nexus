@@ -95,6 +95,9 @@ dependencies {
     // WebRTC P2P engine
     implementation(libs.webrtc)
 
+    // Interactive map tiles (Esri Satellite & CartoDB Dark Streets)
+    implementation(libs.osmdroid.android)
+
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.coroutines.test)
