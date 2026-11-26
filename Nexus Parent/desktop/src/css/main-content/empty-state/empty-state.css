@@ -44,11 +44,11 @@
 
 .empty-connect-card {
   width: 100%;
-  max-width: 390px;
+  max-width: 420px;
   background-color: #121212;
-  border: none;
-  border-radius: 0;
-  padding: 24px 24px 20px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px 24px 22px 24px;
   box-shadow: 0 20px 56px rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
@@ -68,7 +68,7 @@
 .connect-brand-icon {
   width: 40px;
   height: 40px;
-  border-radius: 0;
+  border-radius: 10px;
   background-color: #1a1a1a;
   border: none;
   display: flex;
@@ -107,9 +107,17 @@
   flex-direction: column;
 }
 
+.connect-input-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .connect-input-wrapper {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
 }
@@ -137,7 +145,7 @@
   height: 40px;
   background-color: #0c0c0c;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 0;
+  border-radius: 8px;
   padding: 0 36px 0 38px;
   font-family: var(--mono-font-family);
   font-size: 14px;
@@ -167,7 +175,7 @@
   right: 10px;
   width: 20px;
   height: 20px;
-  border-radius: 0;
+  border-radius: 5px;
   background-color: #222222;
   border: none;
   color: #888888;
@@ -186,12 +194,15 @@
 
 /* Feedback Row */
 .connect-feedback {
-  min-height: 18px;
-  margin: 6px 0 12px 0;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.connect-feedback:empty {
+  display: none;
 }
 
 .feedback-text {
@@ -220,21 +231,24 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  margin-top: 8px;
 }
 
 .btn-connect-primary {
-  width: 100%;
-  height: 38px;
+  height: 40px;
+  padding: 0 16px;
   background-color: #ffffff;
   color: #000000;
   border: none;
-  border-radius: 0;
+  border-radius: 8px;
   font-size: 12.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
+  flex-shrink: 0;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.12s ease;
   outline: none;
@@ -315,7 +329,7 @@
   padding: 6px 12px;
   background-color: #171717;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -345,7 +359,7 @@
 .recent-device-icon {
   width: 28px;
   height: 28px;
-  border-radius: 0;
+  border-radius: 6px;
   background-color: rgba(255, 255, 255, 0.06);
   border: none;
   display: flex;
@@ -409,21 +423,4 @@
 .btn-recent-device:hover .recent-arrow-icon {
   opacity: 1;
   transform: translateX(2px);
-}
-
-/* Footer Hint */
-.connect-footer-hint {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.connect-footer-hint strong {
-  color: #ffffff;
 }

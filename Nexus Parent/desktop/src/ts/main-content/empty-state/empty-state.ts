@@ -39,38 +39,37 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
 
     <!-- 12-Digit Child ID Form -->
     <div class="connect-form">
-      <div class="connect-input-wrapper">
-        <span class="input-prefix-icon">
-          <img src="assets/icons/main-content/empty-state/key-round.svg" alt="" />
-        </span>
-        <input
-          type="text"
-          id="child-id-input"
-          class="child-id-input"
-          aria-label="Child Device ID"
-          placeholder="Enter 12-digit Child ID"
-          maxlength="12"
-          autocomplete="off"
-          spellcheck="false"
-          inputmode="numeric"
-        />
-        <button id="btn-clear-id" class="btn-clear-id" title="Clear input" style="display: none;">✕</button>
+      <div class="connect-input-row">
+        <div class="connect-input-wrapper">
+          <span class="input-prefix-icon">
+            <img src="assets/icons/main-content/empty-state/key-round.svg" alt="" />
+          </span>
+          <input
+            type="text"
+            id="child-id-input"
+            class="child-id-input"
+            aria-label="Child Device ID"
+            placeholder="Enter 12-digit Child ID"
+            maxlength="12"
+            autocomplete="off"
+            spellcheck="false"
+            inputmode="numeric"
+          />
+          <button id="btn-clear-id" class="btn-clear-id" title="Clear input" style="display: none;">✕</button>
+        </div>
+
+        <button id="btn-connect-device" class="btn-connect-primary" disabled>
+          <img src="assets/icons/main-content/empty-state/link.svg" alt="" style="filter: invert(0); width: 14px; height: 14px;" />
+          <span>Connect</span>
+        </button>
       </div>
 
       <!-- Live Validation & Progress Feedback -->
-      <div id="connect-feedback" class="connect-feedback">
-        <span class="feedback-text">Enter the 12-digit identifier from the child app</span>
-      </div>
+      <div id="connect-feedback" class="connect-feedback"></div>
 
-      <!-- Primary Action Buttons -->
-      <div class="connect-actions">
-        <button id="btn-connect-device" class="btn-connect-primary" disabled>
-          <img src="assets/icons/main-content/empty-state/link.svg" alt="" style="filter: invert(0); width: 14px; height: 14px;" />
-          <span>Connect Device</span>
-        </button>
-
-        ${lastDevice ? `
-          <!-- Quick Reconnect Shortcut for Previously Connected Child Device -->
+      ${lastDevice ? `
+        <!-- Quick Reconnect Shortcut for Previously Connected Child Device -->
+        <div class="connect-actions">
           <div class="connect-recent-section" id="connect-recent-section">
             <div class="connect-recent-divider">
               <span>or reconnect to recent child</span>
@@ -97,14 +96,8 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
               </div>
             </button>
           </div>
-        ` : ''}
-      </div>
-
-      <!-- Footer Help Hint -->
-      <div class="connect-footer-hint">
-        <img src="assets/icons/main-content/empty-state/info.svg" alt="" style="filter: invert(1); width: 12px; height: 12px; opacity: 0.6; flex-shrink: 0; margin-top: 1px;" />
-        <span>Open Nexus Child on the phone to view its <strong>12-digit Child ID</strong>.</span>
-      </div>
+        </div>
+      ` : ''}
     </div>
   `;
 
@@ -145,7 +138,7 @@ function bindPairingEvents(card: HTMLElement, onConnected: () => void): void {
     }
 
     if (raw.length === 0) {
-      feedback.innerHTML = '<span class="feedback-text">Enter the 12-digit identifier from the child app</span>';
+      feedback.innerHTML = '';
       connectBtn.disabled = true;
     } else if (raw.length < 12) {
       feedback.innerHTML = `<span class="feedback-text text-ready">${12 - raw.length} more digits needed</span>`;
