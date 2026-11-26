@@ -47,14 +47,30 @@ class ParentAudioTest {
         var enableCalled = false
         var restoreCalled = false
         var cleanupCalled = false
+        var lastMode: LoudspeakerVolumeMode? = null
+        var targetMode: LoudspeakerVolumeMode = LoudspeakerVolumeMode.MAX
 
         override fun onRemoteAudioTrackAdded(track: org.webrtc.AudioTrack) {}
 
         override fun enableMaxVolumePlayback(): Boolean {
+            return enableLoudspeakerPlayback(LoudspeakerVolumeMode.MAX)
+        }
+
+        override fun enableLoudspeakerPlayback(mode: LoudspeakerVolumeMode): Boolean {
             enableCalled = true
+            lastMode = mode
+            targetMode = mode
             if (enableResult) active = true
             return enableResult
         }
+
+        override fun setTargetVolumeMode(mode: LoudspeakerVolumeMode): Boolean {
+            targetMode = mode
+            lastMode = mode
+            return enableResult
+        }
+
+        override fun getTargetVolumeMode(): LoudspeakerVolumeMode = targetMode
 
         override fun restoreNormalVolume(): Boolean {
             restoreCalled = true
@@ -194,5 +210,33 @@ class ParentAudioTest {
         assertFalse("Mic must not be active after disconnect", mockMic.isActive())
         assertTrue("restoreNormalVolume must be called on disconnect", fakeSpeakerMgr.restoreCalled)
         assertFalse("Loudspeaker boost must not be active after disconnect", fakeSpeakerMgr.isMaxVolumeActive())
+    }
+
+    @Test
+    fun testLoudspeakerTargetVolumeModesAndLiveUpdate() {
+        val fakeSpeakerMgr = TestableParentAudioSpeakerManager()
+        val sentMessages = mutableListOf<String>()
+
+        val handler = MicCommandHandler(
+            micController = MockMicController(),
+            parentAudioSpeakerManager = fakeSpeakerMgr,
+            renegotiationTrigger = {},
+            dataSender = { msg -> sentMessages.add(msg); true }
+        )
+
+        // Parameterized high mode (85%)
+        assertTrue(handler.handleCommand("PARENT_AUDIO_UNMUTE:high"))
+        assertEquals(LoudspeakerVolumeMode.HIGH, fakeSpeakerMgr.lastMode)
+        assertEquals(MicCommandHandler.RESP_PARENT_AUDIO_UNMUTED, sentMessages.last())
+
+        // Live switch to normal (Preserve Level)
+        assertTrue(handler.handleCommand("PARENT_AUDIO_VOLUME:normal"))
+        assertEquals(LoudspeakerVolumeMode.NORMAL, fakeSpeakerMgr.getTargetVolumeMode())
+        assertEquals("PARENT_AUDIO_VOLUME_SET:normal", sentMessages.last())
+
+        // Verify pure stream volume math for 15-step Android AudioManager streams
+        assertEquals(15, computeTargetStreamVolume(15, LoudspeakerVolumeMode.MAX))
+        assertEquals(13, computeTargetStreamVolume(15, LoudspeakerVolumeMode.HIGH))
+        assertEquals(null, computeTargetStreamVolume(15, LoudspeakerVolumeMode.NORMAL))
     }
 }

@@ -12,7 +12,10 @@ import {
   initAudioVoiceIntercomRuntime,
   renderAudioVoiceIntercomContent,
 } from './audio-voice-intercom/audio-voice-intercom.js';
-import { renderSurveillanceDvrContent } from './surveillance-dvr/surveillance-dvr.js';
+import {
+  initSurveillanceDvrRuntime,
+  renderSurveillanceDvrContent,
+} from './surveillance-dvr/surveillance-dvr.js';
 import { renderSecurityForensicsContent } from './security-forensics/security-forensics.js';
 import {
   initGeneralSystemRuntime,
@@ -58,9 +61,11 @@ export function mountSettingsMainContent(container: HTMLElement, tabId: Settings
 export function initSettingsMainContentRuntime(onOpenSettings?: () => void): () => void {
   const disposeGeneralSystem = initGeneralSystemRuntime(onOpenSettings);
   const disposeAudioVoiceIntercom = initAudioVoiceIntercomRuntime();
+  const disposeSurveillanceDvr = initSurveillanceDvrRuntime();
 
   return () => {
     disposeGeneralSystem();
     disposeAudioVoiceIntercom();
+    disposeSurveillanceDvr();
   };
 }

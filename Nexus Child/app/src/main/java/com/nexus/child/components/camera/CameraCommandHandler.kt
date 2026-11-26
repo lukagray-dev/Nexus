@@ -61,16 +61,19 @@ class CameraCommandHandler(
      * @return true if command was recognized and handled; false otherwise.
      */
     fun handleCommand(command: String): Boolean {
-        return when (command.trim()) {
-            CMD_CAMERA_ON -> {
-                handleCameraOn()
+        val trimmed = command.trim()
+        return when {
+            trimmed == CMD_CAMERA_ON || trimmed.startsWith("$CMD_CAMERA_ON:") -> {
+                val lensArg = trimmed.substringAfter(':', "").trim().uppercase()
+                val targetLens = if (lensArg == "FRONT") CameraLens.FRONT else CameraLens.REAR
+                handleCameraOn(targetLens)
                 true
             }
-            CMD_CAMERA_OFF -> {
+            trimmed == CMD_CAMERA_OFF -> {
                 handleCameraOff()
                 true
             }
-            CMD_CAMERA_SWITCH -> {
+            trimmed == CMD_CAMERA_SWITCH -> {
                 handleCameraSwitch()
                 true
             }
@@ -79,10 +82,10 @@ class CameraCommandHandler(
     }
 
     /**
-     * Handles starting the camera (rear lens by default).
+     * Handles starting the camera on [targetLens] (rear lens by default).
      */
-    private fun handleCameraOn() {
-        Log.d(TAG, "Processing command: $CMD_CAMERA_ON")
+    private fun handleCameraOn(targetLens: CameraLens = CameraLens.REAR) {
+        Log.d(TAG, "Processing command: $CMD_CAMERA_ON (lens=$targetLens)")
 
         // Step 1: Verify runtime CAMERA permission
         if (!cameraController.hasCameraPermission()) {
@@ -91,17 +94,20 @@ class CameraCommandHandler(
             return
         }
 
-        // Step 2: If already active, immediately acknowledge with CAMERA_STARTED
+        // Step 2: If already active on requested lens, acknowledge immediately; otherwise switch
         if (cameraController.isActive()) {
+            if (cameraController.getCurrentLens() != targetLens) {
+                cameraController.startCamera(targetLens)
+            }
             Log.d(TAG, "Camera is already active. Acknowledging with $RESP_CAMERA_STARTED.")
             dataSender(RESP_CAMERA_STARTED)
             return
         }
 
-        // Step 3: Start hardware camera capture (rear lens by default per user requirements)
-        val started = cameraController.startCamera(CameraLens.REAR)
+        // Step 3: Start hardware camera capture with requested lens
+        val started = cameraController.startCamera(targetLens)
         if (started) {
-            Log.d(TAG, "Camera started successfully. Transmitting confirmation: $RESP_CAMERA_STARTED...")
+            Log.d(TAG, "Camera started successfully on $targetLens. Transmitting confirmation: $RESP_CAMERA_STARTED...")
             dataSender(RESP_CAMERA_STARTED)
         } else {
             Log.e(TAG, "Failed to start camera hardware!")

@@ -72,10 +72,7 @@ export interface SettingsValues {
   closeAction: 'tray' | 'exit';
   autoCheckUpdates: boolean;
 
-  // 5. Paired Devices
-  deviceAlias: string;
-
-  // 6. Diagnostics & Storage
+  // 5. Diagnostics & Storage
   diagnosticLogging: boolean;
 }
 
@@ -110,9 +107,8 @@ export const SETTINGS_TABS: SettingsTabItem[] = [
   {
     id: 'devices',
     label: 'Paired Devices',
-    description: 'Child phone hardware & pairing',
+    description: 'Child phone hardware & telemetry',
     iconPath: 'assets/icons/settings/devices.svg',
-    badge: '1 Online',
   },
   {
     id: 'diagnostics',
@@ -162,10 +158,7 @@ export function getDefaultSettingsValues(): SettingsValues {
     closeAction: 'tray',
     autoCheckUpdates: true,
 
-    // 5. Paired Devices
-    deviceAlias: 'Lucas - Pixel 8',
-
-    // 6. Diagnostics & Storage
+    // 5. Diagnostics & Storage
     diagnosticLogging: true,
   };
 }

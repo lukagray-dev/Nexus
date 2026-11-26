@@ -3,15 +3,23 @@
  * @description Rolling DVR Memory Retention dropdown setting.
  *
  * Hey friend! Configures how many minutes of live surveillance video are buffered
- * in RAM for instant DVR scrubbing.
+ * in RAM for instant DVR scrubbing (`15m`, `30m`, `60m`).
  */
 
 import { settingsState } from '../../sidebar/state.js';
+import { showToast } from '../../../shared/toast.js';
+
+let unsubscribeDvrDurationSync: (() => void) | null = null;
 
 /**
  * Renders the Rolling DVR Memory Retention dropdown setting row.
  */
 export function renderDvrDurationSetting(): HTMLElement {
+  if (unsubscribeDvrDurationSync) {
+    unsubscribeDvrDurationSync();
+    unsubscribeDvrDurationSync = null;
+  }
+
   const row = document.createElement('div');
   row.className = 'settings-row';
 
@@ -31,7 +39,20 @@ export function renderDvrDurationSetting(): HTMLElement {
 
   const dvrSelect = row.querySelector<HTMLSelectElement>('#setting-dvr-duration');
   dvrSelect?.addEventListener('change', () => {
-    settingsState.setValue('dvrBufferDuration', dvrSelect.value as '15m' | '30m' | '60m');
+    const nextDuration = dvrSelect.value as '15m' | '30m' | '60m';
+    settingsState.setValue('dvrBufferDuration', nextDuration);
+    showToast(`Rolling DVR retention set to ${nextDuration.replace('m', ' minutes')}`);
+  });
+
+  unsubscribeDvrDurationSync = settingsState.onValuesChange((values) => {
+    if (row.isConnected === false) {
+      unsubscribeDvrDurationSync?.();
+      unsubscribeDvrDurationSync = null;
+      return;
+    }
+    if (dvrSelect && dvrSelect.value !== values.dvrBufferDuration) {
+      dvrSelect.value = values.dvrBufferDuration;
+    }
   });
 
   return row;

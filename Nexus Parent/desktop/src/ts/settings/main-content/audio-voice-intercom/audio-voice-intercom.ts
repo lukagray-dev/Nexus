@@ -68,6 +68,7 @@ export function initAudioVoiceIntercomRuntime(): () => void {
 
   // Reconcile persisted Settings default voice preset into the intercom engine on boot
   let lastVoicePreset = initialValues.defaultVoicePreset;
+  let lastLoudspeakerVolume = initialValues.loudspeakerVolume;
   let lastInputDeviceId = initialValues.inputDeviceId;
   let lastOutputDeviceId = initialValues.outputDeviceId;
   let lastNoiseSuppression = initialValues.noiseSuppression;
@@ -89,6 +90,12 @@ export function initAudioVoiceIntercomRuntime(): () => void {
           })
         );
       }
+    }
+
+    // 2. Loudspeaker Target Volume -> notify connected child device (applies live if speaking)
+    if (values.loudspeakerVolume !== lastLoudspeakerVolume) {
+      lastLoudspeakerVolume = values.loudspeakerVolume;
+      parentAudioController.syncLoudspeakerVolume();
     }
 
     // 2. Microphone Input Device or Noise Suppression / AEC change -> reconfigure capture

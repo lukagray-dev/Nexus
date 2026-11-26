@@ -7,7 +7,7 @@ This document specifies the architecture, hardware device enumeration, output si
 The **Audio & Intercom** tab governs two functional groups:
 1. **Voice Changer Engine**:
    - **Default Intercom Voice** (`defaultVoicePreset`) — implemented with bidirectional synchronization.
-   - **Loudspeaker Target Volume** (`loudspeakerVolume`) — currently local-only persistence; remote Android volume override integration is deferred.
+   - **Loudspeaker Target Volume** (`loudspeakerVolume`) — implemented end-to-end across Desktop (`PARENT_AUDIO_UNMUTE:<mode>` / `PARENT_AUDIO_VOLUME:<mode>`) and Android (`ParentAudioSpeakerManager` `MAX` / `HIGH` / `NORMAL`).
 2. **Hardware Routing & DSP**:
    - **Microphone Input Device** (`inputDeviceId`) — real `navigator.mediaDevices` `audioinput` enumeration, permission unlock, and hot-swap capture.
    - **Monitoring Output Speaker** (`outputDeviceId`) — real `audiooutput` enumeration and live `setSinkId()` routing across both child microphone monitoring and screen internal audio.
@@ -42,7 +42,7 @@ Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TA
 | `inputDeviceId` | `string` | `'default'` | `localStorage` | Implemented |
 | `outputDeviceId` | `string` | `'default'` | `localStorage` | Implemented |
 | `noiseSuppression` | `boolean` | `true` | `localStorage` | Implemented |
-| `loudspeakerVolume` | `'max' \| 'high' \| 'normal'` | `'max'` | `localStorage` | Deferred (Local-only for now) |
+| `loudspeakerVolume` | `'max' \| 'high' \| 'normal'` | `'max'` | `localStorage` | Implemented (Parent + Child) |
 
 ### Runtime Lifecycle (`initAudioVoiceIntercomRuntime`)
 Initialized once at application boot via `initSettingsMainContentRuntime()` (`src/ts/settings/main-content/main-content.ts`):
@@ -86,8 +86,10 @@ Initialized once at application boot via `initSettingsMainContentRuntime()` (`sr
 - Controls `echoCancellation`, `noiseSuppression`, and `autoGainControl` in `buildAudioCaptureConstraints()`.
 - Toggling the switch reconfigures `ParentAudioController` immediately (resetting idle capture or hot-swapping active speech).
 
-### 3.6 Loudspeaker Target Volume (`loudspeaker-volume.ts`)
-- Kept in the UI as a local `settingsState` preference (`'max' | 'high' | 'normal'`). Remote Android DataChannel payload support is deferred for a future milestone.
+### 3.6 Loudspeaker Target Volume (`loudspeaker-volume.ts` + `parent-audio-controller.ts` + Android `ParentAudioSpeakerManager`)
+- Persists `'max'` (100%), `'high'` (85%), or `'normal'` (Preserve Level) in `settingsState`.
+- `ParentAudioController.unmute()` transmits `PARENT_AUDIO_UNMUTE:<mode>`, and live changes while connected dispatch `PARENT_AUDIO_VOLUME:<mode>` via `initAudioVoiceIntercomRuntime()`.
+- Android `ParentAudioSpeakerManager` applies `maxVolume`, `round(maxVolume * 0.85)`, or preserves the child device's current stream volumes while still routing incoming speech through the external loudspeaker.
 
 ---
 

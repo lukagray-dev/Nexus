@@ -195,6 +195,12 @@
   background-color: rgba(255, 255, 255, 0.14);
 }
 
+.feed-control-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .feed-control-btn img {
   width: 16px;
   height: 16px;

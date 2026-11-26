@@ -111,10 +111,10 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.closeAction, 'tray');
     assert.strictEqual(defaults.autoCheckUpdates, true);
 
-    // 6. Devices
-    assert.strictEqual(defaults.deviceAlias, 'Lucas - Pixel 8');
+    // Removed legacy deviceAlias key must not exist
+    assert.strictEqual('deviceAlias' in defaults, false);
 
-    // 7. Diagnostics
+    // 6. Diagnostics
     assert.strictEqual(defaults.diagnosticLogging, true);
   });
 });
@@ -220,7 +220,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual(state.getValue('startMinimized'), true);
   });
 
-  it('Strips removed legacy Connection & WebRTC keys when loading persisted settings', () => {
+  it('Strips removed legacy Connection & WebRTC and deviceAlias keys when loading persisted settings', () => {
     mockStorage[SETTINGS_STORAGE_KEY] = JSON.stringify({
       defaultVoicePreset: 'echo',
       autoReconnect: false,
@@ -229,6 +229,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
       iceTransportPolicy: 'relay',
       iceGatherTimeout: 900,
       signalingHeartbeat: 45,
+      deviceAlias: 'Old Nickname',
     });
     const state = new SettingsState();
     const values = state.getValues();
@@ -240,6 +241,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual('iceTransportPolicy' in values, false);
     assert.strictEqual('iceGatherTimeout' in values, false);
     assert.strictEqual('signalingHeartbeat' in values, false);
+    assert.strictEqual('deviceAlias' in values, false);
   });
 });
 

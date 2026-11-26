@@ -16,6 +16,57 @@
 import { STUN_SERVERS, DATA_CHANNEL_LABEL } from './firebase-config.js';
 import { signalingClient, type ChildDeviceMetadata } from './signaling-client.js';
 import { authManager } from './auth-manager.js';
+import { settingsState } from '../settings/sidebar/state.js';
+
+/**
+ * Sorts WebRTC video codec capabilities to prioritize GPU hardware-decoded codecs
+ * (H.264 / VP9) when `hardwareAcceleration` is enabled, or software-friendly VP8 first when disabled.
+ */
+export function sortVideoCodecsForAcceleration<T extends { mimeType: string }>(
+  codecs: readonly T[],
+  hardwareAcceleration: boolean
+): T[] {
+  const priority = hardwareAcceleration
+    ? ['video/h264', 'video/vp9', 'video/vp8']
+    : ['video/vp8', 'video/vp9', 'video/h264'];
+
+  const rankOf = (mime: string): number => {
+    const normalized = mime.toLowerCase();
+    const idx = priority.indexOf(normalized);
+    return idx === -1 ? priority.length : idx;
+  };
+
+  return [...codecs].sort((a, b) => rankOf(a.mimeType) - rankOf(b.mimeType));
+}
+
+/**
+ * Applies preferred video codec ordering to the receiving video transceiver when supported.
+ */
+export function applyVideoCodecPreference(
+  transceiver: RTCRtpTransceiver | null | undefined,
+  hardwareAcceleration: boolean
+): boolean {
+  if (!transceiver || typeof transceiver.setCodecPreferences !== 'function') {
+    return false;
+  }
+
+  try {
+    const caps =
+      typeof RTCRtpReceiver !== 'undefined' && typeof RTCRtpReceiver.getCapabilities === 'function'
+        ? RTCRtpReceiver.getCapabilities('video')
+        : null;
+    if (!caps || !Array.isArray(caps.codecs) || caps.codecs.length === 0) {
+      return false;
+    }
+
+    const sorted = sortVideoCodecsForAcceleration(caps.codecs, hardwareAcceleration);
+    transceiver.setCodecPreferences(sorted);
+    return true;
+  } catch (err) {
+    console.warn('[WebRTCManager] Could not apply video codec preferences:', err);
+    return false;
+  }
+}
 
 export type ConnectionStateListener = (state: RTCPeerConnectionState) => void;
 export type MessageListener = (message: string) => void;
@@ -193,7 +244,8 @@ export class DesktopWebRtcManager {
     if (!pc) throw new Error('Failed to create RTCPeerConnection');
 
     // Step 5: Add receiving transceivers for camera/screen video and bidirectional transceiver for mic audio
-    pc.addTransceiver('video', { direction: 'recvonly' });
+    const videoTransceiver = pc.addTransceiver('video', { direction: 'recvonly' });
+    applyVideoCodecPreference(videoTransceiver, settingsState.getValue('hardwareAcceleration'));
     pc.addTransceiver('audio', { direction: 'sendrecv' });
     console.log('[WebRTCManager] Video transceiver (recvonly) and Audio transceiver (sendrecv) added.');
 

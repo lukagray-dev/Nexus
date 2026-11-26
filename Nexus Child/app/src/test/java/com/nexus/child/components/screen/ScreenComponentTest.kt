@@ -34,6 +34,7 @@ class ScreenComponentTest {
         var startCalled = false
         var stopCalled = false
         var cleanupCalled = false
+        var lastQuality: ScreenQualityPreset = ScreenQualityPreset.FULL_HD_1080P
 
         override fun hasAccessibilityPermission(): Boolean = hasAccessibility
         override fun isStreaming(): Boolean = streamingState
@@ -42,7 +43,16 @@ class ScreenComponentTest {
             onStarted: () -> Unit,
             onError: (errorMessage: String) -> Unit
         ): Boolean {
+            return startScreenStreaming(ScreenQualityPreset.FULL_HD_1080P, onStarted, onError)
+        }
+
+        override fun startScreenStreaming(
+            quality: ScreenQualityPreset,
+            onStarted: () -> Unit,
+            onError: (errorMessage: String) -> Unit
+        ): Boolean {
             startCalled = true
+            lastQuality = quality
             if (!startResult) return false
 
             if (shouldSucceedAsync) {
@@ -52,6 +62,11 @@ class ScreenComponentTest {
                 onError("User denied screen capture")
             }
             return true
+        }
+
+        override fun updateScreenQuality(quality: ScreenQualityPreset): Boolean {
+            lastQuality = quality
+            return streamingState
         }
 
         override fun stopScreenStreaming(): Boolean {
@@ -255,5 +270,29 @@ class ScreenComponentTest {
 
         assertFalse("Random command must not be handled", handler.handleCommand("UNKNOWN_CMD"))
         assertFalse("CAMERA_ON must not be handled by ScreenCommandHandler", handler.handleCommand("CAMERA_ON"))
+    }
+
+    @Test
+    fun testScreenOnParameterizedQualityAndLiveUpdateAndDimensionScaling() {
+        val fakeController = FakeScreenController(hasAccessibility = true, streamingState = false)
+        val sentMessages = mutableListOf<String>()
+
+        val handler = ScreenCommandHandler(
+            screenController = fakeController,
+            dataSender = { msg -> sentMessages.add(msg); true }
+        )
+
+        assertTrue(handler.handleCommand("SCREEN_ON:720p"))
+        assertEquals(ScreenQualityPreset.HD_720P, fakeController.lastQuality)
+        assertEquals(ScreenCommandHandler.RESP_SCREEN_STARTED, sentMessages.first())
+
+        assertTrue(handler.handleCommand("SCREEN_QUALITY:540p"))
+        assertEquals(ScreenQualityPreset.SD_540P, fakeController.lastQuality)
+        assertEquals("SCREEN_QUALITY_SET:540p", sentMessages.last())
+
+        // Aspect ratio + even-pixel scaling checks
+        assertEquals(864 to 1920, ScreenController.computeScaledDimensions(1080, 2400, 1920))
+        assertEquals(576 to 1280, ScreenController.computeScaledDimensions(1080, 2400, 1280))
+        assertEquals(432 to 960, ScreenController.computeScaledDimensions(1080, 2400, 960))
     }
 }

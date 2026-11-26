@@ -7,11 +7,19 @@
 
 import { settingsState } from '../../sidebar/state.js';
 import { bindSegmentedGroup } from '../helpers.js';
+import { showToast } from '../../../shared/toast.js';
+
+let unsubscribeClipFormatSync: (() => void) | null = null;
 
 /**
  * Renders the DVR Clip Export Container segmented selector row.
  */
 export function renderClipFormatSetting(): HTMLElement {
+  if (unsubscribeClipFormatSync) {
+    unsubscribeClipFormatSync();
+    unsubscribeClipFormatSync = null;
+  }
+
   const row = document.createElement('div');
   row.className = 'settings-row';
 
@@ -30,6 +38,19 @@ export function renderClipFormatSetting(): HTMLElement {
 
   bindSegmentedGroup<'mp4' | 'webm'>(row, '#setting-clip-format', (val) => {
     settingsState.setValue('dvrClipFormat', val);
+    showToast(`DVR clip export container set to ${val.toUpperCase()}`);
+  });
+
+  unsubscribeClipFormatSync = settingsState.onValuesChange((values) => {
+    if (row.isConnected === false) {
+      unsubscribeClipFormatSync?.();
+      unsubscribeClipFormatSync = null;
+      return;
+    }
+    const buttons = row.querySelectorAll<HTMLButtonElement>('#setting-clip-format .settings-segmented-btn');
+    buttons.forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.value === values.dvrClipFormat);
+    });
   });
 
   return row;

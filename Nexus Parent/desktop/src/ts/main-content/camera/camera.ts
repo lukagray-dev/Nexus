@@ -22,17 +22,20 @@
 
 import { sidebarState } from '../../left-sidebar/state.js';
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { settingsState } from '../../settings/sidebar/state.js';
 import { showToast } from '../../shared/toast.js';
 import {
   type CameraState,
   type CameraLens,
-  CMD_CAMERA_ON,
+  EVENT_CAMERA_PREFERRED_LENS_CHANGED,
   CMD_CAMERA_OFF,
   CMD_CAMERA_SWITCH,
   RESP_CAMERA_STARTED,
   RESP_CAMERA_STOPPED,
   RESP_CAMERA_SWITCHED_PREFIX,
-  RESP_CAMERA_ERROR_PREFIX
+  RESP_CAMERA_ERROR_PREFIX,
+  toCameraLensLabel,
+  buildCameraOnCommand,
 } from './types.js';
 import { CameraDvrManager } from './camera-dvr.js';
 
@@ -74,6 +77,7 @@ export function onCameraViewActivated(): void {
 export function renderCameraView(): HTMLElement {
   const container = document.createElement('div');
   container.className = 'feed-page-container';
+  const initialLensLabel = toCameraLensLabel(settingsState.getValue('preferredCameraLens'));
 
   container.innerHTML = `
     <!-- Topbar Header -->
@@ -138,10 +142,16 @@ export function renderCameraView(): HTMLElement {
               <span id="camera-rotate-degrees" class="feed-btn-label">0°</span>
             </button>
 
-            <!-- Change Lens Button (Rear by default per project specification) -->
+            <!-- Change Lens Button (initialized from Preferred Default Camera Lens setting) -->
             <button id="btn-camera-lens" class="feed-control-btn feed-lens-btn" title="Change Lens (Rear & Front)">
               <img id="camera-lens-icon" src="assets/icons/left-sidebar/camera.svg" alt="" />
-              <span id="camera-lens-name" class="feed-btn-label">Rear</span>
+              <span id="camera-lens-name" class="feed-btn-label">${initialLensLabel}</span>
+            </button>
+
+            <!-- Save Recorded DVR Clip Button -->
+            <button id="btn-camera-save-clip" class="feed-control-btn" title="Save recorded DVR clip" disabled>
+              <img src="assets/icons/main-content/download.svg" alt="" />
+              <span class="feed-btn-label">Save Clip</span>
             </button>
 
             <!-- Fullscreen Button -->
@@ -180,6 +190,7 @@ function bindCameraEvents(container: HTMLElement): void {
   const lensBtn = container.querySelector<HTMLButtonElement>('#btn-camera-lens');
   const lensIcon = container.querySelector<HTMLImageElement>('#camera-lens-icon');
   const lensLabel = container.querySelector<HTMLElement>('#camera-lens-name');
+  const saveClipBtn = container.querySelector<HTMLButtonElement>('#btn-camera-save-clip');
   const fullscreenBtn = container.querySelector<HTMLButtonElement>('#btn-camera-fullscreen');
   const viewportArea = container.querySelector<HTMLElement>('.feed-viewport-area');
 
@@ -196,8 +207,9 @@ function bindCameraEvents(container: HTMLElement): void {
 
   // Active camera state flags
   let cameraState: CameraState = 'IDLE';
-  let currentLens: CameraLens = 'Rear';
+  let currentLens: CameraLens = toCameraLensLabel(settingsState.getValue('preferredCameraLens'));
   let isSwitchingLens = false;
+  let isExportingClip = false;
   let currentRotation = 0;
   let confirmationTimeout: ReturnType<typeof setTimeout> | null = null;
   let lensTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -257,6 +269,7 @@ function bindCameraEvents(container: HTMLElement): void {
         dvrVideo.style.display = 'none';
         liveVideo.style.display = 'block';
         dvrManager.stop();
+        if (saveClipBtn) saveClipBtn.disabled = true;
         break;
 
       case 'STARTING':
@@ -399,9 +412,10 @@ function bindCameraEvents(container: HTMLElement): void {
       webrtcManager.setActiveVideoType('camera');
       setCameraState('STARTING');
 
-      const sent = webrtcManager.sendCommand(CMD_CAMERA_ON);
+      const startCommand = buildCameraOnCommand(currentLens);
+      const sent = webrtcManager.sendCommand(startCommand);
       if (!sent) {
-        console.warn('[Camera] Cannot send CAMERA_ON: DataChannel is not open.');
+        console.warn(`[Camera] Cannot send ${startCommand}: DataChannel is not open.`);
         webrtcManager.setActiveVideoType(null);
         setCameraState('IDLE');
         return;
@@ -462,6 +476,9 @@ function bindCameraEvents(container: HTMLElement): void {
 
   // 3. YouTube-Style DVR Progress Ticker
   dvrManager.onTick((progress) => {
+    if (saveClipBtn && !isExportingClip) {
+      saveClipBtn.disabled = !dvrManager.hasRecordedChunks();
+    }
     if (!timerSpan || !progressFill || !scrubber) return;
 
     if (progress.isLive) {
@@ -608,7 +625,22 @@ function bindCameraEvents(container: HTMLElement): void {
     rotateBtn.setAttribute('title', `Rotate feed (${(currentRotation + 90) % 360}°)`);
   });
 
-  // 7. Fullscreen Toggle
+  // 7. Fullscreen Toggle & Save DVR Clip
+  saveClipBtn?.addEventListener('click', async () => {
+    if (isExportingClip) return;
+    isExportingClip = true;
+    saveClipBtn.disabled = true;
+    try {
+      await dvrManager.exportRecordedClip(showToast);
+    } catch (err) {
+      console.error('[Camera] Failed to export DVR clip:', err);
+      showToast('Failed to save DVR clip');
+    } finally {
+      isExportingClip = false;
+      saveClipBtn.disabled = !dvrManager.hasRecordedChunks();
+    }
+  });
+
   fullscreenBtn?.addEventListener('click', () => {
     if (!document.fullscreenElement) {
       viewportArea?.requestFullscreen().catch(() => {});
@@ -703,6 +735,14 @@ function bindCameraEvents(container: HTMLElement): void {
   };
   window.addEventListener('nexus-camera-stream', onCameraStreamReceived);
 
+  // Sync preferred default lens changes from Settings while Camera is idle
+  const onPreferredLensChanged = () => {
+    if (cameraState === 'IDLE' && !isSwitchingLens) {
+      setLensButtonState(false, toCameraLensLabel(settingsState.getValue('preferredCameraLens')));
+    }
+  };
+  window.addEventListener(EVENT_CAMERA_PREFERRED_LENS_CHANGED, onPreferredLensChanged);
+
   // 11. WebRTC Connection State Listener: Auto-reset on peer disconnection
   const unbindConnectionState = webrtcManager.onConnectionStateChange((state) => {
     console.log('[Camera] WebRTC connection state changed:', state);
@@ -718,7 +758,7 @@ function bindCameraEvents(container: HTMLElement): void {
       }
       dvrManager.stop();
       setCameraState('IDLE');
-      setLensButtonState(false, 'Rear');
+      setLensButtonState(false, toCameraLensLabel(settingsState.getValue('preferredCameraLens')));
     }
   });
 
@@ -734,6 +774,7 @@ function bindCameraEvents(container: HTMLElement): void {
       resizeObserver.disconnect();
       document.removeEventListener('fullscreenchange', onFullscreenChange);
       window.removeEventListener('nexus-camera-stream', onCameraStreamReceived);
+      window.removeEventListener(EVENT_CAMERA_PREFERRED_LENS_CHANGED, onPreferredLensChanged);
       sidebarState.setFeatureLive('camera', false);
       onCameraActivatedCallback = null;
       onCameraStopCallback = null;

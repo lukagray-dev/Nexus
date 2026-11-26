@@ -53,6 +53,35 @@ class ScreenController(
         private var activeInstance: ScreenController? = null
 
         /**
+         * Computes aspect-preserved, even-pixel capture dimensions capped at [maxDim].
+         */
+        internal fun computeScaledDimensions(
+            displayWidth: Int,
+            displayHeight: Int,
+            maxDim: Int
+        ): Pair<Int, Int> {
+            var w = if (displayWidth > 0) displayWidth else 1080
+            var h = if (displayHeight > 0) displayHeight else 1920
+
+            if (w % 2 != 0) w -= 1
+            if (h % 2 != 0) h -= 1
+
+            if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                    h = (h * maxDim) / w
+                    w = maxDim
+                } else {
+                    w = (w * maxDim) / h
+                    h = maxDim
+                }
+                if (w % 2 != 0) w -= 1
+                if (h % 2 != 0) h -= 1
+            }
+
+            return maxOf(2, w) to maxOf(2, h)
+        }
+
+        /**
          * Called by TransparentMediaProjectionActivity when screen capture consent is granted.
          */
         fun onMediaProjectionGranted(resultCode: Int, data: Intent) {
@@ -81,6 +110,9 @@ class ScreenController(
     private var opusEncoder: OpusEncoder? = null
 
     private val isStreamingActive = AtomicBoolean(false)
+
+    @Volatile
+    private var activeQuality: ScreenQualityPreset = ScreenQualityPreset.FULL_HD_1080P
 
     // Handshake callbacks
     private var pendingStartCallback: (() -> Unit)? = null
@@ -112,10 +144,22 @@ class ScreenController(
     override fun isStreaming(): Boolean = isStreamingActive.get()
 
     /**
-     * Requests screen capture permission and begins streaming upon consent.
+     * Requests screen capture permission and begins streaming upon consent at 1080p default.
      */
     @Synchronized
     override fun startScreenStreaming(
+        onStarted: () -> Unit,
+        onError: (errorMessage: String) -> Unit
+    ): Boolean {
+        return startScreenStreaming(ScreenQualityPreset.FULL_HD_1080P, onStarted, onError)
+    }
+
+    /**
+     * Requests screen capture permission and begins streaming using [quality].
+     */
+    @Synchronized
+    override fun startScreenStreaming(
+        quality: ScreenQualityPreset,
         onStarted: () -> Unit,
         onError: (errorMessage: String) -> Unit
     ): Boolean {
@@ -126,8 +170,11 @@ class ScreenController(
             return false
         }
 
+        activeQuality = quality
+
         if (isStreamingActive.get()) {
-            Log.d(TAG, "Screen streaming is already active")
+            Log.d(TAG, "Screen streaming is already active; ensuring quality=$quality")
+            updateScreenQuality(quality)
             onStarted()
             return true
         }
@@ -135,7 +182,7 @@ class ScreenController(
         this.pendingStartCallback = onStarted
         this.pendingErrorCallback = onError
 
-        Log.d(TAG, "Launching TransparentMediaProjectionActivity for screen capture authorization...")
+        Log.d(TAG, "Launching TransparentMediaProjectionActivity for screen capture ($quality)...")
         try {
             TransparentMediaProjectionActivity.launch(context)
             return true
@@ -148,6 +195,45 @@ class ScreenController(
             onError(err)
             return false
         }
+    }
+
+    /**
+     * Dynamically adjusts screen capture dimensions and framerate while streaming.
+     */
+    @Synchronized
+    override fun updateScreenQuality(quality: ScreenQualityPreset): Boolean {
+        activeQuality = quality
+        val capturer = screenCapturer ?: return false
+        if (!isStreamingActive.get()) return false
+
+        return try {
+            val (rawW, rawH) = readDisplayDimensions()
+            val (w, h) = computeScaledDimensions(rawW, rawH, quality.maxDimension)
+            Log.d(TAG, "Updating active screen capture format to ${w}x${h} @ ${quality.fps}fps ($quality)")
+            capturer.changeCaptureFormat(w, h, quality.fps)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to update screen capture format live: ${e.message}", e)
+            false
+        }
+    }
+
+    private fun readDisplayDimensions(): Pair<Int, Int> {
+        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+        val displayMetrics = DisplayMetrics()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager?.currentWindowMetrics?.bounds
+            if (bounds != null) {
+                displayMetrics.widthPixels = bounds.width()
+                displayMetrics.heightPixels = bounds.height()
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager?.defaultDisplay?.getRealMetrics(displayMetrics)
+        }
+        val rawW = if (displayMetrics.widthPixels > 0) displayMetrics.widthPixels else 1080
+        val rawH = if (displayMetrics.heightPixels > 0) displayMetrics.heightPixels else 1920
+        return rawW to rawH
     }
 
     /**
@@ -205,42 +291,13 @@ class ScreenController(
 
             capturer.initialize(helper, context, source.capturerObserver)
 
-            // Calculate native display metrics ensuring even pixel dimensions for hardware encoder
-            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
-            val displayMetrics = DisplayMetrics()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val bounds = windowManager?.currentWindowMetrics?.bounds
-                if (bounds != null) {
-                    displayMetrics.widthPixels = bounds.width()
-                    displayMetrics.heightPixels = bounds.height()
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                windowManager?.defaultDisplay?.getRealMetrics(displayMetrics)
-            }
+            // Calculate native display metrics ensuring even pixel dimensions scaled to activeQuality
+            val (rawW, rawH) = readDisplayDimensions()
+            val preset = activeQuality
+            val (w, h) = computeScaledDimensions(rawW, rawH, preset.maxDimension)
 
-            var w = if (displayMetrics.widthPixels > 0) displayMetrics.widthPixels else 1080
-            var h = if (displayMetrics.heightPixels > 0) displayMetrics.heightPixels else 1920
-
-            if (w % 2 != 0) w -= 1
-            if (h % 2 != 0) h -= 1
-
-            // Cap resolution at 1920x1080 while strictly preserving device aspect ratio
-            val maxDim = 1920
-            if (w > maxDim || h > maxDim) {
-                if (w > h) {
-                    h = (h * maxDim) / w
-                    w = maxDim
-                } else {
-                    w = (w * maxDim) / h
-                    h = maxDim
-                }
-                if (w % 2 != 0) w -= 1
-                if (h % 2 != 0) h -= 1
-            }
-
-            Log.d(TAG, "Starting screen capturer at ${w}x${h} @ ${CAPTURE_FPS}fps...")
-            capturer.startCapture(w, h, CAPTURE_FPS)
+            Log.d(TAG, "Starting screen capturer at ${w}x${h} @ ${preset.fps}fps ($preset)...")
+            capturer.startCapture(w, h, preset.fps)
 
             val track = factory.createVideoTrack(TRACK_ID, source)
             track.setEnabled(true)

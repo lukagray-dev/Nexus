@@ -24,6 +24,9 @@ export type CameraState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
  * - 'Front': Selfie front-facing camera lens.
  */
 export type CameraLens = 'Rear' | 'Front';
+export type PreferredCameraLensSetting = 'rear' | 'front';
+
+export const EVENT_CAMERA_PREFERRED_LENS_CHANGED = 'nexus-camera-preferred-lens-changed';
 
 // DataChannel Camera Control Commands (Parent -> Child)
 export const CMD_CAMERA_ON = 'CAMERA_ON';
@@ -35,3 +38,18 @@ export const RESP_CAMERA_STARTED = 'CAMERA_STARTED';
 export const RESP_CAMERA_STOPPED = 'CAMERA_STOPPED';
 export const RESP_CAMERA_SWITCHED_PREFIX = 'CAMERA_SWITCHED';
 export const RESP_CAMERA_ERROR_PREFIX = 'CAMERA_ERROR: ';
+
+/**
+ * Maps Settings lens value (`'rear' | 'front'`) to UI display label (`'Rear' | 'Front'`).
+ */
+export function toCameraLensLabel(setting: PreferredCameraLensSetting): CameraLens {
+  return setting === 'front' ? 'Front' : 'Rear';
+}
+
+/**
+ * Builds the parameterized `CAMERA_ON` command targeting the requested lens.
+ */
+export function buildCameraOnCommand(lens: PreferredCameraLensSetting | CameraLens): string {
+  const normalized = lens.toLowerCase() === 'front' ? 'FRONT' : 'REAR';
+  return `${CMD_CAMERA_ON}:${normalized}`;
+}

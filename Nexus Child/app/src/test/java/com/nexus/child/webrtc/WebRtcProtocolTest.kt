@@ -105,7 +105,25 @@ class WebRtcProtocolTest {
             manufacturer = "Samsung",
             androidVersion = "14",
             freeStorageBytes = 64424509440L,
-            totalStorageBytes = 256000000000L
+            totalStorageBytes = 256000000000L,
+            sdkInt = 34,
+            brand = "samsung",
+            appVersion = "0.1.0-alpha",
+            chargingSource = "AC",
+            batteryTemperatureC = 32.4,
+            isPowerSaveMode = false,
+            batteryOptimizationIgnored = true,
+            totalRamBytes = 8589934592L,
+            availableRamBytes = 4294967296L,
+            isScreenOn = true,
+            screenResolution = "1080x2340",
+            ringerMode = "Vibrate",
+            simCarrier = "SIM 1 • Jio",
+            deviceUptimeMs = 5400000L,
+            isStealthMode = false,
+            isAppLockEnabled = true,
+            grantedPermissionsCount = 13,
+            totalPermissionsCount = 14
         )
         val jsonStr = snapshot.toJsonString()
         assertTrue("JSON must contain DEVICE_TELEMETRY type", jsonStr.contains("\"type\":\"DEVICE_TELEMETRY\""))
@@ -118,6 +136,24 @@ class WebRtcProtocolTest {
         assertTrue("JSON must contain androidVersion", jsonStr.contains("\"androidVersion\":\"14\""))
         assertTrue("JSON must contain freeStorageBytes", jsonStr.contains("\"freeStorageBytes\":64424509440"))
         assertTrue("JSON must contain totalStorageBytes", jsonStr.contains("\"totalStorageBytes\":256000000000"))
+        assertTrue("JSON must contain sdkInt", jsonStr.contains("\"sdkInt\":34"))
+        assertTrue("JSON must contain brand", jsonStr.contains("\"brand\":\"samsung\""))
+        assertTrue("JSON must contain appVersion", jsonStr.contains("\"appVersion\":\"0.1.0-alpha\""))
+        assertTrue("JSON must contain chargingSource", jsonStr.contains("\"chargingSource\":\"AC\""))
+        assertTrue("JSON must contain batteryTemperatureC", jsonStr.contains("\"batteryTemperatureC\":32.4"))
+        assertTrue("JSON must contain isPowerSaveMode", jsonStr.contains("\"isPowerSaveMode\":false"))
+        assertTrue("JSON must contain batteryOptimizationIgnored", jsonStr.contains("\"batteryOptimizationIgnored\":true"))
+        assertTrue("JSON must contain totalRamBytes", jsonStr.contains("\"totalRamBytes\":8589934592"))
+        assertTrue("JSON must contain availableRamBytes", jsonStr.contains("\"availableRamBytes\":4294967296"))
+        assertTrue("JSON must contain isScreenOn", jsonStr.contains("\"isScreenOn\":true"))
+        assertTrue("JSON must contain screenResolution", jsonStr.contains("\"screenResolution\":\"1080x2340\""))
+        assertTrue("JSON must contain ringerMode", jsonStr.contains("\"ringerMode\":\"Vibrate\""))
+        assertTrue("JSON must contain simCarrier", jsonStr.contains("\"simCarrier\":\"SIM 1 • Jio\""))
+        assertTrue("JSON must contain deviceUptimeMs", jsonStr.contains("\"deviceUptimeMs\":5400000"))
+        assertTrue("JSON must contain isStealthMode", jsonStr.contains("\"isStealthMode\":false"))
+        assertTrue("JSON must contain isAppLockEnabled", jsonStr.contains("\"isAppLockEnabled\":true"))
+        assertTrue("JSON must contain grantedPermissionsCount", jsonStr.contains("\"grantedPermissionsCount\":13"))
+        assertTrue("JSON must contain totalPermissionsCount", jsonStr.contains("\"totalPermissionsCount\":14"))
     }
 
     @Test

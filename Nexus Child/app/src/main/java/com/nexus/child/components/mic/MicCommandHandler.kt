@@ -49,9 +49,11 @@ class MicCommandHandler(
         const val CMD_PARENT_MIC_ON = "PARENT_MIC_ON"
         const val CMD_PARENT_AUDIO_MUTE = "PARENT_AUDIO_MUTE"
         const val CMD_PARENT_MIC_OFF = "PARENT_MIC_OFF"
+        const val CMD_PARENT_AUDIO_VOLUME_PREFIX = "PARENT_AUDIO_VOLUME:"
 
         const val RESP_PARENT_AUDIO_UNMUTED = "PARENT_AUDIO_UNMUTED"
         const val RESP_PARENT_AUDIO_MUTED = "PARENT_AUDIO_MUTED"
+        const val RESP_PARENT_AUDIO_VOLUME_SET_PREFIX = "PARENT_AUDIO_VOLUME_SET:"
         const val RESP_PARENT_AUDIO_ERROR_PREFIX = "PARENT_AUDIO_ERROR: "
     }
 
@@ -67,25 +69,37 @@ class MicCommandHandler(
      * @return true if the command was recognized and handled; false otherwise.
      */
     fun handleCommand(command: String): Boolean {
-        return when (command.trim()) {
-            CMD_MIC_ON -> {
+        val trimmed = command.trim()
+        return when {
+            trimmed == CMD_MIC_ON -> {
                 handleMicOn()
                 true
             }
-            CMD_MIC_OFF -> {
+            trimmed == CMD_MIC_OFF -> {
                 handleMicOff()
                 true
             }
-            CMD_RENEGOTIATION_COMPLETE -> {
+            trimmed == CMD_RENEGOTIATION_COMPLETE -> {
                 handleRenegotiationComplete()
                 true
             }
-            CMD_PARENT_AUDIO_UNMUTE, CMD_PARENT_MIC_ON -> {
-                handleParentAudioUnmute()
+            trimmed == CMD_PARENT_AUDIO_UNMUTE ||
+                trimmed == CMD_PARENT_MIC_ON ||
+                trimmed.startsWith("$CMD_PARENT_AUDIO_UNMUTE:") ||
+                trimmed.startsWith("$CMD_PARENT_MIC_ON:") -> {
+                val arg = trimmed.substringAfter(':', "")
+                val mode = LoudspeakerVolumeMode.fromCommandArg(arg.ifBlank { null })
+                handleParentAudioUnmute(mode)
                 true
             }
-            CMD_PARENT_AUDIO_MUTE, CMD_PARENT_MIC_OFF -> {
+            trimmed == CMD_PARENT_AUDIO_MUTE || trimmed == CMD_PARENT_MIC_OFF -> {
                 handleParentAudioMute()
+                true
+            }
+            trimmed.startsWith(CMD_PARENT_AUDIO_VOLUME_PREFIX) -> {
+                val arg = trimmed.removePrefix(CMD_PARENT_AUDIO_VOLUME_PREFIX)
+                val mode = LoudspeakerVolumeMode.fromCommandArg(arg)
+                handleParentAudioVolumeUpdate(mode)
                 true
             }
             else -> false
@@ -190,18 +204,31 @@ class MicCommandHandler(
     }
 
     /**
-     * Handles un-muting parent audio: activates maximum volume loudspeaker output
+     * Handles un-muting parent audio: activates loudspeaker output at [mode]
      * and sends confirmation to parent.
      */
-    private fun handleParentAudioUnmute() {
-        Log.d(TAG, "Processing command: $CMD_PARENT_AUDIO_UNMUTE")
-        val success = parentAudioSpeakerManager.enableMaxVolumePlayback()
+    private fun handleParentAudioUnmute(mode: LoudspeakerVolumeMode) {
+        Log.d(TAG, "Processing command: $CMD_PARENT_AUDIO_UNMUTE (mode=$mode)")
+        val success = parentAudioSpeakerManager.enableLoudspeakerPlayback(mode)
         if (success) {
             Log.d(TAG, "Loudspeaker playback ready. Transmitting $RESP_PARENT_AUDIO_UNMUTED...")
             dataSender(RESP_PARENT_AUDIO_UNMUTED)
         } else {
-            Log.e(TAG, "Failed to enable max volume playback!")
+            Log.e(TAG, "Failed to enable loudspeaker playback!")
             dataSender("$RESP_PARENT_AUDIO_ERROR_PREFIX Failed to configure loudspeaker")
+        }
+    }
+
+    /**
+     * Updates the loudspeaker target volume policy (applying live if currently speaking).
+     */
+    private fun handleParentAudioVolumeUpdate(mode: LoudspeakerVolumeMode) {
+        Log.d(TAG, "Processing command: $CMD_PARENT_AUDIO_VOLUME_PREFIX$mode")
+        val success = parentAudioSpeakerManager.setTargetVolumeMode(mode)
+        if (success) {
+            dataSender("$RESP_PARENT_AUDIO_VOLUME_SET_PREFIX${mode.wireValue}")
+        } else {
+            dataSender("$RESP_PARENT_AUDIO_ERROR_PREFIX Failed to update loudspeaker volume")
         }
     }
 

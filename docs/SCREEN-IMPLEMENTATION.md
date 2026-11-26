@@ -17,7 +17,8 @@ All screen orchestration and state synchronizations occur over the dedicated `ne
 
 | Direction | Command / Payload | Description | Expected Response |
 | :--- | :--- | :--- | :--- |
-| **Parent → Child** | `SCREEN_ON` | Requests child to start Full HD screen capture and system audio. | `SCREEN_STARTED` or `SCREEN_ERROR: <reason>` |
+| **Parent → Child** | `SCREEN_ON[:1080p\|720p\|540p]` | Requests child to start screen capture at the configured quality preset (`1080p`/`720p` @ 30fps, `540p` @ 24fps; defaults to `1080p`) and system audio. | `SCREEN_STARTED` or `SCREEN_ERROR: <reason>` |
+| **Parent → Child** | `SCREEN_QUALITY:<1080p\|720p\|540p>` | Dynamically updates active screen capture resolution and framerate while streaming. | `SCREEN_QUALITY_SET:<preset>` |
 | **Parent → Child** | `SCREEN_OFF` | Requests child to halt screen capture and stop internal audio recording. | `SCREEN_STOPPED` |
 | **Child → Parent** | `SCREEN_STARTED` | Confirms screen capture and audio pipeline are active. | Desktop flips Play spinner to Pause button, starts Live timer and DVR buffer. |
 | **Child → Parent** | `SCREEN_STOPPED` | Confirms screen capture is halted and video track is restored. | Desktop flips Pause spinner to Play button, displays paused overlay. |

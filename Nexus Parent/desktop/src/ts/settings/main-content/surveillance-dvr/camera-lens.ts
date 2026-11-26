@@ -8,11 +8,19 @@
 
 import { settingsState } from '../../sidebar/state.js';
 import { bindSegmentedGroup } from '../helpers.js';
+import { showToast } from '../../../shared/toast.js';
+
+let unsubscribeCameraLensSync: (() => void) | null = null;
 
 /**
  * Renders the Preferred Default Camera Lens segmented selector row.
  */
 export function renderCameraLensSetting(): HTMLElement {
+  if (unsubscribeCameraLensSync) {
+    unsubscribeCameraLensSync();
+    unsubscribeCameraLensSync = null;
+  }
+
   const row = document.createElement('div');
   row.className = 'settings-row';
 
@@ -31,6 +39,19 @@ export function renderCameraLensSetting(): HTMLElement {
 
   bindSegmentedGroup<'rear' | 'front'>(row, '#setting-camera-lens', (val) => {
     settingsState.setValue('preferredCameraLens', val);
+    showToast(`Preferred default camera lens set to ${val === 'front' ? 'Front Lens' : 'Rear Lens'}`);
+  });
+
+  unsubscribeCameraLensSync = settingsState.onValuesChange((values) => {
+    if (row.isConnected === false) {
+      unsubscribeCameraLensSync?.();
+      unsubscribeCameraLensSync = null;
+      return;
+    }
+    const buttons = row.querySelectorAll<HTMLButtonElement>('#setting-camera-lens .settings-segmented-btn');
+    buttons.forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.value === values.preferredCameraLens);
+    });
   });
 
   return row;

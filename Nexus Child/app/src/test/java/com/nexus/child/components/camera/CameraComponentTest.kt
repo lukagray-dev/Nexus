@@ -270,6 +270,25 @@ class CameraComponentTest {
     }
 
     @Test
+    fun testCameraOnParameterizedLensStartsFrontOrRear() {
+        val fakeController = FakeCameraController(hasPermission = true, activeState = false)
+        val sentMessages = mutableListOf<String>()
+
+        val handler = CameraCommandHandler(
+            cameraController = fakeController,
+            dataSender = { msg -> sentMessages.add(msg); true }
+        )
+
+        assertTrue(handler.handleCommand("CAMERA_ON:FRONT"))
+        assertEquals(CameraLens.FRONT, fakeController.currentLensState)
+        assertEquals(CameraCommandHandler.RESP_CAMERA_STARTED, sentMessages.last())
+
+        // Switching back via parameterized CAMERA_ON:REAR while active updates lens
+        assertTrue(handler.handleCommand("CAMERA_ON:REAR"))
+        assertEquals(CameraLens.REAR, fakeController.currentLensState)
+    }
+
+    @Test
     fun testCleanupTearsDownController() {
         val fakeController = FakeCameraController(activeState = true)
         val handler = CameraCommandHandler(

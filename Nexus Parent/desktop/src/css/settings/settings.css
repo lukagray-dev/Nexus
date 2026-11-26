@@ -197,6 +197,18 @@
   white-space: nowrap;
 }
 
+.settings-nav-badge.is-offline {
+  color: rgba(255, 255, 255, 0.55);
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.settings-nav-badge.is-reconnecting {
+  color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
 /* Right Content Area */
 .settings-content-area {
   flex: 1;
@@ -528,7 +540,13 @@
   gap: 2px;
 }
 
-/* Device Overview Card */
+/* Device Overview Card & Read-Only Telemetry Inspector */
+.settings-device-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .settings-device-card {
   padding: 14px;
   background-color: #161616;
@@ -537,18 +555,34 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.settings-device-card.is-offline,
+.settings-group.is-offline {
+  opacity: 0.52;
+  filter: grayscale(0.65);
 }
 
 .settings-device-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .settings-device-card-header-left {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.settings-device-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .settings-device-card-icon {
@@ -556,28 +590,33 @@
   height: 24px;
   filter: invert(1);
   opacity: 0.9;
+  flex-shrink: 0;
 }
 
 .settings-device-alias-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
-.settings-device-alias-input {
-  font-size: 13px;
+.settings-device-name {
+  font-size: 13.5px;
   font-weight: 700;
   color: #ffffff;
-  background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  padding: 2px 6px;
-  outline: none;
 }
 
-.settings-device-alias-input:focus {
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+.settings-device-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.settings-device-sync-time {
+  font-family: var(--mono-font-family);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .settings-device-badge-online {
@@ -587,6 +626,28 @@
   color: #22c55e;
   background-color: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.settings-device-badge-offline {
+  font-family: var(--mono-font-family);
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.settings-device-badge-reconnecting {
+  font-family: var(--mono-font-family);
+  font-size: 9px;
+  font-weight: 700;
+  color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
   padding: 1px 5px;
   border-radius: 3px;
 }
@@ -601,6 +662,106 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+}
+
+.settings-device-telemetry-grid-2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Paired Devices List & Detail Navigation */
+.paired-devices-view-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paired-devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paired-device-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, opacity 0.15s ease;
+}
+
+.paired-device-list-item:hover {
+  background-color: #1c1c1c;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.paired-device-list-item.is-offline-row {
+  opacity: 0.78;
+}
+
+.paired-device-list-item.is-offline-row:hover {
+  opacity: 1;
+}
+
+.paired-device-list-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.paired-device-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.paired-device-list-meta {
+  font-family: var(--mono-font-family);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.paired-device-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.paired-device-chevron {
+  width: 14px;
+  height: 14px;
+  filter: invert(1);
+  opacity: 0.45;
+}
+
+.paired-device-list-item:hover .paired-device-chevron {
+  opacity: 0.9;
+}
+
+.paired-device-detail-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.paired-device-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paired-device-back-icon {
+  width: 12px;
+  height: 12px;
+  filter: invert(1);
 }
 
 .settings-telemetry-tile {

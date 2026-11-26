@@ -64,9 +64,15 @@ pub struct WindowTraySettings {
     pub start_minimized: bool,
     #[serde(default)]
     pub always_on_top: bool,
+    #[serde(default = "default_hardware_acceleration")]
+    pub hardware_acceleration: bool,
     /// Legacy combined flag from earlier builds; migrated on load and omitted when saving.
     #[serde(default, skip_serializing)]
     launch_minimized: Option<bool>,
+}
+
+fn default_hardware_acceleration() -> bool {
+    true
 }
 
 impl Default for WindowTraySettings {
@@ -76,6 +82,7 @@ impl Default for WindowTraySettings {
             launch_on_startup: false,
             start_minimized: false,
             always_on_top: false,
+            hardware_acceleration: true,
             launch_minimized: None,
         }
     }
@@ -103,12 +110,15 @@ pub struct WindowTraySettingsSnapshot {
     pub start_minimized: bool,
     pub always_on_top: bool,
     pub autostart_enabled: bool,
+    pub hardware_acceleration: bool,
+    pub launch_hardware_acceleration: bool,
 }
 
 /// Thread-safe Tauri managed state tracking window behavior and explicit exit intent.
 pub struct WindowLifecycleState {
     settings: Mutex<WindowTraySettings>,
     config_path: Option<PathBuf>,
+    launch_hardware_acceleration: bool,
     /// True only when the user explicitly requests full termination (File->Exit, Ctrl+Q, Tray->Quit).
     is_exiting: AtomicBool,
 }
@@ -120,12 +130,19 @@ impl WindowLifecycleState {
             .as_deref()
             .map(load_settings_from_file)
             .unwrap_or_default();
+        let launch_hardware_acceleration = initial_settings.hardware_acceleration;
 
         Self {
             settings: Mutex::new(initial_settings),
             config_path,
+            launch_hardware_acceleration,
             is_exiting: AtomicBool::new(false),
         }
+    }
+
+    /// Returns whether GPU hardware acceleration was enabled when this process launched.
+    pub fn launch_hardware_acceleration(&self) -> bool {
+        self.launch_hardware_acceleration
     }
 
     /// Returns a cloned copy of the current window & tray settings.
@@ -175,6 +192,11 @@ impl WindowLifecycleState {
     /// Updates `always_on_top` in memory and persists to disk.
     pub fn set_always_on_top(&self, enabled: bool) -> Result<WindowTraySettings, String> {
         self.update_settings(|s| s.always_on_top = enabled)
+    }
+
+    /// Updates `hardware_acceleration` in memory and persists to disk for the next launch.
+    pub fn set_hardware_acceleration(&self, enabled: bool) -> Result<WindowTraySettings, String> {
+        self.update_settings(|s| s.hardware_acceleration = enabled)
     }
 
     /// Marks whether the application is intentionally exiting (bypasses minimize-to-tray).
@@ -233,6 +255,73 @@ pub fn resolve_settings_path<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> 
         .app_config_dir()
         .ok()
         .map(|dir| dir.join(SETTINGS_FILENAME))
+}
+
+/// Resolves the default `window-settings.json` path before `tauri::Builder` initializes WebView2.
+pub fn resolve_default_settings_path() -> Option<PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        return std::env::var_os("APPDATA")
+            .map(|dir| PathBuf::from(dir).join("com.nexus.parent").join(SETTINGS_FILENAME));
+    }
+    #[cfg(target_os = "macos")]
+    {
+        return std::env::var_os("HOME").map(|home| {
+            PathBuf::from(home)
+                .join("Library/Application Support/com.nexus.parent")
+                .join(SETTINGS_FILENAME)
+        });
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        return std::env::var_os("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
+            .map(|dir| dir.join("com.nexus.parent").join(SETTINGS_FILENAME));
+    }
+}
+
+/// Computes `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` value when GPU hardware acceleration is disabled.
+pub fn merge_webview2_gpu_browser_args(
+    existing: Option<&str>,
+    hardware_acceleration: bool,
+) -> Option<String> {
+    let base = existing.unwrap_or("").trim();
+    if hardware_acceleration {
+        return if base.is_empty() {
+            None
+        } else {
+            Some(base.to_string())
+        };
+    }
+
+    let mut parts: Vec<String> = if base.is_empty() {
+        Vec::new()
+    } else {
+        base.split_whitespace().map(str::to_string).collect()
+    };
+
+    for flag in ["--disable-gpu", "--disable-gpu-compositing"] {
+        if !parts.iter().any(|existing_flag| existing_flag == flag) {
+            parts.push(flag.to_string());
+        }
+    }
+
+    Some(parts.join(" "))
+}
+
+/// Applies persisted GPU acceleration flags to the WebView2 environment before Tauri initializes.
+pub fn configure_gpu_acceleration_before_launch() {
+    let settings = resolve_default_settings_path()
+        .map(|path| load_settings_from_file(&path))
+        .unwrap_or_default();
+
+    let existing = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").ok();
+    if let Some(merged) =
+        merge_webview2_gpu_browser_args(existing.as_deref(), settings.hardware_acceleration)
+    {
+        std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", merged);
+    }
 }
 
 /// Restores, unminimizes, shows, and focuses the main Nexus Parent window.
@@ -376,6 +465,8 @@ pub fn get_window_tray_settings<R: Runtime>(
         start_minimized: settings.start_minimized,
         always_on_top: settings.always_on_top,
         autostart_enabled,
+        hardware_acceleration: settings.hardware_acceleration,
+        launch_hardware_acceleration: state.launch_hardware_acceleration(),
     }
 }
 
@@ -449,6 +540,36 @@ pub fn show_main_window<R: Runtime>(app: AppHandle<R>) {
     show_and_focus_main_window(&app);
 }
 
+/// Tauri command: updates and persists GPU hardware acceleration for WebView2 on next launch.
+#[tauri::command]
+pub fn set_hardware_acceleration<R: Runtime>(
+    enabled: bool,
+    app: AppHandle<R>,
+    state: State<'_, WindowLifecycleState>,
+) -> Result<WindowTraySettingsSnapshot, String> {
+    let updated = state.set_hardware_acceleration(enabled)?;
+    let autostart_enabled = app.autolaunch().is_enabled().unwrap_or(false);
+
+    Ok(WindowTraySettingsSnapshot {
+        close_action: updated.close_action,
+        launch_on_startup: updated.launch_on_startup,
+        start_minimized: updated.start_minimized,
+        always_on_top: updated.always_on_top,
+        autostart_enabled,
+        hardware_acceleration: updated.hardware_acceleration,
+        launch_hardware_acceleration: state.launch_hardware_acceleration(),
+    })
+}
+
+/// Tauri command: performs a clean restart so process-level WebView2 settings take effect.
+#[tauri::command]
+pub fn restart_application<R: Runtime>(app: AppHandle<R>) {
+    if let Some(state) = app.try_state::<WindowLifecycleState>() {
+        state.mark_exiting(true);
+    }
+    app.restart();
+}
+
 /// Tauri command: performs a full application shutdown regardless of `close_action`.
 #[tauri::command]
 pub fn exit_application<R: Runtime>(app: AppHandle<R>) {
@@ -477,6 +598,7 @@ mod tests {
         assert!(!defaults.launch_on_startup);
         assert!(!defaults.start_minimized);
         assert!(!defaults.always_on_top);
+        assert!(defaults.hardware_acceleration);
     }
 
     #[test]
@@ -524,6 +646,7 @@ mod tests {
         state.set_launch_on_startup(true).expect("save launch_on_startup");
         state.set_start_minimized(false).expect("save start_minimized");
         state.set_always_on_top(true).expect("save always_on_top");
+        state.set_hardware_acceleration(false).expect("save hardware_acceleration");
 
         let reloaded = WindowLifecycleState::load_from_path(Some(path.clone()));
         assert_eq!(
@@ -533,9 +656,11 @@ mod tests {
                 launch_on_startup: true,
                 start_minimized: false,
                 always_on_top: true,
+                hardware_acceleration: false,
                 launch_minimized: None,
             }
         );
+        assert!(!reloaded.launch_hardware_acceleration());
 
         // Corrupted JSON recovers cleanly to defaults
         fs::write(&path, "{ invalid json !!!").expect("write corrupt json");
@@ -555,5 +680,22 @@ mod tests {
         assert!(state.is_exiting());
         state.mark_exiting(false);
         assert!(!state.is_exiting());
+    }
+
+    #[test]
+    fn webview2_gpu_browser_args_respect_hardware_acceleration() {
+        assert_eq!(merge_webview2_gpu_browser_args(None, true), None);
+        assert_eq!(
+            merge_webview2_gpu_browser_args(Some("--enable-logging"), true),
+            Some("--enable-logging".to_string())
+        );
+        assert_eq!(
+            merge_webview2_gpu_browser_args(None, false),
+            Some("--disable-gpu --disable-gpu-compositing".to_string())
+        );
+        assert_eq!(
+            merge_webview2_gpu_browser_args(Some("--disable-gpu --foo"), false),
+            Some("--disable-gpu --foo --disable-gpu-compositing".to_string())
+        );
     }
 }

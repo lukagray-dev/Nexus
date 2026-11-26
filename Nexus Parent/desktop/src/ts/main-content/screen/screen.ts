@@ -23,15 +23,16 @@
 
 import { sidebarState } from '../../left-sidebar/state.js';
 import { webrtcManager } from '../../webrtc/webrtc-manager.js';
+import { settingsState } from '../../settings/sidebar/state.js';
 import { showToast } from '../../shared/toast.js';
 import {
   type ScreenState,
-  CMD_SCREEN_ON,
   CMD_SCREEN_OFF,
   RESP_SCREEN_STARTED,
   RESP_SCREEN_STOPPED,
   RESP_SCREEN_ERROR_PREFIX,
-  HEADER_OPUS_AUDIO
+  HEADER_OPUS_AUDIO,
+  buildScreenOnCommand,
 } from './types.js';
 import { ScreenDvrManager } from './screen-dvr.js';
 import { OpusAudioPlayer } from './opus-audio-player.js';
@@ -138,6 +139,12 @@ export function renderScreenView(): HTMLElement {
               <span id="screen-rotate-degrees" class="feed-btn-label">0°</span>
             </button>
 
+            <!-- Save Recorded DVR Clip Button -->
+            <button id="btn-screen-save-clip" class="feed-control-btn" title="Save recorded DVR clip" disabled>
+              <img src="assets/icons/main-content/download.svg" alt="" />
+              <span class="feed-btn-label">Save Clip</span>
+            </button>
+
             <!-- Fullscreen Button -->
             <button id="btn-screen-fullscreen" class="feed-control-btn" title="Toggle Fullscreen">
               <img src="assets/icons/main-content/maximize-2.svg" alt="" />
@@ -171,6 +178,7 @@ function bindScreenEvents(container: HTMLElement): void {
   const rotateBtn = container.querySelector<HTMLButtonElement>('#btn-screen-rotate');
   const rotateLabel = container.querySelector<HTMLElement>('#screen-rotate-degrees');
   const surface = container.querySelector<HTMLElement>('#screen-feed-surface');
+  const saveClipBtn = container.querySelector<HTMLButtonElement>('#btn-screen-save-clip');
   const fullscreenBtn = container.querySelector<HTMLButtonElement>('#btn-screen-fullscreen');
   const viewportArea = container.querySelector<HTMLElement>('.feed-viewport-area');
 
@@ -188,6 +196,7 @@ function bindScreenEvents(container: HTMLElement): void {
   // Active screen streaming state
   let screenState: ScreenState = 'IDLE';
   let currentRotation = 0;
+  let isExportingClip = false;
   let confirmationTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // DVR Manager and Opus Audio Player singletons for this view
@@ -243,6 +252,7 @@ function bindScreenEvents(container: HTMLElement): void {
         liveVideo.style.display = 'block';
         dvrManager.stop();
         opusAudioPlayer.reset();
+        if (saveClipBtn) saveClipBtn.disabled = true;
         break;
 
       case 'STARTING':
@@ -356,9 +366,10 @@ function bindScreenEvents(container: HTMLElement): void {
       webrtcManager.setActiveVideoType('screen');
       setScreenState('STARTING');
 
-      const sent = webrtcManager.sendCommand(CMD_SCREEN_ON);
+      const startCommand = buildScreenOnCommand(settingsState.getValue('screenQuality'));
+      const sent = webrtcManager.sendCommand(startCommand);
       if (!sent) {
-        console.warn('[Screen] Cannot send SCREEN_ON: DataChannel is not open.');
+        console.warn(`[Screen] Cannot send ${startCommand}: DataChannel is not open.`);
         webrtcManager.setActiveVideoType(null);
         setScreenState('IDLE');
         return;
@@ -396,6 +407,9 @@ function bindScreenEvents(container: HTMLElement): void {
 
   // 2. YouTube-Style DVR Progress Ticker
   dvrManager.onTick((progress) => {
+    if (saveClipBtn && !isExportingClip) {
+      saveClipBtn.disabled = !dvrManager.hasRecordedChunks();
+    }
     if (!timerSpan || !progressFill || !scrubber) return;
 
     if (progress.isLive) {
@@ -529,7 +543,22 @@ function bindScreenEvents(container: HTMLElement): void {
     rotateBtn.setAttribute('title', `Rotate feed (${(currentRotation + 90) % 360}°)`);
   });
 
-  // 6. Fullscreen Toggle
+  // 6. Fullscreen Toggle & Save DVR Clip
+  saveClipBtn?.addEventListener('click', async () => {
+    if (isExportingClip) return;
+    isExportingClip = true;
+    saveClipBtn.disabled = true;
+    try {
+      await dvrManager.exportRecordedClip(showToast);
+    } catch (err) {
+      console.error('[Screen] Failed to export DVR clip:', err);
+      showToast('Failed to save DVR clip');
+    } finally {
+      isExportingClip = false;
+      saveClipBtn.disabled = !dvrManager.hasRecordedChunks();
+    }
+  });
+
   fullscreenBtn?.addEventListener('click', () => {
     if (!document.fullscreenElement) {
       viewportArea?.requestFullscreen().catch(() => {});

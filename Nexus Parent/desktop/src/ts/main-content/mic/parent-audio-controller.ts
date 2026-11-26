@@ -21,6 +21,22 @@ import { showToast } from '../../shared/toast.js';
 import { VoicePreset, VoicePresetId, VOICE_PRESETS } from './voice-presets.js';
 import { voiceChangerEngine } from './voice-changer-engine.js';
 
+export type LoudspeakerVolumeSetting = 'max' | 'high' | 'normal';
+
+/**
+ * Formats the DataChannel unmute command carrying the parent's target child loudspeaker volume.
+ */
+export function buildParentAudioUnmuteCommand(mode: LoudspeakerVolumeSetting): string {
+  return `PARENT_AUDIO_UNMUTE:${mode}`;
+}
+
+/**
+ * Formats the DataChannel command to update the child loudspeaker target volume live.
+ */
+export function buildParentAudioVolumeCommand(mode: LoudspeakerVolumeSetting): string {
+  return `PARENT_AUDIO_VOLUME:${mode}`;
+}
+
 /**
  * Builds WebRTC `getUserMedia` audio constraints from Settings values.
  */
@@ -297,13 +313,27 @@ export class ParentAudioController {
     this.audioTrack.enabled = true;
     this.isMutedState = false;
 
-    console.log('[ParentAudio] Audio track enabled. Sending PARENT_AUDIO_UNMUTE command...');
-    const sent = webrtcManager.sendCommand('PARENT_AUDIO_UNMUTE');
+    const targetVolume = settingsState.getValue('loudspeakerVolume');
+    const cmd = buildParentAudioUnmuteCommand(targetVolume);
+    console.log(`[ParentAudio] Audio track enabled. Sending ${cmd} command...`);
+    const sent = webrtcManager.sendCommand(cmd);
     if (!sent) {
-      console.warn('[ParentAudio] Could not send PARENT_AUDIO_UNMUTE: DataChannel is not ready.');
+      console.warn(`[ParentAudio] Could not send ${cmd}: DataChannel is not ready.`);
     }
 
     return true;
+  }
+
+  /**
+   * Synchronizes an updated `loudspeakerVolume` setting with the connected child device.
+   */
+  public syncLoudspeakerVolume(): boolean {
+    const dc = webrtcManager.getDataChannel();
+    if (!dc || dc.readyState !== 'open') {
+      return false;
+    }
+    const targetVolume = settingsState.getValue('loudspeakerVolume');
+    return webrtcManager.sendCommand(buildParentAudioVolumeCommand(targetVolume));
   }
 
   /**

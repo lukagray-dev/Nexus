@@ -16,6 +16,7 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    tray::configure_gpu_acceleration_before_launch();
     let mut builder = tauri::Builder::default();
 
     // Single-instance guard MUST be registered first so duplicate launches restore the running tray window.
@@ -71,6 +72,8 @@ pub fn run() {
             tray::set_launch_on_startup,
             tray::set_start_minimized,
             tray::set_always_on_top,
+            tray::set_hardware_acceleration,
+            tray::restart_application,
             tray::hide_to_tray,
             tray::show_main_window,
             tray::exit_application,

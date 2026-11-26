@@ -14,7 +14,7 @@ All camera orchestration and state synchronizations occur over the dedicated `ne
 
 | Direction | Command / Payload | Description | Expected Response |
 | :--- | :--- | :--- | :--- |
-| **Parent → Child** | `CAMERA_ON` | Requests child to activate camera hardware (Rear lens by default) and enable video track. | `CAMERA_STARTED` or `CAMERA_ERROR: <reason>` |
+| **Parent → Child** | `CAMERA_ON[:REAR\|FRONT]` | Requests child to activate camera hardware (using the preferred default lens setting, or `REAR` when omitted) and enable video track. | `CAMERA_STARTED` or `CAMERA_ERROR: <reason>` |
 | **Parent → Child** | `CAMERA_OFF` | Requests child to deactivate camera hardware and mute video track. | `CAMERA_STOPPED` |
 | **Parent → Child** | `CAMERA_SWITCH` | Requests child to toggle between Rear and Front camera lenses. | `CAMERA_SWITCHED: REAR` / `CAMERA_SWITCHED: FRONT` (or `CAMERA_SWITCHED`) |
 | **Child → Parent** | `CAMERA_STARTED` | Confirms rear camera hardware is active and frames are flowing. | Desktop changes Play spinner to Pause button, starts Live timer and DVR buffer. |

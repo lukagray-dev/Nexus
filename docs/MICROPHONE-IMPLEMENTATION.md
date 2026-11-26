@@ -16,7 +16,8 @@ All microphone orchestration and state synchronizations occur over the dedicated
 | **Parent → Child** | `MIC_ON` | Requests child to start environmental microphone monitoring. | `MIC_STARTED` or `MIC_ERROR: <reason>` |
 | **Parent → Child** | `MIC_OFF` | Requests child to stop environmental microphone monitoring. | `MIC_STOPPED` |
 | **Parent → Child** | `RENEGOTIATION_COMPLETE` | Informs child that parent applied the role-reversal offer and ready for audio. | Triggers transmission of `MIC_STARTED` / `MIC_STOPPED` |
-| **Parent → Child** | `PARENT_AUDIO_UNMUTE`<br>*(alias `PARENT_MIC_ON`)* | Parent started speaking; requests child loudspeaker boost. | `PARENT_AUDIO_UNMUTED` or `PARENT_AUDIO_ERROR: <reason>` |
+| **Parent → Child** | `PARENT_AUDIO_UNMUTE[:max\|high\|normal]`<br>*(alias `PARENT_MIC_ON[:mode]`)* | Parent started speaking; requests child loudspeaker routing at the configured target volume (100%, 85%, or preserve level; defaults to `max`). | `PARENT_AUDIO_UNMUTED` or `PARENT_AUDIO_ERROR: <reason>` |
+| **Parent → Child** | `PARENT_AUDIO_VOLUME:<max\|high\|normal>` | Updates the child loudspeaker target volume policy live while connected or speaking. | `PARENT_AUDIO_VOLUME_SET:<mode>` |
 | **Parent → Child** | `PARENT_AUDIO_MUTE`<br>*(alias `PARENT_MIC_OFF`)* | Parent stopped speaking; requests child normal volume restore. | `PARENT_AUDIO_MUTED` |
 | **Child → Parent** | `MIC_STARTED` | Confirms child mic hardware is active and audio track is negotiated. | Desktop changes Play button to Pause. |
 | **Child → Parent** | `MIC_STOPPED` | Confirms child mic hardware is shut down and audio track is removed. | Desktop changes Pause button to Play. |

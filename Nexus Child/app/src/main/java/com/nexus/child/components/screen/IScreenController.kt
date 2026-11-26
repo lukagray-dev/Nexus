@@ -1,6 +1,25 @@
 package com.nexus.child.components.screen
 
 /**
+ * Target video resolution and framerate preset for Screen Mirror streaming.
+ */
+enum class ScreenQualityPreset(val id: String, val maxDimension: Int, val fps: Int) {
+    FULL_HD_1080P("1080p", 1920, 30),
+    HD_720P("720p", 1280, 30),
+    SD_540P("540p", 960, 24);
+
+    companion object {
+        fun fromId(raw: String?): ScreenQualityPreset {
+            return when (raw?.trim()?.lowercase()) {
+                "720p", "hd" -> HD_720P
+                "540p", "sd" -> SD_540P
+                else -> FULL_HD_1080P
+            }
+        }
+    }
+}
+
+/**
  * IScreenController specifies the interface contract for managing, querying,
  * and streaming full-screen video and system audio on the Android Child device.
  *
@@ -15,21 +34,31 @@ interface IScreenController {
     fun hasAccessibilityPermission(): Boolean
 
     /**
-     * Returns true if live Full HD screen video capture and streaming is underway.
+     * Returns true if live screen video capture and streaming is underway.
      */
     fun isStreaming(): Boolean
 
     /**
-     * Requests screen capture permission and begins streaming upon consent.
-     *
-     * @param onStarted Callback invoked when screen streaming and audio capture successfully initialize.
-     * @param onError Callback invoked if permission is missing, denied, or initialization fails.
-     * @return true if screen capture initiation was dispatched; false otherwise.
+     * Requests screen capture permission and begins streaming upon consent at default 1080p.
      */
     fun startScreenStreaming(
         onStarted: () -> Unit,
         onError: (errorMessage: String) -> Unit
     ): Boolean
+
+    /**
+     * Requests screen capture permission and begins streaming using the requested [quality] preset.
+     */
+    fun startScreenStreaming(
+        quality: ScreenQualityPreset,
+        onStarted: () -> Unit,
+        onError: (errorMessage: String) -> Unit
+    ): Boolean = startScreenStreaming(onStarted, onError)
+
+    /**
+     * Dynamically updates resolution and framerate of an active screen capture session.
+     */
+    fun updateScreenQuality(quality: ScreenQualityPreset): Boolean = false
 
     /**
      * Halts live screen video capture, system audio capture, and encoder threads.

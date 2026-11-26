@@ -51,6 +51,8 @@ export interface WindowTraySettingsSnapshot {
   startMinimized: boolean;
   alwaysOnTop: boolean;
   autostartEnabled: boolean;
+  hardwareAcceleration?: boolean;
+  launchHardwareAcceleration?: boolean;
 }
 
 /**
@@ -61,6 +63,7 @@ export interface WindowTraySettingsRecord {
   launchOnStartup: boolean;
   startMinimized: boolean;
   alwaysOnTop: boolean;
+  hardwareAcceleration?: boolean;
 }
 
 /**
@@ -272,6 +275,30 @@ export async function setAlwaysOnTopSetting(enabled: boolean): Promise<boolean> 
 
   await invoke<WindowTraySettingsRecord>('set_always_on_top', { enabled });
   return true;
+}
+
+/**
+ * Persists GPU hardware acceleration preference in Rust (`window-settings.json`) for WebView2 startup.
+ */
+export async function setHardwareAccelerationSetting(
+  enabled: boolean
+): Promise<WindowTraySettingsSnapshot | null> {
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (!invoke) {
+    return null;
+  }
+
+  return await invoke<WindowTraySettingsSnapshot>('set_hardware_acceleration', { enabled });
+}
+
+/**
+ * Restarts the desktop application so process-level WebView2 settings take effect.
+ */
+export async function restartApplication(): Promise<void> {
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (invoke) {
+    await invoke<void>('restart_application');
+  }
 }
 
 /**

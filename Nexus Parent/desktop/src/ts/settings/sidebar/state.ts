@@ -29,6 +29,7 @@ const REMOVED_LEGACY_SETTING_KEYS = [
   'iceTransportPolicy',
   'iceGatherTimeout',
   'signalingHeartbeat',
+  'deviceAlias',
 ] as const;
 
 export class SettingsState {
