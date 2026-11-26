@@ -113,3 +113,16 @@ In compliance with the project's **No-Emoji Policy** and tactical monochrome aes
 | `PersistentJobService.kt` | `com.nexus.child.service.scheduler` | 15-minute persistent `JobService` watchdog surviving reboots |
 | `PermissionModel.kt` | `com.nexus.child.permission` | Includes `AUTO_START` capability in 15-permission catalog |
 | `MainActivity.kt` | `com.nexus.child` | Decoupled UI observer displaying ID and connection LED |
+
+---
+
+## 7. Nexus Parent Android: Persistent Screen-Off Connection Service
+
+Unlike **Nexus Parent Desktop** (which runs on PCs with `keepawake` window management and rarely faces OS-level socket suspension), **Nexus Parent Android** (`Nexus Parent/android`) must prevent Android Doze and background socket freezing whenever the parent locks their phone screen while monitoring or auto-reconnecting:
+
+- **Application-Scoped WebRTC Ownership (`NexusParentApplication.kt`)**: Holds `DeviceStorage`, `WebRtcManager`, `DeviceStateCoordinator`, and `ParentStateHolder` at `Application` scope so configuration changes or backgrounding never drop peer connections or countdown loops.
+- **`ParentConnectionService.kt` (`com.nexus.parent.service`)**:
+  - Declared with `foregroundServiceType="dataSync"` and `POST_NOTIFICATIONS` / `WAKE_LOCK` permissions in `AndroidManifest.xml`.
+  - Automatically started whenever a session is connecting, connected, or executing the 9-attempt backoff `ReconnectManager` loop; torn down cleanly on manual disconnect or reconnect exhaustion.
+  - Holds a non-ref-counted `PowerManager.PARTIAL_WAKE_LOCK` (12-hour safety window) released immediately on stop/destroy.
+- **`ParentNotificationManager.kt`**: Creates channel `nexus_parent_connection_channel` (`IMPORTANCE_LOW`, silent, ongoing, `R.drawable.ic_shield_check`) and updates status text dynamically (`"Nexus Parent Connecting"`, `"Connected to <Child>"`, or `"Retry X/9 in Ys"`).

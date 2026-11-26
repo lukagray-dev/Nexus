@@ -8,6 +8,16 @@ Inside `Nexus Parent/desktop/`:
 - **Frontend (`src/ts/` and `src/css/`)** maintains a strict 1:1 symmetrical sibling hierarchy. Every UI module has its paired TypeScript controller, state manager, and stylesheet.
 - **Rust Backend (`src-tauri/src/`)** remains lean and minimal (`main.rs`, `lib.rs`), acting as the native OS host and window lifecycle manager. It does not replicate empty UI dummy folders.
 
+## Parent Android Directory Structure (`Nexus Parent/android/`)
+
+Inside `Nexus Parent/android/app/src/main/java/com/nexus/parent/`:
+- **`NexusParentApplication.kt` & `MainActivity.kt`**: Application-scoped dependency container (preserving WebRTC sockets & reconnect timers across configuration changes and backgrounding) and single-Activity Compose host.
+- **`webrtc/`**: Firebase Auth, RTDB Non-Trickle signaling (`SignalingClient.kt`), `WebRtcManager.kt`, `AppConfig.kt`, and SDP/codec helpers (`WebRtcExtensions.kt`).
+- **`service/`**: Persistent background survival (`ParentConnectionService.kt` with `dataSync` foreground service type + `PARTIAL_WAKE_LOCK`, and `ParentNotificationManager.kt`).
+- **`data/`**: `DeviceStateCoordinator.kt`, `DeviceStorage.kt`, `ReconnectManager.kt`, and `TelemetryParser.kt`.
+- **`state/`**: Immutable `ParentUiModels.kt`, `FeatureRegistry.kt` (all 18 Desktop-matching features across 4 sections), and `ParentStateHolder.kt`.
+- **`ui/`**: Monochrome Compose screens (`components/`, `home/`, `monitor/`, `shell/`, `stealth/`, `surveillance/`, `theme/`), plus `ui/settings/` structured **1:1 with `Nexus Parent/desktop/src/ts/settings/`** (`sidebar/`, `maincontent/`, `maincontent/generalsystem/`, `maincontent/audiointercom/`, `maincontent/surveillancedvr/`, `maincontent/paireddevices/`, `maincontent/about/`).
+
 ## Structural Rules for AI Agents
 
 1. **Keep the Sibling Layout Intact**: When creating a new feature (e.g. `analytics`), you must create its corresponding files in `src/ts/{domain}/`, `src/css/{domain}/`, and `src-tauri/src/{domain}/`.

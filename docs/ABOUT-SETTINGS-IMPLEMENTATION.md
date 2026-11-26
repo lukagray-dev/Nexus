@@ -63,3 +63,14 @@ npm test
 Set-Location "d:\Nexus\Nexus Parent\desktop\src-tauri"
 cargo test
 ```
+
+---
+
+## 5. Parent Android Parity (`Nexus Parent/android`)
+
+- **1:1 Modular Package (`ui/settings/maincontent/about/`)**:
+  - `AboutSection.kt`
+  - `ParentIdentityCard.kt` (`Nexus Parent (Android)` identity + brand icon)
+  - `RuntimeEnvironmentCard.kt` (`Jetpack Compose + Material 3`, `TextureView + EglRenderer`, Android OS/API level, host model)
+  - `TransportStorageCard.kt` (`End-to-End Encrypted WebRTC (SRTP)`, `SCTP DataChannel (nexus-control)`, `Non-Trickle GATHER_ONCE`, zero cloud storage)
+  - `WorkspaceResetCard.kt` (clears paired device history & cached state via `DeviceStorage.clearPairedDevicesHistory()`)

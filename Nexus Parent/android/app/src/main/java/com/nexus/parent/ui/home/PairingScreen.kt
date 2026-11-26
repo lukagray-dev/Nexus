@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.nexus.parent.R
 import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.state.FeatureRegistry
+import com.nexus.parent.ui.components.SpinningLoaderIcon
 import com.nexus.parent.ui.components.TacticalCard
 import com.nexus.parent.ui.components.TacticalPrimaryButton
 import com.nexus.parent.ui.theme.NexusColors
@@ -66,9 +67,11 @@ fun PairingScreen(
     onClearDigits: () -> Unit,
     onConnectClick: () -> Unit,
     onQuickConnectRecent: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isConnecting: Boolean = false,
+    connectingProgress: String? = null
 ) {
-    val isReady = FeatureRegistry.isValidChildId(digits)
+    val isReady = FeatureRegistry.isValidChildId(digits) && !isConnecting
 
     Box(
         modifier = modifier
@@ -90,7 +93,7 @@ fun PairingScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
@@ -125,97 +128,118 @@ fun PairingScreen(
 
                 Spacer(modifier = Modifier.height(22.dp))
 
-                // 12-digit Numeric Input Row
+                // 12-digit Numeric Input + Side-by-Side Connect Button (matching Desktop .connect-input-row)
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(NexusDimens.RadiusMd))
-                        .background(NexusColors.CanvasBlack)
-                        .border(
-                            NexusDimens.BorderHairline,
-                            if (errorMessage != null) NexusColors.DangerRed else NexusColors.BorderMedium,
-                            RoundedCornerShape(NexusDimens.RadiusMd)
-                        )
-                        .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_key_round),
-                        contentDescription = null,
-                        tint = NexusColors.TextMuted,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (digits.isEmpty()) {
-                            Text(
-                                text = "Enter 12-digit Child ID",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = NexusColors.TextMuted
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .clip(RoundedCornerShape(NexusDimens.RadiusMd))
+                            .background(NexusColors.CanvasBlack)
+                            .border(
+                                NexusDimens.BorderHairline,
+                                if (errorMessage != null) NexusColors.DangerRed else NexusColors.BorderMedium,
+                                RoundedCornerShape(NexusDimens.RadiusMd)
                             )
-                        }
-                        BasicTextField(
-                            value = digits,
-                            onValueChange = onDigitsChange,
-                            singleLine = true,
-                            textStyle = NexusTypography.MonoValue.copy(color = NexusColors.TextPrimary),
-                            cursorBrush = SolidColor(NexusColors.AccentWhite),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = { if (isReady) onConnectClick() }
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("pairing_id_input")
+                            .padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_key_round),
+                            contentDescription = null,
+                            tint = NexusColors.TextMuted,
+                            modifier = Modifier.size(15.dp)
                         )
-                    }
-                    if (digits.isNotEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .clip(CircleShape)
-                                .clickable(onClick = onClearDigits),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_close),
-                                contentDescription = "Clear ID",
-                                tint = NexusColors.TextMuted,
-                                modifier = Modifier.size(12.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (digits.isEmpty()) {
+                                Text(
+                                    text = "12-digit Child ID",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = NexusColors.TextMuted,
+                                    maxLines = 1
+                                )
+                            }
+                            BasicTextField(
+                                value = digits,
+                                onValueChange = onDigitsChange,
+                                singleLine = true,
+                                textStyle = NexusTypography.MonoValue.copy(color = NexusColors.TextPrimary),
+                                cursorBrush = SolidColor(NexusColors.AccentWhite),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = { if (isReady) onConnectClick() }
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("pairing_id_input")
                             )
                         }
+                        if (digits.isNotEmpty() && !isConnecting) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .clickable(onClick = onClearDigits),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_close),
+                                    contentDescription = "Clear ID",
+                                    tint = NexusColors.TextMuted,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
                     }
+
+                    TacticalPrimaryButton(
+                        text = if (isConnecting) "Connecting..." else "Connect",
+                        iconRes = R.drawable.ic_link,
+                        enabled = isReady,
+                        onClick = onConnectClick,
+                        modifier = Modifier
+                            .height(48.dp)
+                            .testTag("pairing_connect_btn")
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                val feedback = errorMessage ?: statusMessage
-                if (!feedback.isNullOrBlank()) {
-                    Text(
-                        text = feedback,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (errorMessage != null) NexusColors.DangerRed else NexusColors.TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
+                if (isConnecting) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SpinningLoaderIcon(size = 14.dp, tint = NexusColors.TextPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = connectingProgress ?: "Establishing encrypted WebRTC link...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NexusColors.TextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 } else {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    val feedback = errorMessage ?: statusMessage
+                    if (!feedback.isNullOrBlank()) {
+                        Text(
+                            text = feedback,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (errorMessage != null) NexusColors.DangerRed else NexusColors.TextSecondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
-
-                TacticalPrimaryButton(
-                    text = "Connect",
-                    iconRes = R.drawable.ic_link,
-                    enabled = isReady,
-                    onClick = onConnectClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("pairing_connect_btn")
-                )
 
                 if (lastPairedDevice != null) {
                     Spacer(modifier = Modifier.height(20.dp))
@@ -240,7 +264,7 @@ fun PairingScreen(
                             .clip(RoundedCornerShape(NexusDimens.RadiusMd))
                             .background(NexusColors.SurfaceCard)
                             .border(NexusDimens.BorderHairline, NexusColors.BorderSubtle, RoundedCornerShape(NexusDimens.RadiusMd))
-                            .clickable { onQuickConnectRecent(lastPairedDevice.rawId) }
+                            .clickable(enabled = !isConnecting) { onQuickConnectRecent(lastPairedDevice.rawId) }
                             .padding(horizontal = 12.dp, vertical = 12.dp)
                             .testTag("pairing_quick_connect_btn"),
                         verticalAlignment = Alignment.CenterVertically,

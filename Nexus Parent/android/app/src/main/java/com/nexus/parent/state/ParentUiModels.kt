@@ -132,25 +132,34 @@ enum class StealthStatus {
 data class DeviceTelemetry(
     val androidVersion: String = "14",
     val sdkInt: Int = 34,
-    val brand: String = "Google",
+    val brand: String = "Unknown",
     val appVersion: String = "0.1.0-alpha",
-    val batteryPercent: Int = 88,
+    val batteryPercent: Int = 0,
     val isCharging: Boolean = false,
     val chargingSource: String = "Battery",
-    val batteryTemperatureC: Float = 31.4f,
+    val batteryTemperatureC: Float = 0f,
     val isPowerSaveMode: Boolean = false,
-    val batteryOptimizationIgnored: Boolean = true,
-    val ramUsageText: String = "4.6 GB free / 12.0 GB",
-    val storageUsageText: String = "64.2 GB free / 256.0 GB",
-    val storageUsedPercent: Float = 0.75f,
-    val networkState: String = "WiFi",
-    val simCarrier: String = "SIM 1",
+    val batteryOptimizationIgnored: Boolean = false,
+    val ramUsageText: String = "Unknown",
+    val totalRamBytes: Long = 0L,
+    val availableRamBytes: Long = 0L,
+    val storageUsageText: String = "Unknown",
+    val freeStorageBytes: Long = 0L,
+    val totalStorageBytes: Long = 0L,
+    val storageUsedPercent: Float = 0f,
+    val networkState: String = "Unknown",
+    val simCarrier: String = "No SIM",
     val isScreenOn: Boolean = true,
-    val screenResolution: String = "1344x2992",
+    val screenResolution: String = "Unknown",
     val ringerMode: String = "Normal",
-    val deviceUptimeLabel: String = "14h 22m",
+    val deviceUptimeMs: Long = 0L,
+    val deviceUptimeLabel: String = "Unknown",
+    val isStealthMode: Boolean = false,
+    val isAppLockEnabled: Boolean = false,
     val securityGuardsText: String = "App Lock Off • Visible",
-    val survivalPermissionsText: String = "15 / 15 Granted"
+    val grantedPermissionsCount: Int = 0,
+    val totalPermissionsCount: Int = 0,
+    val survivalPermissionsText: String = "Unknown"
 )
 
 data class DeviceRecord(
@@ -159,7 +168,8 @@ data class DeviceRecord(
     val name: String,
     val model: String,
     val lastSyncedLabel: String,
-    val telemetry: DeviceTelemetry
+    val lastConnectedAt: Long = 0L,
+    val telemetry: DeviceTelemetry = DeviceTelemetry()
 )
 
 data class ActiveCallAlert(
@@ -437,18 +447,15 @@ data class ParentUiState(
     val pairingInputDigits: String = "",
     val pairingStatusMessage: String? = null,
     val pairingErrorMessage: String? = null,
+    val connectingProgressMessage: String? = null,
+    val connectingFromHistoryId: String? = null,
     val connectedDevice: DeviceRecord? = null,
-    val lastPairedDevice: DeviceRecord? = DeviceRecord(
-        rawId = "482194021104",
-        formattedId = "4821 9402 1104",
-        name = "Lucas Pixel 8 Pro",
-        model = "Google Pixel 8 Pro",
-        lastSyncedLabel = "Last connected: Today, 10:15 AM",
-        telemetry = DeviceTelemetry()
-    ),
-    val reconnectAttempt: Int = 1,
+    val lastPairedDevice: DeviceRecord? = null,
+    val pairedDevicesHistory: List<DeviceRecord> = emptyList(),
+    val selectedPairedDeviceId: String? = null,
+    val reconnectAttempt: Int = 0,
     val reconnectMaxAttempts: Int = 9,
-    val reconnectSecondsRemaining: Int = 5,
+    val reconnectSecondsRemaining: Int = 0,
 
     val activeFeature: FeatureId? = null,
     val liveFeatures: Set<FeatureId> = emptySet(),

@@ -1,5 +1,7 @@
 package com.nexus.parent.state
 
+import com.nexus.parent.data.DeviceStateCoordinator
+import com.nexus.parent.webrtc.VideoFeedType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -7,15 +9,18 @@ import kotlinx.coroutines.flow.update
 import kotlin.math.sin
 
 /**
- * ParentStateHolder.kt - Deterministic UI-only state controller for Nexus Parent Android.
+ * ParentStateHolder.kt - Central UI & session state controller for Nexus Parent Android.
  *
- * Hey friend! In this UI-first milestone, all interactions (pairing validation, drawer search,
- * feature switching, DVR scrubbing, Mic HUD toggles, Monitor Start/Pause transitions, Stealth
- * confirmation, and Settings auto-save) run locally on `StateFlow<ParentUiState>` with zero
- * network/WebRTC dependencies. Every public method here becomes a clean hook point when
- * WebRTC and Firebase signaling are wired next.
+ * Hey friend! Works in two modes cleanly:
+ * - Production mode (`coordinator != null`): delegates Connect, Disconnect, Reconnect, Stealth,
+ *   Telemetry updates, and Settings persistence to `DeviceStateCoordinator` + `WebRtcManager`.
+ * - Standalone UI/Unit-Test mode (`coordinator == null`): runs deterministic synchronous state
+ *   transitions so all JVM unit tests and Compose instrumentation tests run with zero network setup.
  */
-class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
+class ParentStateHolder(
+    initialState: ParentUiState = ParentUiState(),
+    private val coordinator: DeviceStateCoordinator? = null
+) {
 
     private val _uiState = MutableStateFlow(initialState)
     val uiState: StateFlow<ParentUiState> = _uiState.asStateFlow()
@@ -89,6 +94,15 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
         }
     }
 
+    fun connectToDevice(digitsOverride: String? = null, fromHistoryId: String? = null) {
+        if (coordinator != null) {
+            val target = digitsOverride ?: _uiState.value.pairingInputDigits
+            coordinator.connectFromUi(target, fromHistoryId = fromHistoryId)
+        } else {
+            submitPairingPreview(digitsOverride)
+        }
+    }
+
     fun submitPairingPreview(digitsOverride: String? = null) {
         val current = _uiState.value
         val digits = FeatureRegistry.sanitizeChildIdDigits(digitsOverride ?: current.pairingInputDigits)
@@ -100,15 +114,19 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
         }
 
         val formatted = FeatureRegistry.formatChildId(digits)
-        val matchedTemplate = current.lastPairedDevice?.takeIf { it.rawId == digits }
+        val matchedTemplate = current.pairedDevicesHistory.firstOrNull { it.rawId == digits }
+            ?: current.lastPairedDevice?.takeIf { it.rawId == digits }
         val connectedRecord = DeviceRecord(
             rawId = digits,
             formattedId = formatted,
             name = matchedTemplate?.name ?: "Child Android Device",
             model = matchedTemplate?.model ?: "Android Device",
             lastSyncedLabel = "Online • Just now",
+            lastConnectedAt = System.currentTimeMillis(),
             telemetry = matchedTemplate?.telemetry ?: DeviceTelemetry()
         )
+        val updatedHistory = listOf(connectedRecord) +
+            current.pairedDevicesHistory.filterNot { it.rawId == digits }
 
         _uiState.update {
             it.copy(
@@ -116,19 +134,182 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
                 pairingInputDigits = digits,
                 pairingErrorMessage = null,
                 pairingStatusMessage = null,
+                connectingProgressMessage = null,
+                connectingFromHistoryId = null,
                 connectedDevice = connectedRecord,
                 lastPairedDevice = connectedRecord,
+                pairedDevicesHistory = updatedHistory,
                 isDevicePopoverOpen = false,
-                toastMessage = "UI Preview: Connected to $formatted"
+                toastMessage = "Connected to $formatted"
             )
         }
     }
 
     fun disconnectDevice() {
+        if (coordinator != null) {
+            coordinator.disconnectManual()
+        } else {
+            applyDisconnectedState(toastMessage = "Device disconnected")
+        }
+    }
+
+    fun retryReconnectNow() {
+        coordinator?.retryReconnectNow()
+    }
+
+    fun cancelReconnection() {
+        if (coordinator != null) {
+            coordinator.cancelReconnect()
+        } else {
+            applyDisconnectedState(toastMessage = "Reconnection cancelled")
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // COORDINATOR LIFECYCLE CALLBACKS (LIVE WEBRTC, TELEMETRY & RECONNECT)
+    // -------------------------------------------------------------------------
+
+    fun onConnectingStarted(
+        digits: String,
+        progressMessage: String,
+        fromHistoryId: String?,
+        preserveReconnectingPhase: Boolean
+    ) {
+        _uiState.update { state ->
+            state.copy(
+                connectionPhase = if (preserveReconnectingPhase) ConnectionPhase.RECONNECTING else ConnectionPhase.CONNECTING,
+                pairingInputDigits = if (fromHistoryId == null) digits else state.pairingInputDigits,
+                pairingErrorMessage = null,
+                connectingProgressMessage = progressMessage,
+                connectingFromHistoryId = fromHistoryId
+            )
+        }
+    }
+
+    fun onConnectingProgress(progressMessage: String) {
+        _uiState.update { it.copy(connectingProgressMessage = progressMessage) }
+    }
+
+    fun onConnectionEstablished(
+        record: DeviceRecord,
+        history: List<DeviceRecord>,
+        toastMessage: String?
+    ) {
+        val isSwitchingDevice = _uiState.value.connectedDevice?.rawId?.let { it != record.rawId } ?: false
+        _uiState.update { state ->
+            state.copy(
+                connectionPhase = ConnectionPhase.CONNECTED,
+                pairingInputDigits = record.rawId,
+                pairingErrorMessage = null,
+                pairingStatusMessage = null,
+                connectingProgressMessage = null,
+                connectingFromHistoryId = null,
+                connectedDevice = record,
+                lastPairedDevice = record,
+                pairedDevicesHistory = history,
+                activeFeature = if (isSwitchingDevice) null else state.activeFeature,
+                isDevicePopoverOpen = false,
+                toastMessage = toastMessage ?: state.toastMessage
+            )
+        }
+    }
+
+    fun onConnectingFailed(errorMessage: String?, isAutoReconnectAttempt: Boolean) {
+        _uiState.update { state ->
+            state.copy(
+                connectionPhase = if (isAutoReconnectAttempt) ConnectionPhase.RECONNECTING else ConnectionPhase.DISCONNECTED,
+                connectingProgressMessage = null,
+                connectingFromHistoryId = null,
+                pairingErrorMessage = errorMessage ?: state.pairingErrorMessage,
+                pairingStatusMessage = if (errorMessage != null) null else state.pairingStatusMessage
+            )
+        }
+    }
+
+    fun onConnectionDroppedReconnecting(toastMessage: String?) {
+        _uiState.update { state ->
+            state.copy(
+                connectionPhase = ConnectionPhase.RECONNECTING,
+                connectingProgressMessage = null,
+                connectingFromHistoryId = null,
+                activeFeature = null,
+                liveFeatures = emptySet(),
+                camera = CameraFeedUiState(lens = state.settings.preferredCameraLens),
+                screen = ScreenFeedUiState(quality = state.settings.screenQuality),
+                mic = MicUiState(selectedVoice = state.settings.defaultVoicePreset),
+                location = LocationUiState(),
+                activeCallAlert = null,
+                toastMessage = toastMessage ?: state.toastMessage
+            )
+        }
+    }
+
+    fun onReconnectTick(attempt: Int, maxAttempts: Int, secondsRemaining: Int) {
+        _uiState.update {
+            it.copy(
+                connectionPhase = ConnectionPhase.RECONNECTING,
+                reconnectAttempt = attempt,
+                reconnectMaxAttempts = maxAttempts,
+                reconnectSecondsRemaining = secondsRemaining
+            )
+        }
+    }
+
+    fun onTelemetryUpdated(record: DeviceRecord, history: List<DeviceRecord>) {
+        _uiState.update { state ->
+            state.copy(
+                connectedDevice = record,
+                lastPairedDevice = record,
+                pairedDevicesHistory = history,
+                stealthStatus = when {
+                    state.stealthStatus == StealthStatus.WAIT -> StealthStatus.WAIT
+                    record.telemetry.isStealthMode -> StealthStatus.ACTIVE
+                    else -> StealthStatus.ARMED
+                }
+            )
+        }
+    }
+
+    fun onStealthCommandDispatched() {
+        _uiState.update {
+            it.copy(
+                stealthStatus = StealthStatus.WAIT,
+                showStealthConfirmDialog = false
+            )
+        }
+    }
+
+    fun onStealthStatusSynced(status: StealthStatus, toastMessage: String? = null) {
+        _uiState.update {
+            it.copy(
+                stealthStatus = status,
+                toastMessage = toastMessage ?: it.toastMessage
+            )
+        }
+    }
+
+    fun onHistoryCleared() {
+        _uiState.update {
+            it.copy(
+                lastPairedDevice = if (it.connectionPhase == ConnectionPhase.CONNECTED) it.connectedDevice else null,
+                pairedDevicesHistory = if (it.connectionPhase == ConnectionPhase.CONNECTED && it.connectedDevice != null) {
+                    listOf(it.connectedDevice)
+                } else {
+                    emptyList()
+                },
+                selectedPairedDeviceId = null,
+                toastMessage = "Paired device history cleared"
+            )
+        }
+    }
+
+    fun applyDisconnectedState(toastMessage: String?) {
         _uiState.update { state ->
             state.copy(
                 connectionPhase = ConnectionPhase.DISCONNECTED,
                 connectedDevice = null,
+                connectingProgressMessage = null,
+                connectingFromHistoryId = null,
                 isDevicePopoverOpen = false,
                 activeFeature = null,
                 liveFeatures = emptySet(),
@@ -138,13 +319,11 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
                 location = LocationUiState(),
                 activeCallAlert = null,
                 stealthStatus = StealthStatus.ARMED,
-                toastMessage = "Device disconnected"
+                reconnectAttempt = 0,
+                reconnectSecondsRemaining = 0,
+                toastMessage = toastMessage ?: state.toastMessage
             )
         }
-    }
-
-    fun cancelReconnection() {
-        disconnectDevice()
     }
 
     // -------------------------------------------------------------------------
@@ -181,12 +360,14 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
     // -------------------------------------------------------------------------
 
     fun toggleCameraStream() {
+        var nextState = MonitoringState.IDLE
         _uiState.update { state ->
             val next = if (state.camera.state == MonitoringState.LIVE) {
                 MonitoringState.IDLE
             } else {
                 MonitoringState.LIVE
             }
+            nextState = next
             val liveSet = if (next == MonitoringState.LIVE) {
                 state.liveFeatures + FeatureId.CAMERA - FeatureId.SCREEN
             } else {
@@ -207,6 +388,9 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
                 liveFeatures = liveSet
             )
         }
+        coordinator?.webRtcManager?.setActiveVideoType(
+            if (nextState == MonitoringState.LIVE) VideoFeedType.CAMERA else null
+        )
     }
 
     fun rotateCameraFeed() {
@@ -252,12 +436,14 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
     }
 
     fun toggleScreenStream() {
+        var nextState = MonitoringState.IDLE
         _uiState.update { state ->
             val next = if (state.screen.state == MonitoringState.LIVE) {
                 MonitoringState.IDLE
             } else {
                 MonitoringState.LIVE
             }
+            nextState = next
             val liveSet = if (next == MonitoringState.LIVE) {
                 state.liveFeatures + FeatureId.SCREEN - FeatureId.CAMERA
             } else {
@@ -278,6 +464,9 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
                 liveFeatures = liveSet
             )
         }
+        coordinator?.webRtcManager?.setActiveVideoType(
+            if (nextState == MonitoringState.LIVE) VideoFeedType.SCREEN else null
+        )
     }
 
     fun rotateScreenFeed() {
@@ -640,21 +829,25 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
     }
 
     fun confirmStealthToggle() {
-        _uiState.update { state ->
-            val next = if (state.stealthStatus == StealthStatus.ACTIVE) {
-                StealthStatus.ARMED
-            } else {
-                StealthStatus.ACTIVE
-            }
-            state.copy(
-                stealthStatus = next,
-                showStealthConfirmDialog = false,
-                toastMessage = if (next == StealthStatus.ACTIVE) {
-                    "Stealth Mode ACTIVE (UI Preview)"
+        if (coordinator != null) {
+            coordinator.sendStealthToggleCommand()
+        } else {
+            _uiState.update { state ->
+                val next = if (state.stealthStatus == StealthStatus.ACTIVE) {
+                    StealthStatus.ARMED
                 } else {
-                    "Stealth Mode deactivated (UI Preview)"
+                    StealthStatus.ACTIVE
                 }
-            )
+                state.copy(
+                    stealthStatus = next,
+                    showStealthConfirmDialog = false,
+                    toastMessage = if (next == StealthStatus.ACTIVE) {
+                        "Stealth Mode ACTIVE (UI Preview)"
+                    } else {
+                        "Stealth Mode deactivated (UI Preview)"
+                    }
+                )
+            }
         }
     }
 
@@ -681,6 +874,7 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
             it.copy(
                 isSettingsOpen = true,
                 activeSettingsTab = tab,
+                selectedPairedDeviceId = null,
                 isDrawerOpen = false,
                 isDevicePopoverOpen = false
             )
@@ -688,16 +882,34 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
     }
 
     fun closeSettings() {
-        _uiState.update { it.copy(isSettingsOpen = false) }
+        _uiState.update { it.copy(isSettingsOpen = false, selectedPairedDeviceId = null) }
     }
 
     fun selectSettingsTab(tab: SettingsTabId) {
-        _uiState.update { it.copy(activeSettingsTab = tab) }
+        _uiState.update { it.copy(activeSettingsTab = tab, selectedPairedDeviceId = null) }
+    }
+
+    fun selectPairedDevice(rawId: String) {
+        _uiState.update { it.copy(selectedPairedDeviceId = rawId) }
+    }
+
+    fun clearSelectedPairedDevice() {
+        _uiState.update { it.copy(selectedPairedDeviceId = null) }
+    }
+
+    fun clearWorkspaceHistory() {
+        if (coordinator != null) {
+            coordinator.clearLocalWorkspaceHistory()
+        } else {
+            onHistoryCleared()
+        }
     }
 
     fun updateSettings(transform: (SettingsValues) -> SettingsValues) {
+        var latestSettings: SettingsValues? = null
         _uiState.update { state ->
             val updated = transform(state.settings)
+            latestSettings = updated
             state.copy(
                 settings = updated,
                 camera = state.camera.copy(lens = updated.preferredCameraLens),
@@ -705,10 +917,12 @@ class ParentStateHolder(initialState: ParentUiState = ParentUiState()) {
                 mic = state.mic.copy(selectedVoice = updated.defaultVoicePreset)
             )
         }
+        latestSettings?.let { coordinator?.saveSettings(it) }
     }
 
     fun resetSettingsToDefaults() {
         val defaults = SettingsValues()
+        coordinator?.saveSettings(defaults)
         _uiState.update {
             it.copy(
                 settings = defaults,

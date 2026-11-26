@@ -1,6 +1,26 @@
+import java.io.File
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+fun parseEnvFile(envFile: File): Map<String, String> {
+    if (!envFile.exists()) return emptyMap()
+    val content = envFile.readText()
+    val map = mutableMapOf<String, String>()
+    val keys = listOf(
+        "apiKey", "authDomain", "databaseURL", "projectId", "storageBucket",
+        "messagingSenderId", "appId", "measurementId"
+    )
+    for (k in keys) {
+        val regex = Regex("""['"]?$k['"]?\s*[:=]\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE)
+        val match = regex.find(content)
+        if (match != null) {
+            map[k] = match.groupValues[1]
+        }
+    }
+    return map
 }
 
 android {
@@ -17,6 +37,17 @@ android {
         versionName = "0.1.0-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load Firebase credentials dynamically from monorepo root .env (two levels above Nexus Parent/android)
+        val envFile = File(rootProject.projectDir.parentFile.parentFile, ".env")
+        val envMap = parseEnvFile(envFile)
+
+        buildConfigField("String", "FIREBASE_API_KEY", "\"${envMap["apiKey"] ?: ""}\"")
+        buildConfigField("String", "FIREBASE_AUTH_DOMAIN", "\"${envMap["authDomain"] ?: ""}\"")
+        buildConfigField("String", "FIREBASE_DATABASE_URL", "\"${envMap["databaseURL"] ?: ""}\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${envMap["projectId"] ?: ""}\"")
+        buildConfigField("String", "FIREBASE_APPLICATION_ID", "\"${envMap["appId"] ?: ""}\"")
+        buildConfigField("String", "FIREBASE_STORAGE_BUCKET", "\"${envMap["storageBucket"] ?: ""}\"")
     }
 
     buildTypes {
@@ -32,6 +63,12 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    packaging {
+        resources {
+            excludes += listOf("META-INF/INDEX.LIST", "META-INF/DEPENDENCIES")
+        }
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -48,9 +85,19 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // Firebase for anonymous auth & RTDB WebRTC signaling
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.database)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // WebRTC P2P engine
     implementation(libs.webrtc)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

@@ -3,6 +3,7 @@
 Nexus uses standard WebRTC for peer-to-peer streaming, control, and hardware telemetry:
 * **Nexus Child (Android)**: Native Kotlin using Google WebRTC SDK (`com.dafruits:webrtc:123.0.0`) with hardware-accelerated video codecs (`DefaultVideoEncoderFactory`, `DefaultVideoDecoderFactory`) and EGL context.
 * **Nexus Parent (Desktop)**: Tauri v2 frontend running inside WebView2 (Chromium). Uses native browser `RTCPeerConnection`, hardware video decoding via `<video>` elements, and Web Audio API with zero Rust IPC serialization overhead.
+* **Nexus Parent (Android)**: Native Kotlin + Jetpack Compose using Google WebRTC SDK (`com.dafruits:webrtc:123.0.0`), `EglBase`, hardware-preferred codec sorting, `TextureView` + `EglRenderer` compositing, ordered `nexus-control` DataChannel, and `ParentConnectionService` (`dataSync` foreground service + `PARTIAL_WAKE_LOCK`) so sessions survive screen-off.
 * **Signaling & Presence Transport**: Firebase Realtime Database (RTDB) coupled with Firebase Anonymous Authentication.
 * **Dynamic Environment Configuration**: Root `.env` acts as the single source of truth for Firebase credentials:
   * Android: `build.gradle.kts` parses `.env` and injects credentials via `BuildConfig`.
@@ -89,6 +90,19 @@ To prevent the child device from incorrectly marking itself as `offline` in Fire
 | `SignalingClient.kt` | RTDB listener for Non-Trickle offers and publisher for Non-Trickle answers. |
 | `WebRtcManager.kt` | `PeerConnectionFactory`, hardware video decoders/encoders, fast GATHER_ONCE answer generator, zero-delay renegotiation, and DataChannel coordinator. |
 | `WebRtcExtensions.kt` | Bidirectional mapper between `SessionDescription` and Firebase Maps. |
+
+### Parent Android Client (`Nexus Parent/android/app/src/main/java/com/nexus/parent/`)
+
+| Module | Responsibility |
+| :--- | :--- |
+| `webrtc/AppConfig.kt` | Reads injected `BuildConfig.FIREBASE_*` credentials from root `.env` + 2 STUN servers & timeouts. |
+| `webrtc/AuthManager.kt` | Thread-safe programmatic `FirebaseApp` initialization & anonymous authentication. |
+| `webrtc/SignalingClient.kt` | Validates `/child-devices/{childId}`, clears stale signaling, publishes offers & renegotiation answers, listens on `/answer`. |
+| `webrtc/WebRtcManager.kt` | `PeerConnectionFactory` (`EglBase`), `GATHER_ONCE` ICE, `RECV_ONLY` video + `SEND_RECV` audio transceivers, codec sorting, 30s timeout, role-reversal renegotiation (`RENEGOTIATION_COMPLETE`), and `VideoTrack`/`AudioTrack` `StateFlow`s. |
+| `webrtc/WebRtcExtensions.kt` | Bidirectional `SessionDescription` Firebase serializer and video codec priority sorter (`H264` > `VP9` > `VP8`). |
+| `data/DeviceStateCoordinator.kt` | Orchestrates connect/disconnect, 27-field `DEVICE_TELEMETRY` merging, stealth sync, unexpected-drop 9-attempt auto-reconnect, startup auto-connect, and `ParentConnectionService` notifications. |
+| `data/ReconnectManager.kt` | 9-attempt backoff timer (`10, 30, 60, 90, 120, 150, 180, 210, 240`s) with `retryNow()`, `cancel()`, and callbacks. |
+| `data/TelemetryParser.kt` & `DeviceStorage.kt` | 27-field telemetry JSON parser/formatters and `SharedPreferences` device history + settings store. |
 
 ### Desktop Console (`Nexus Parent/desktop/`)
 

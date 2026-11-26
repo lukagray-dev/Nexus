@@ -103,3 +103,14 @@ Initialized once at application boot via `initSettingsMainContentRuntime()` (`sr
 Set-Location "d:\Nexus\Nexus Parent\desktop"
 npm test
 ```
+
+---
+
+## 5. Parent Android Parity (`Nexus Parent/android`)
+
+- **1:1 Modular Package (`ui/settings/maincontent/audiointercom/`)**:
+  - `AudioIntercomSection.kt`
+  - `VoicePresetSetting.kt` (syncs `defaultVoicePreset` bidirectionally with `FloatingMicOverlay.kt` and `SettingsValues`)
+  - `NoiseSuppressionSetting.kt` (`noiseSuppression`)
+  - `LoudspeakerVolumeSetting.kt` (`LoudspeakerVolume.MAX` / `HIGH` / `NORMAL`)
+- **WebRTC Audio Transceiver**: `WebRtcManager.kt` attaches a `SEND_RECV` audio transceiver (`remoteAudioTrack`) alongside Settings persistence in `DeviceStorage.kt`; individual `MIC_ON` / `MIC_OFF` / DSP command wiring is staged for the feature-wiring phase.

@@ -1,27 +1,21 @@
 package com.nexus.parent.ui.settings
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,10 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -45,28 +37,32 @@ import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.ParentUiState
 import com.nexus.parent.state.SettingsTabId
 import com.nexus.parent.state.SettingsValues
-import com.nexus.parent.ui.components.TacticalBadgePill
 import com.nexus.parent.ui.components.TacticalPrimaryButton
 import com.nexus.parent.ui.components.TacticalSecondaryButton
-import com.nexus.parent.ui.components.TacticalSwitch
+import com.nexus.parent.ui.settings.maincontent.SettingsMainContent
+import com.nexus.parent.ui.settings.sidebar.SettingsSidebarPillStrip
+import com.nexus.parent.ui.settings.sidebar.SettingsSidebarRail
 import com.nexus.parent.ui.theme.NexusColors
 import com.nexus.parent.ui.theme.NexusDimens
-import com.nexus.parent.ui.theme.NexusTypography
 
 /**
  * SettingsScreen.kt - 5-Category Settings Console matching Desktop `settings/settings.ts`.
  *
- * Hey friend! Uses an adaptive layout:
- * - On phones (< 600dp wide): Horizontal scrollable category pills at top + detail pane below.
- * - On tablets (>= 600dp wide): True two-pane master-detail matching Desktop!
+ * Hey friend! Notice how clean this file is now that every tab lives in its own folder under
+ * `ui/settings/maincontent/` and every setting lives in its own modular file, matching Desktop 1:1.
  */
 @Composable
 fun SettingsScreen(
     state: ParentUiState,
     onSelectTab: (SettingsTabId) -> Unit,
     onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onSelectPairedDevice: (String) -> Unit,
+    onClearSelectedPairedDevice: () -> Unit,
+    onConnectPairedDevice: (String) -> Unit,
+    onDisconnectDevice: () -> Unit,
+    onCancelReconnect: () -> Unit,
     onResetDefaults: () -> Unit,
-    onResetWorkspaceToast: () -> Unit,
+    onClearWorkspaceHistory: () -> Unit,
     onDismiss: () -> Unit
 ) {
     if (!state.isSettingsOpen) return
@@ -74,6 +70,7 @@ fun SettingsScreen(
     val devicesBadge = when {
         state.connectionPhase == ConnectionPhase.CONNECTED -> "Online"
         state.connectionPhase == ConnectionPhase.RECONNECTING -> "Reconnecting"
+        state.pairedDevicesHistory.isNotEmpty() -> state.pairedDevicesHistory.size.toString()
         state.lastPairedDevice != null -> "Offline"
         else -> null
     }
@@ -89,7 +86,7 @@ fun SettingsScreen(
                 .navigationBarsPadding()
                 .padding(10.dp),
             shape = RoundedCornerShape(NexusDimens.RadiusXl),
-            color = NexusColors.SurfaceSidebar,
+            color = NexusColors.CanvasElevated,
             border = BorderStroke(NexusDimens.BorderHairline, NexusColors.BorderMedium)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -98,33 +95,33 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(NexusColors.SurfaceCard)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_settings),
                             contentDescription = null,
-                            tint = NexusColors.TextSecondary,
-                            modifier = Modifier.size(16.dp)
+                            tint = NexusColors.TextPrimary,
+                            modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Settings",
+                            text = "Nexus Parent Settings",
                             style = MaterialTheme.typography.titleMedium,
                             color = NexusColors.TextPrimary
                         )
                     }
-
                     Box(
                         modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable(onClick = onDismiss)
-                            .testTag("settings_close_btn"),
+                            .size(30.dp)
+                            .clip(RoundedCornerShape(NexusDimens.RadiusSm))
+                            .background(NexusColors.SurfaceSidebar)
+                            .border(NexusDimens.BorderHairline, NexusColors.BorderSubtle, RoundedCornerShape(NexusDimens.RadiusSm))
+                            .clickable(onClick = onDismiss),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -138,7 +135,7 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = NexusColors.BorderSubtle)
 
-                // Adaptive Body
+                // Adaptive Body (Side-by-side Rail on tablets vs Pill Strip on phones)
                 BoxWithConstraints(
                     modifier = Modifier
                         .weight(1f)
@@ -148,23 +145,11 @@ fun SettingsScreen(
 
                     if (isWide) {
                         Row(modifier = Modifier.fillMaxSize()) {
-                            Column(
-                                modifier = Modifier
-                                    .width(220.dp)
-                                    .fillMaxHeight()
-                                    .background(NexusColors.SurfaceSidebar)
-                                    .padding(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                SettingsTabId.entries.forEach { tab ->
-                                    SettingsSidebarTabRow(
-                                        tab = tab,
-                                        isActive = state.activeSettingsTab == tab,
-                                        badgeText = if (tab == SettingsTabId.DEVICES) devicesBadge else null,
-                                        onClick = { onSelectTab(tab) }
-                                    )
-                                }
-                            }
+                            SettingsSidebarRail(
+                                activeTab = state.activeSettingsTab,
+                                devicesBadge = devicesBadge,
+                                onSelectTab = onSelectTab
+                            )
                             VerticalDivider(color = NexusColors.BorderSubtle)
                             Box(
                                 modifier = Modifier
@@ -172,63 +157,25 @@ fun SettingsScreen(
                                     .fillMaxHeight()
                                     .background(NexusColors.CanvasElevated)
                             ) {
-                                SettingsDetailHost(
+                                SettingsMainContent(
                                     state = state,
                                     onUpdateSettings = onUpdateSettings,
-                                    onResetWorkspaceToast = onResetWorkspaceToast
+                                    onSelectPairedDevice = onSelectPairedDevice,
+                                    onClearSelectedPairedDevice = onClearSelectedPairedDevice,
+                                    onConnectPairedDevice = onConnectPairedDevice,
+                                    onDisconnectDevice = onDisconnectDevice,
+                                    onCancelReconnect = onCancelReconnect,
+                                    onClearWorkspaceHistory = onClearWorkspaceHistory
                                 )
                             }
                         }
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(NexusColors.SurfaceSidebar)
-                                    .horizontalScroll(rememberScrollState())
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                SettingsTabId.entries.forEach { tab ->
-                                    val active = state.activeSettingsTab == tab
-                                    Row(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(NexusDimens.RadiusCapsule))
-                                            .background(if (active) NexusColors.AccentWhite else NexusColors.SurfaceCard)
-                                            .border(
-                                                NexusDimens.BorderHairline,
-                                                if (active) NexusColors.AccentWhite else NexusColors.BorderSubtle,
-                                                RoundedCornerShape(NexusDimens.RadiusCapsule)
-                                            )
-                                            .clickable { onSelectTab(tab) }
-                                            .padding(horizontal = 12.dp, vertical = 7.dp)
-                                            .testTag("settings_tab_${tab.name.lowercase()}"),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        if (tab == SettingsTabId.ABOUT) {
-                                            Image(
-                                                painter = painterResource(id = tab.iconRes),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        } else {
-                                            Icon(
-                                                painter = painterResource(id = tab.iconRes),
-                                                contentDescription = null,
-                                                tint = if (active) NexusColors.TextInverse else NexusColors.TextSecondary,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                        Text(
-                                            text = tab.label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (active) NexusColors.TextInverse else NexusColors.TextSecondary,
-                                            maxLines = 1
-                                        )
-                                    }
-                                }
-                            }
+                            SettingsSidebarPillStrip(
+                                activeTab = state.activeSettingsTab,
+                                devicesBadge = devicesBadge,
+                                onSelectTab = onSelectTab
+                            )
                             HorizontalDivider(color = NexusColors.BorderSubtle)
                             Box(
                                 modifier = Modifier
@@ -236,10 +183,15 @@ fun SettingsScreen(
                                     .fillMaxWidth()
                                     .background(NexusColors.CanvasElevated)
                             ) {
-                                SettingsDetailHost(
+                                SettingsMainContent(
                                     state = state,
                                     onUpdateSettings = onUpdateSettings,
-                                    onResetWorkspaceToast = onResetWorkspaceToast
+                                    onSelectPairedDevice = onSelectPairedDevice,
+                                    onClearSelectedPairedDevice = onClearSelectedPairedDevice,
+                                    onConnectPairedDevice = onConnectPairedDevice,
+                                    onDisconnectDevice = onDisconnectDevice,
+                                    onCancelReconnect = onCancelReconnect,
+                                    onClearWorkspaceHistory = onClearWorkspaceHistory
                                 )
                             }
                         }
@@ -267,179 +219,6 @@ fun SettingsScreen(
                         text = "Done",
                         onClick = onDismiss,
                         modifier = Modifier.testTag("settings_done_btn")
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsDetailHost(
-    state: ParentUiState,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
-    onResetWorkspaceToast: () -> Unit
-) {
-    when (state.activeSettingsTab) {
-        SettingsTabId.GENERAL -> GeneralSystemPane(state.settings, onUpdateSettings)
-        SettingsTabId.AUDIO -> AudioIntercomPane(state.settings, onUpdateSettings)
-        SettingsTabId.SURVEILLANCE -> SurveillanceDvrPane(state.settings, onUpdateSettings)
-        SettingsTabId.DEVICES -> PairedDevicesPane(
-            connectionPhase = state.connectionPhase,
-            device = state.connectedDevice ?: state.lastPairedDevice
-        )
-        SettingsTabId.ABOUT -> AboutPane(onResetWorkspaceToast = onResetWorkspaceToast)
-    }
-}
-
-@Composable
-private fun SettingsSidebarTabRow(
-    tab: SettingsTabId,
-    isActive: Boolean,
-    badgeText: String?,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(NexusDimens.RadiusMd))
-            .background(if (isActive) NexusColors.AccentWhiteSubtle else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 9.dp)
-            .testTag("settings_tab_${tab.name.lowercase()}"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            if (tab == SettingsTabId.ABOUT) {
-                Image(
-                    painter = painterResource(id = tab.iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(15.dp)
-                )
-            } else {
-                Icon(
-                    painter = painterResource(id = tab.iconRes),
-                    contentDescription = null,
-                    tint = if (isActive) NexusColors.TextPrimary else NexusColors.TextSecondary,
-                    modifier = Modifier.size(15.dp)
-                )
-            }
-            Text(
-                text = tab.label,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isActive) NexusColors.TextPrimary else NexusColors.TextSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        if (badgeText != null) {
-            TacticalBadgePill(
-                text = badgeText,
-                textColor = when (badgeText) {
-                    "Online" -> NexusColors.LiveGreen
-                    "Reconnecting" -> NexusColors.WarningAmber
-                    else -> NexusColors.TextMuted
-                }
-            )
-        }
-    }
-}
-
-@Composable
-internal fun SettingsSectionGroup(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = title.uppercase(),
-            style = NexusTypography.SectionHeader,
-            color = NexusColors.TextMuted
-        )
-        content()
-    }
-}
-
-@Composable
-internal fun SettingsToggleRow(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(NexusDimens.RadiusMd))
-            .background(NexusColors.SurfaceCard)
-            .border(NexusDimens.BorderHairline, NexusColors.BorderSubtle, RoundedCornerShape(NexusDimens.RadiusMd))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(text = title, style = MaterialTheme.typography.labelMedium, color = NexusColors.TextPrimary)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = NexusColors.TextMuted)
-        }
-        TacticalSwitch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-internal fun <T> SettingsSegmentedRow(
-    title: String,
-    subtitle: String,
-    options: List<T>,
-    selected: T,
-    labelProvider: (T) -> String,
-    onSelect: (T) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(NexusDimens.RadiusMd))
-            .background(NexusColors.SurfaceCard)
-            .border(NexusDimens.BorderHairline, NexusColors.BorderSubtle, RoundedCornerShape(NexusDimens.RadiusMd))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(text = title, style = MaterialTheme.typography.labelMedium, color = NexusColors.TextPrimary)
-        Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = NexusColors.TextMuted)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            options.forEach { option ->
-                val active = option == selected
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(NexusDimens.RadiusSm))
-                        .background(if (active) NexusColors.AccentWhite else NexusColors.SurfaceSidebar)
-                        .border(
-                            NexusDimens.BorderHairline,
-                            if (active) NexusColors.AccentWhite else NexusColors.BorderSubtle,
-                            RoundedCornerShape(NexusDimens.RadiusSm)
-                        )
-                        .clickable { onSelect(option) }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = labelProvider(option),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (active) NexusColors.TextInverse else NexusColors.TextSecondary,
-                        maxLines = 1
                     )
                 }
             }

@@ -78,3 +78,13 @@ cargo test
 Set-Location "d:\Nexus\Nexus Child"
 .\gradlew.bat testDebugUnitTest
 ```
+
+---
+
+## 4. Parent Android Parity (`Nexus Parent/android`)
+
+- **1:1 Modular Package (`ui/settings/maincontent/surveillancedvr/`)**:
+  - `SurveillanceDvrSection.kt`
+  - `ScreenQualitySetting.kt` (`ScreenQuality`: `P1080`, `P720`, `P540`), `CameraLensSetting.kt` (`CameraLens`: `REAR`, `FRONT`), `DvrDurationSetting.kt` (`DvrDuration`: `M15`, `M30`, `M60`), `ClipFormatSetting.kt` (`ClipFormat`: `MP4`, `WEBM`), and `HardwareAccelerationSetting.kt`.
+- **Hardware Video Codec Priority**: `WebRtcManager.kt` invokes `sortVideoCodecsForAcceleration()` (`H264` > `VP9` > `VP8` when hardware acceleration is enabled; `VP8` > `VP9` > `H264` when disabled) paired with `EglBase` and `NexusTextureVideoView` (`TextureView` + `EglRenderer`). Note: individual `CAMERA_ON` / `SCREEN_ON` DataChannel command wiring is staged for the feature-wiring phase.
+- **Verification**: `WebRtcExtensionsTest.kt` verifies hardware vs software video codec ordering.

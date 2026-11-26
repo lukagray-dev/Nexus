@@ -50,7 +50,8 @@ fun DeviceStatusPopover(
     reconnectSecondsRemaining: Int,
     onDisconnect: () -> Unit,
     onCancelReconnect: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRetryReconnectNow: () -> Unit = {}
 ) {
     if (device == null) return
 
@@ -110,9 +111,18 @@ fun DeviceStatusPopover(
                 HorizontalDivider(color = NexusColors.BorderSubtle)
                 Spacer(modifier = Modifier.height(8.dp))
                 PopoverActionButton(
+                    iconRes = R.drawable.ic_refresh_cw,
+                    label = "Retry Now",
+                    accent = NexusColors.TextPrimary,
+                    backgroundColor = NexusColors.SurfaceCard,
+                    onClick = onRetryReconnectNow
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                PopoverActionButton(
                     iconRes = R.drawable.ic_close,
                     label = "Cancel Reconnection",
                     accent = NexusColors.DangerRed,
+                    backgroundColor = NexusColors.DangerRedSubtle,
                     onClick = onCancelReconnect
                 )
             } else {
@@ -181,13 +191,14 @@ private fun PopoverActionButton(
     iconRes: Int,
     label: String,
     accent: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    backgroundColor: Color = NexusColors.DangerRedSubtle
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(NexusDimens.RadiusSm))
-            .background(NexusColors.DangerRedSubtle)
+            .background(backgroundColor)
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {

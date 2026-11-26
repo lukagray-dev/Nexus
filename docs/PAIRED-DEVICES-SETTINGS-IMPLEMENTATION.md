@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document specifies the **Paired Devices** master-detail settings page inside **Nexus Parent** (`Nexus Parent/desktop`) and the expanded `DEVICE_TELEMETRY` protocol emitted by **Nexus Child** (`Nexus Child/app`).
+This document specifies the **Paired Devices** master-detail settings page inside **Nexus Parent** (`Nexus Parent/desktop` & `Nexus Parent/android`) and the expanded `DEVICE_TELEMETRY` protocol emitted by **Nexus Child** (`Nexus Child/app`).
 
 The **Paired Devices** page lists every child device the parent has ever connected to—with one-click **Connect** buttons for quick reconnection—and opens a strictly read-only detailed telemetry view when any device is selected (full-contrast live telemetry when online, grayed-out cached telemetry when offline).
 
@@ -81,3 +81,13 @@ Set-Location "d:\Nexus\Nexus Child"
 .\gradlew.bat testDebugUnitTest
 ```
 - **`WebRtcProtocolTest.kt`**: Verifies `TelemetrySnapshot.toJsonString()` serialization across all 27 telemetry fields.
+
+---
+
+## 5. Parent Android Parity (`Nexus Parent/android`)
+
+- **Persistence (`data/DeviceStorage.kt` & `data/TelemetryParser.kt`)**: Stores `nexus_last_connected_child_device` and deduplicated `nexus_paired_devices_history_v1` in `SharedPreferences` (backed by `StorageStore` for JVM tests), merging all 27 `DEVICE_TELEMETRY` fields onto `DeviceTelemetry` / `DeviceRecord`.
+- **Master-Detail UI (`ui/settings/maincontent/paireddevices/`)**:
+  - `PairedDevicesSection.kt`: Displays the saved paired-devices list with `ONLINE` / `RECONNECTING` / `CONNECTING` / `OFFLINE` badges and 1-tap `Connect` / `Disconnect` / `Cancel` buttons; tapping a row opens the full telemetry view with an **All Paired Devices** back button.
+  - `DeviceTelemetryCard.kt`: Renders the 27-field telemetry grid (`OS VERSION`, `HARDWARE`, `DISPLAY`, `CHILD APP VERSION`, `BATTERY & CHARGING`, `THERMAL & SAVER`, `SYSTEM RAM`, `INTERNAL STORAGE`, `NETWORK & CARRIER`, `RINGER & UPTIME`, `SECURITY GUARDS`, `SURVIVAL PERMISSIONS`).
+- **Verification (`testDebugUnitTest`)**: `TelemetryParserTest.kt`, `DeviceStorageTest.kt`, and `ParentStateHolderTest.kt` verify 27-field parsing, history deduplication, stealth flag sync, and detail navigation.

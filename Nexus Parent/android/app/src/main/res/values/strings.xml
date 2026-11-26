@@ -5,4 +5,6 @@
     <string name="cd_mic_toggle">Toggle microphone monitor</string>
     <string name="cd_settings">Open settings</string>
     <string name="cd_close">Close</string>
+    <string name="service_notification_channel_name">Nexus Parent Connection</string>
+    <string name="service_notification_channel_desc">Maintains encrypted WebRTC connection and auto-reconnect while screen is off.</string>
 </resources>

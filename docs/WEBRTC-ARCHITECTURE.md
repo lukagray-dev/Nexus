@@ -2,15 +2,10 @@
 
 This document defines how real-time video, audio, and data streaming are architected in Nexus.
 
-## 1. Core Architectural Decision: WebView-Native WebRTC
+## 1. Core Architectural Decisions: WebView-Native (Desktop) & Zero-Blocker TextureView WebRTC (Parent Android)
 
-Nexus **does NOT use external Rust WebRTC libraries** (such as `webrtc-rs`, C++ GStreamer, or custom native bindings).
-
-Instead, Nexus leverages the **native WebRTC stack already embedded in the OS WebView** (Chromium / Microsoft Edge WebView2 on Windows):
-
-- **Identical to Electron, without the bloat**: The previous Electron implementation handled media seamlessly because Chromium has Google's battle-tested WebRTC implementation built-in. Tauri's WebView provides that exact same Chromium engine, but with an idle footprint of ~40MB RAM instead of ~400MB.
-- **Hardware-Accelerated Decoding**: Video codecs (H.264, VP8, VP9) and audio codecs (Opus) are decoded directly by the user's GPU and OS media pipeline via standard HTML5 `<video>` and `<audio>` elements.
-- **Zero Rust Transcoding Overhead**: The Rust backend (`src-tauri`) does not intercept, transcode, or buffer raw video frames. Media flows directly between the child Android device and the desktop WebView DOM.
+- **Nexus Parent Desktop (`Nexus Parent/desktop`) does NOT use external Rust WebRTC libraries** (`webrtc-rs`, C++ GStreamer, or custom native bindings); it uses the WebView2/Chromium native `RTCPeerConnection` stack (`<video>`, `<audio>`, Web Audio API) with zero Rust transcoding overhead.
+- **Nexus Parent Android (`Nexus Parent/android`) uses Google WebRTC Android SDK (`com.dafruits:webrtc:123.0.0`) paired with `NexusTextureVideoView` (`TextureView` + `org.webrtc.EglRenderer` + `VideoSink`)** rather than `SurfaceViewRenderer`. Because `SurfaceView` punches hardware holes through Compose layers, using a Compose-hosted `TextureView` guarantees floating Mic HUDs, Push-Drawer slides, DVR scrubbers, and 90° feed rotations compose without window-hole artifacts.
 
 ## 2. Separation of Responsibilities
 

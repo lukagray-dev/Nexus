@@ -263,3 +263,15 @@ npm test
 Set-Location "d:\Nexus\Nexus Parent\desktop\src-tauri"
 cargo test
 ```
+
+---
+
+## 6. Parent Android Parity (`Nexus Parent/android`)
+
+- **1:1 Modular Package (`ui/settings/maincontent/generalsystem/`)**:
+  - `GeneralSystemSection.kt`
+  - `AutoConnectLastDeviceSetting.kt` (triggers single startup `DeviceStateCoordinator.runStartupAutoConnect()` attempt when enabled and a prior paired device is saved)
+  - `KeepScreenAwakeSetting.kt` (toggles `WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON` in `MainActivity.kt` during active/live surveillance)
+  - `DownloadsDirectorySetting.kt`, `AskBeforeDownloadSetting.kt`, and `SafetyAlertsSetting.kt` (`alertChildActiveCall`, `alertIntruderSelfie`, `alertLowBattery`, `alertChildDisconnected`)
+- **Persistence**: `DeviceStorage.kt` serializes `SettingsValues` into `SharedPreferences` (`nexus_parent_settings_v1`) automatically on every edit and reset.
+- **Verification**: `DeviceStorageTest.kt` and `ParentStateHolderTest.kt` via `.\gradlew.bat testDebugUnitTest`.

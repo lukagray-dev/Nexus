@@ -8,13 +8,9 @@
 [![WebRTC](https://img.shields.io/badge/WebRTC-P2P_Encrypted-red?style=flat-square)](https://webrtc.org/)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green?style=flat-square)](./LICENSE)
 
-<p align="center">
-  <b>High-performance, privacy-first parental oversight & live surveillance.</b><br/>
-</p>
+*High-performance, privacy-first parental oversight & live surveillance.*
 
 </div>
-
-<br/>
 
 <div align="center">
 
@@ -59,7 +55,7 @@ Unlike traditional commercial monitoring tools that upload camera feeds, audio r
 
 Nexus is partitioned into two specialized subsystems:
 
-1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and a scaffolded **Android Parent** client (`Nexus Parent/android`).
+1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and the **Android Parent Client** (`Nexus Parent/android`, built with **Kotlin**, **Jetpack Compose**, zero-blocker `TextureView` + `EglRenderer` video surface, Google WebRTC Android SDK, and a persistent `dataSync` background Foreground Service for screen-off resilience; WebRTC connection/renegotiation/telemetry/settings parity is active, with individual feature command wiring staged next).
 2. **Nexus Child (Mobile Client)**: An autonomous Android client written in **Kotlin** integrating device-level telemetry, background accessibility hooks, hardware media capture, Digital Wellbeing usage tracking, active call alerting, and a 5-tier process survival engine.
 
 ## **Why Nexus?**
@@ -79,9 +75,9 @@ Nexus connects the parent console and child device through a high-performance, m
 
 ```mermaid
 graph TB
-    subgraph PARENT["NEXUS PARENT CONSOLE (Desktop Tauri v2 + Rust)"]
+    subgraph PARENT["NEXUS PARENT CLIENTS (Desktop Tauri v2 + Android Kotlin)"]
         direction TB
-        subgraph P_UI["Tactical B&W Frontend (Pure Static TS + CSS)"]
+        subgraph P_UI["Tactical B&W Frontend (Desktop TS/CSS & Android Jetpack Compose)"]
             direction TB
             SURV_CAM["Camera Surveillance<br/>• Rear / Front Lens Default & Switch<br/>• Zero-Renegotiation Track<br/>• 15m/30m/60m Rolling DVR Buffer<br/>• Scrubber, Snap-to-Live & Save Clip"]
             SURV_SCR["Screen & System Audio<br/>• Configurable 1080p/720p/540p Stream<br/>• Autonomous Consent Clicker<br/>• Opus WebCodecs Audio (Sink Routed)<br/>• Rolling DVR & MP4/WebM Clip Export"]
@@ -102,8 +98,9 @@ graph TB
             P_PREFS["5-Tab Preferences Console<br/>• General & System / Auto-Updates<br/>• Audio & Intercom / Surveillance & DVR<br/>• Paired Devices History & About"]
         end
         
-        subgraph P_CORE["Tauri v2 OS Runtime (Rust)"]
-            RUST_HOST["Rust Core & Native Services<br/>• System Tray, Autostart & Always-on-Top<br/>• Display Wake Lock (keepawake)<br/>• Atomic Chunked Downloads & Notifications<br/>• GitHub Stable Release Auto-Updater"]
+        subgraph P_CORE["Native Host Runtimes (Rust Tauri v2 + Android Parent)"]
+            RUST_HOST["Desktop Rust Core & Native Services<br/>• System Tray, Autostart & Always-on-Top<br/>• Display Wake Lock (keepawake)<br/>• Atomic Chunked Downloads & Notifications<br/>• GitHub Stable Release Auto-Updater"]
+            PA_CORE["Parent Android Core (`NexusParentApplication`)<br/>• Google WebRTC (`com.dafruits:webrtc`) + TextureView<br/>• `ParentConnectionService` (`dataSync` + WakeLock)<br/>• `DeviceStateCoordinator` & 9-Attempt Backoff<br/>• `SharedPreferences` History & 1:1 5-Tab Settings"]
         end
     end
 
@@ -225,7 +222,7 @@ graph TD
         DESKTOP_TAURI[desktop/src-tauri/<br/>Rust Tauri v2 Backend<br/>Window, Tray, Downloads, Updater]
         DESKTOP_UI[desktop/src/<br/>Pure Static Frontend<br/>TS / CSS / HTML / Webview Assets]
         DESKTOP_CONF[desktop/package.json<br/>tsconfig.json, tauri.conf.json]
-        PARENT_ANDROID[android/<br/>Kotlin Android Client Scaffold]
+        PARENT_ANDROID[android/<br/>Kotlin + Jetpack Compose Client<br/>WebRTC, Foreground Service, 1:1 Settings]
     end
 
     subgraph "Nexus Child (Mobile)"
@@ -259,29 +256,6 @@ D:\Nexus\
 │   └── screenshots/           # Architecture diagrams and UI captures
 │
 ├── docs/                      # Architectural blueprints & implementation specs
-│   ├── ABOUT-SETTINGS-IMPLEMENTATION.md
-│   ├── APPLOCK-SECURITY-IMPLEMENTATION.md
-│   ├── AUDIO-INTERCOM-SETTINGS-IMPLEMENTATION.md
-│   ├── BACKGROUND-SERVICE-REVIVAL-IMPLEMENTATION.md
-│   ├── CALL-ALERT-IMPLEMENTATION.md
-│   ├── CAMERA-IMPLEMENTATION.md
-│   ├── DIGITAL-WELLBEING-IMPLEMENTATION.md
-│   ├── FOLDER-STRUCTURE.md
-│   ├── GENERAL-SYSTEM-SETTINGS-IMPLEMENTATION.md
-│   ├── KEYBOARD-MONITORING-IMPLEMENTATION.md
-│   ├── LOCATION-IMPLEMENTATION.md
-│   ├── MICROPHONE-IMPLEMENTATION.md
-│   ├── NOTIFICATION-MONITORING-IMPLEMENTATION.md
-│   ├── PAIRED-DEVICES-SETTINGS-IMPLEMENTATION.md
-│   ├── SCREEN-IMPLEMENTATION.md
-│   ├── SMS-CALLLOG-IMPLEMENTATION.md
-│   ├── STEALTH-MODE-IMPLEMENTATION.md
-│   ├── STORAGE-IMPLEMENTATION.md
-│   ├── SURVEILLANCE-DVR-SETTINGS-IMPLEMENTATION.md
-│   ├── UI-PREFERENCES.md
-│   ├── WALLPAPER-VIBRATEFLASH-IMPLEMENTATION.md
-│   ├── WEBRTC-ARCHITECTURE.md
-│   └── WEBRTC-IMPLEMENTATION.md
 │
 ├── Nexus Child/               # Native Android Mobile Application
 │   ├── app/                   # Android application module
@@ -291,7 +265,18 @@ D:\Nexus\
 │   └── gradle/                # Gradle wrapper & catalog files
 │
 ├── Nexus Parent/              # Parent Monitoring Clients
-│   ├── android/               # Scaffolded Android Parent client (Kotlin)
+│   ├── android/               # Native Android Parent client (Kotlin + Jetpack Compose)
+│   │   ├── app/
+│   │   │   ├── src/main/java/com/nexus/parent/
+│   │   │   │   ├── data/      # DeviceStateCoordinator, DeviceStorage, ReconnectManager, TelemetryParser
+│   │   │   │   ├── service/   # ParentConnectionService (dataSync), ParentNotificationManager
+│   │   │   │   ├── state/     # ParentUiModels, FeatureRegistry, ParentStateHolder
+│   │   │   │   ├── webrtc/    # AppConfig, AuthManager, SignalingClient, WebRtcManager, WebRtcExtensions
+│   │   │   │   └── ui/        # Monochrome theme, PushDrawer, Home, Surveillance, Monitor, 1:1 Settings
+│   │   │   ├── src/main/res/  # Lucide SVG-derived Vector Drawables, dark #000000 theme
+│   │   │   ├── src/test/      # JVM unit tests (telemetry, storage, reconnect, WebRTC, state)
+│   │   │   └── build.gradle.kts
+│   │   └── gradle/            # Gradle wrapper & version catalog
 │   └── desktop/               # Tauri v2 Desktop Application
 │       ├── package.json       # Build scripts (npm run build, npm test, tsc)
 │       ├── tsconfig.json      # Strict ESNext/Bundler TypeScript configuration
@@ -335,7 +320,17 @@ Before building Nexus from source, verify you have the following installed:
 - **Node.js**: v20 or later ([nodejs.org](https://nodejs.org/))
 - **Rust & Cargo**: Latest stable toolchain ([rustup.rs](https://rustup.rs/))
 - **Tauri CLI v2**: `cargo install tauri-cli --version "^2.0"`
-- **Android Studio / SDK**: Android SDK API 34+ (for Nexus Child mobile build)
+- **Android Studio / SDK**: Android SDK API 34+ (required for building **Nexus Child** and **Nexus Parent Android**)
+
+#### Launching Nexus Parent Android (Build & Unit Tests)
+
+From `Nexus Parent/android`:
+
+```powershell
+.\gradlew.bat assembleDebug testDebugUnitTest lintDebug --console=plain
+```
+
+> Uses Firebase credentials from root `.env` (injected via `BuildConfig` in `app/build.gradle.kts`).
 
 #### Clone the Repository
 
@@ -358,22 +353,6 @@ Run the automated launcher script from PowerShell or command prompt:
 2. Press `Ctrl + Shift + D` to open the **Run and Debug** view.
 3. Select **"Nexus Parent Desktop (Dev)"** from the dropdown menu.
 4. Press `F5` to trigger the automated build pipeline and attach the debugger.
-
-#### Running Tests
-
-```powershell
-# Nexus Parent (Desktop) — TypeScript build + Node.js test suite
-cd "Nexus Parent\desktop"
-npm test
-
-# Nexus Parent (Desktop) — Rust backend unit tests
-cd "Nexus Parent\desktop\src-tauri"
-cargo test
-
-# Nexus Child (Android) — Kotlin unit tests
-cd "Nexus Child"
-.\gradlew.bat testDebugUnitTest
-```
 
 ## **License & Contributing**
 

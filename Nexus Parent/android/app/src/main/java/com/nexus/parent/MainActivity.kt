@@ -1,12 +1,19 @@
 package com.nexus.parent
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,12 +21,15 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.FeatureId
@@ -54,6 +64,10 @@ import com.nexus.parent.ui.surveillance.storage.StorageScreen
 import com.nexus.parent.ui.theme.NexusColors
 import com.nexus.parent.ui.theme.NexusParentTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import org.webrtc.EglBase
+import org.webrtc.VideoTrack
 
 /**
  * MainActivity.kt - Single-Activity Compose entry point for Nexus Parent Android.
@@ -74,17 +88,73 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.BLACK)
         )
         setContent {
-            val stateHolder = remember { ParentStateHolder() }
+            val app = application as? NexusParentApplication
+            val stateHolder = remember(app) { app?.stateHolder ?: ParentStateHolder() }
+            val videoTrackFlow = remember(app) {
+                app?.coordinator?.webRtcManager?.activeVideoTrack ?: MutableStateFlow<VideoTrack?>(null)
+            }
+            val eglContext = remember(app) { app?.coordinator?.getEglBaseContext() }
+
+            LaunchedEffect(app) {
+                app?.coordinator?.runStartupAutoConnect()
+            }
+
             NexusParentTheme {
-                NexusParentRoot(stateHolder = stateHolder)
+                NexusParentRoot(
+                    stateHolder = stateHolder,
+                    videoTrackFlow = videoTrackFlow,
+                    eglContext = eglContext,
+                    hasLiveCoordinator = app != null
+                )
             }
         }
     }
 }
 
 @Composable
-fun NexusParentRoot(stateHolder: ParentStateHolder) {
+fun NexusParentRoot(
+    stateHolder: ParentStateHolder,
+    videoTrackFlow: StateFlow<VideoTrack?> = remember { MutableStateFlow(null) },
+    eglContext: EglBase.Context? = null,
+    hasLiveCoordinator: Boolean = false
+) {
     val state by stateHolder.uiState.collectAsStateWithLifecycle()
+    val activeVideoTrack by videoTrackFlow.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) {
+            stateHolder.showToast("Notification permission helps keep background WebRTC status visible.")
+        }
+    }
+
+    val requestNotificationsIfNeeded: () -> Unit = {
+        if (hasLiveCoordinator && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    // Keep screen awake cleanly when monitoring live feeds with setting enabled
+    val shouldKeepAwake = state.settings.keepScreenAwake && state.liveFeatures.isNotEmpty()
+    DisposableEffect(shouldKeepAwake, context) {
+        val window = (context as? Activity)?.window
+        if (shouldKeepAwake) {
+            window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
 
     // Auto-dismiss transient toast notifications after 2.6 seconds
     LaunchedEffect(state.toastMessage) {
@@ -122,6 +192,7 @@ fun NexusParentRoot(stateHolder: ParentStateHolder) {
                 },
                 onDisconnectClick = stateHolder::disconnectDevice,
                 onCancelReconnectClick = stateHolder::cancelReconnection,
+                onRetryReconnectNowClick = stateHolder::retryReconnectNow,
                 onSearchQueryChange = stateHolder::setDrawerSearchQuery,
                 onToggleSection = stateHolder::toggleSectionCollapsed,
                 onSelectFeature = stateHolder::selectFeature,
@@ -138,7 +209,10 @@ fun NexusParentRoot(stateHolder: ParentStateHolder) {
                 // 1. Primary Main Viewport Router
                 MainContentRouter(
                     state = state,
-                    stateHolder = stateHolder
+                    stateHolder = stateHolder,
+                    activeVideoTrack = activeVideoTrack,
+                    eglContext = eglContext,
+                    onBeforeConnect = requestNotificationsIfNeeded
                 )
 
                 // 2. Floating Three-Capsule Top Toolbar (hidden in fullscreen video mode)
@@ -205,10 +279,16 @@ fun NexusParentRoot(stateHolder: ParentStateHolder) {
         state = state,
         onSelectTab = stateHolder::selectSettingsTab,
         onUpdateSettings = stateHolder::updateSettings,
-        onResetDefaults = stateHolder::resetSettingsToDefaults,
-        onResetWorkspaceToast = {
-            stateHolder.showToast("Local UI workspace cache cleared")
+        onSelectPairedDevice = stateHolder::selectPairedDevice,
+        onClearSelectedPairedDevice = stateHolder::clearSelectedPairedDevice,
+        onConnectPairedDevice = { targetId ->
+            requestNotificationsIfNeeded()
+            stateHolder.connectToDevice(targetId, fromHistoryId = targetId)
         },
+        onDisconnectDevice = stateHolder::disconnectDevice,
+        onCancelReconnect = stateHolder::cancelReconnection,
+        onResetDefaults = stateHolder::resetSettingsToDefaults,
+        onClearWorkspaceHistory = stateHolder::clearWorkspaceHistory,
         onDismiss = stateHolder::closeSettings
     )
 }
@@ -216,7 +296,10 @@ fun NexusParentRoot(stateHolder: ParentStateHolder) {
 @Composable
 private fun MainContentRouter(
     state: ParentUiState,
-    stateHolder: ParentStateHolder
+    stateHolder: ParentStateHolder,
+    activeVideoTrack: VideoTrack?,
+    eglContext: EglBase.Context?,
+    onBeforeConnect: () -> Unit
 ) {
     val active = state.activeFeature
     if (active == null) {
@@ -233,10 +316,18 @@ private fun MainContentRouter(
                 statusMessage = state.pairingStatusMessage,
                 errorMessage = state.pairingErrorMessage,
                 lastPairedDevice = state.lastPairedDevice,
+                isConnecting = state.connectionPhase == ConnectionPhase.CONNECTING && state.connectingFromHistoryId == null,
+                connectingProgress = state.connectingProgressMessage,
                 onDigitsChange = stateHolder::updatePairingDigits,
                 onClearDigits = stateHolder::clearPairingDigits,
-                onConnectClick = { stateHolder.submitPairingPreview() },
-                onQuickConnectRecent = { rawId -> stateHolder.submitPairingPreview(rawId) }
+                onConnectClick = {
+                    onBeforeConnect()
+                    stateHolder.connectToDevice()
+                },
+                onQuickConnectRecent = { rawId ->
+                    onBeforeConnect()
+                    stateHolder.connectToDevice(rawId)
+                }
             )
         }
         return
@@ -251,7 +342,9 @@ private fun MainContentRouter(
             onScrubDvr = stateHolder::scrubCameraDvr,
             onJumpToLive = stateHolder::jumpCameraToLive,
             onSaveClipClick = { stateHolder.showToast("DVR clip export ready once connected") },
-            onToggleFullscreen = stateHolder::toggleCameraFullscreen
+            onToggleFullscreen = stateHolder::toggleCameraFullscreen,
+            videoTrack = if (state.camera.state == MonitoringState.LIVE) activeVideoTrack else null,
+            eglContext = eglContext
         )
         FeatureId.SCREEN -> ScreenFeedScreen(
             state = state.screen,
@@ -260,7 +353,9 @@ private fun MainContentRouter(
             onScrubDvr = stateHolder::scrubScreenDvr,
             onJumpToLive = stateHolder::jumpScreenToLive,
             onSaveClipClick = { stateHolder.showToast("DVR clip export ready once connected") },
-            onToggleFullscreen = stateHolder::toggleScreenFullscreen
+            onToggleFullscreen = stateHolder::toggleScreenFullscreen,
+            videoTrack = if (state.screen.state == MonitoringState.LIVE) activeVideoTrack else null,
+            eglContext = eglContext
         )
         FeatureId.LOCATION -> LocationScreen(
             state = state.location,

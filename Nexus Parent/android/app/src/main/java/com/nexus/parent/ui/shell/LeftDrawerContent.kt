@@ -69,7 +69,8 @@ fun LeftDrawerContent(
     onSelectFeature: (FeatureId) -> Unit,
     onStealthClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRetryReconnectNowClick: () -> Unit = {}
 ) {
     val filteredSections = FeatureRegistry.filterSections(state.drawerSearchQuery)
 
@@ -116,7 +117,8 @@ fun LeftDrawerContent(
                     reconnectMaxAttempts = state.reconnectMaxAttempts,
                     reconnectSecondsRemaining = state.reconnectSecondsRemaining,
                     onDisconnect = onDisconnectClick,
-                    onCancelReconnect = onCancelReconnectClick
+                    onCancelReconnect = onCancelReconnectClick,
+                    onRetryReconnectNow = onRetryReconnectNowClick
                 )
             }
 
@@ -252,6 +254,7 @@ private fun PairStatusButton(
     onClick: () -> Unit
 ) {
     val isConnected = state.connectionPhase == ConnectionPhase.CONNECTED && state.connectedDevice != null
+    val isConnecting = state.connectionPhase == ConnectionPhase.CONNECTING
     val isReconnecting = state.connectionPhase == ConnectionPhase.RECONNECTING
 
     val borderColor = when {
@@ -273,6 +276,20 @@ private fun PairStatusButton(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         when {
+            isConnecting -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SpinningLoaderIcon(size = 14.dp, tint = NexusColors.TextPrimary)
+                    Text(
+                        text = "Connecting...",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = NexusColors.TextPrimary,
+                        maxLines = 1
+                    )
+                }
+            }
             isReconnecting -> {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

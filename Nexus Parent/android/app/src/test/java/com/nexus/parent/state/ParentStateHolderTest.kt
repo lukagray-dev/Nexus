@@ -143,4 +143,41 @@ class ParentStateHolderTest {
         assertNull(holder.uiState.value.activeFeature)
         assertTrue(holder.uiState.value.liveFeatures.isEmpty())
     }
+
+    @Test
+    fun `telemetry syncs stealth status and paired device detail navigation works cleanly`() {
+        val holder = ParentStateHolder()
+        val sample = DeviceRecord(
+            rawId = "482194021104",
+            formattedId = "4821 9402 1104",
+            name = "Child Phone",
+            model = "Pixel 8 Pro",
+            lastSyncedLabel = "Online • Just now",
+            telemetry = DeviceTelemetry(batteryPercent = 82, isStealthMode = true)
+        )
+
+        holder.onConnectionEstablished(
+            record = sample.copy(telemetry = sample.telemetry.copy(isStealthMode = false)),
+            history = listOf(sample),
+            toastMessage = null
+        )
+        assertEquals(ConnectionPhase.CONNECTED, holder.uiState.value.connectionPhase)
+        assertEquals(StealthStatus.ARMED, holder.uiState.value.stealthStatus)
+
+        holder.onTelemetryUpdated(record = sample, history = listOf(sample))
+        assertEquals(StealthStatus.ACTIVE, holder.uiState.value.stealthStatus)
+        assertEquals(82, holder.uiState.value.connectedDevice?.telemetry?.batteryPercent)
+
+        holder.openSettings(SettingsTabId.DEVICES)
+        holder.selectPairedDevice("482194021104")
+        assertEquals("482194021104", holder.uiState.value.selectedPairedDeviceId)
+        holder.clearSelectedPairedDevice()
+        assertNull(holder.uiState.value.selectedPairedDeviceId)
+
+        holder.onConnectionDroppedReconnecting("Connection lost")
+        assertEquals(ConnectionPhase.RECONNECTING, holder.uiState.value.connectionPhase)
+        holder.onReconnectTick(attempt = 2, maxAttempts = 9, secondsRemaining = 30)
+        assertEquals(2, holder.uiState.value.reconnectAttempt)
+        assertEquals(30, holder.uiState.value.reconnectSecondsRemaining)
+    }
 }

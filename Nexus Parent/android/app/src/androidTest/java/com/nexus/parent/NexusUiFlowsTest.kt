@@ -51,10 +51,13 @@ class NexusUiFlowsTest {
         composeRule.onNodeWithTag("floating_mic_hud").assertIsDisplayed()
         composeRule.onNodeWithTag("mic_hud_close_btn").performClick()
 
-        // 5. Open Settings, switch tabs, and close
+        // 5. Open Settings, switch tabs, inspect paired device detail & back button, and close
         composeRule.onNodeWithTag("capsule_settings_btn").performClick()
         composeRule.onNodeWithTag("settings_tab_surveillance").performClick()
         composeRule.onNodeWithText("Rolling DVR Buffer Duration").assertIsDisplayed()
+        composeRule.onNodeWithTag("settings_tab_devices").performClick()
+        composeRule.onNodeWithTag("paired_device_row_482194021104").performClick()
+        composeRule.onNodeWithTag("paired_devices_back_btn").performClick()
         composeRule.onNodeWithTag("settings_done_btn").performClick()
     }
 }

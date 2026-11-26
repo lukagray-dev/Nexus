@@ -1,4 +1,4 @@
-package com.nexus.parent.ui.settings
+package com.nexus.parent.ui.settings.maincontent.paireddevices
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,45 +23,38 @@ import com.nexus.parent.R
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.ui.components.TacticalBadgePill
-import com.nexus.parent.ui.components.TacticalEmptyState
 import com.nexus.parent.ui.theme.NexusColors
 import com.nexus.parent.ui.theme.NexusDimens
 import com.nexus.parent.ui.theme.NexusTypography
 
 /**
- * PairedDevicesPane.kt - Tab 4 of Settings Console (`paired-devices/`).
+ * DeviceTelemetryCard.kt - 27-field live hardware, OS, power, storage, network, and posture
+ * telemetry inspector matching Desktop `paired-devices/device-card.ts`.
  *
- * Hey friend! Displays the paired child device's full hardware/OS/power/memory/posture
- * telemetry grid. When offline, renders in muted grayed-out contrast preserving cached values.
+ * Hey friend! When inspected for an offline device from history, the card gently lowers its
+ * contrast while keeping every last-known field readable so parents always know the child phone's
+ * last synced battery, storage, OS, and security posture.
  */
 @Composable
-fun PairedDevicesPane(
+fun DeviceTelemetryCard(
+    device: DeviceRecord,
     connectionPhase: ConnectionPhase,
-    device: DeviceRecord?
+    isActiveDevice: Boolean,
+    modifier: Modifier = Modifier
 ) {
-    if (device == null) {
-        TacticalEmptyState(
-            iconRes = R.drawable.ic_devices,
-            title = "No Paired Child Device",
-            description = "Pair a 12-digit Child ID to inspect live hardware, power, storage, and survival posture telemetry."
-        )
-        return
-    }
-
-    val isOnline = connectionPhase == ConnectionPhase.CONNECTED
-    val isReconnecting = connectionPhase == ConnectionPhase.RECONNECTING
-    val contentAlpha = if (isOnline) 1f else 0.58f
+    val isOnline = isActiveDevice && connectionPhase == ConnectionPhase.CONNECTED
+    val isReconnecting = isActiveDevice && connectionPhase == ConnectionPhase.RECONNECTING
+    val isConnecting = isActiveDevice && connectionPhase == ConnectionPhase.CONNECTING
+    val contentAlpha = if (isOnline) 1f else 0.64f
     val t = device.telemetry
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
             .alpha(contentAlpha),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Device Header Card
+        // Device Header Summary Card
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -84,7 +75,7 @@ fun PairedDevicesPane(
                     contentDescription = null,
                     modifier = Modifier.size(32.dp)
                 )
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = device.name,
                         style = MaterialTheme.typography.titleMedium,
@@ -101,27 +92,55 @@ fun PairedDevicesPane(
                 text = when {
                     isOnline -> "ONLINE"
                     isReconnecting -> "RECONNECTING"
+                    isConnecting -> "CONNECTING"
                     else -> "OFFLINE"
                 },
                 textColor = when {
                     isOnline -> NexusColors.LiveGreen
                     isReconnecting -> NexusColors.WarningAmber
+                    isConnecting -> NexusColors.TextPrimary
                     else -> NexusColors.TextMuted
                 }
             )
         }
 
-        TelemetryTileRow("OS", "Android ${t.androidVersion} (API ${t.sdkInt})", "HARDWARE", "${t.brand} ${device.model}")
-        TelemetryTileRow("DISPLAY", "${if (t.isScreenOn) "Awake" else "Screen Off"} (${t.screenResolution})", "APP VERSION", t.appVersion)
+        // Complete 27-field Hardware, OS, Battery, Memory, Storage, Radio & Posture Grid
         TelemetryTileRow(
-            "BATTERY",
-            "${t.batteryPercent}% • ${t.chargingSource}",
-            "THERMAL / POWER",
-            "${t.batteryTemperatureC} C • ${if (t.isPowerSaveMode) "Saver On" else "Normal"}"
+            leftLabel = "OS VERSION",
+            leftValue = "Android ${t.androidVersion} (API ${t.sdkInt})",
+            rightLabel = "HARDWARE",
+            rightValue = "${t.brand} ${device.model}"
         )
-        TelemetryTileRow("SYSTEM RAM", t.ramUsageText, "INTERNAL STORAGE", t.storageUsageText)
-        TelemetryTileRow("NETWORK / SIM", "${t.networkState} • ${t.simCarrier}", "RINGER / UPTIME", "${t.ringerMode} • ${t.deviceUptimeLabel}")
-        TelemetryTileRow("SECURITY GUARDS", t.securityGuardsText, "SURVIVAL PERMISSIONS", t.survivalPermissionsText)
+        TelemetryTileRow(
+            leftLabel = "DISPLAY",
+            leftValue = "${if (t.isScreenOn) "Awake" else "Screen Off"} (${t.screenResolution})",
+            rightLabel = "CHILD APP VERSION",
+            rightValue = t.appVersion
+        )
+        TelemetryTileRow(
+            leftLabel = "BATTERY & CHARGING",
+            leftValue = "${t.batteryPercent}% • ${if (t.isCharging) "Charging (${t.chargingSource})" else t.chargingSource}",
+            rightLabel = "THERMAL & SAVER",
+            rightValue = "${"%.1f".format(t.batteryTemperatureC)} C • ${if (t.isPowerSaveMode) "Battery Saver On" else "Normal"}"
+        )
+        TelemetryTileRow(
+            leftLabel = "SYSTEM RAM",
+            leftValue = t.ramUsageText,
+            rightLabel = "INTERNAL STORAGE",
+            rightValue = t.storageUsageText
+        )
+        TelemetryTileRow(
+            leftLabel = "NETWORK & CARRIER",
+            leftValue = "${t.networkState} • ${t.simCarrier}",
+            rightLabel = "RINGER & UPTIME",
+            rightValue = "${t.ringerMode} • ${t.deviceUptimeLabel}"
+        )
+        TelemetryTileRow(
+            leftLabel = "SECURITY GUARDS",
+            leftValue = t.securityGuardsText,
+            rightLabel = "SURVIVAL PERMISSIONS",
+            rightValue = "${t.survivalPermissionsText} • ${if (t.batteryOptimizationIgnored) "Doze Exempt" else "Restricted"}"
+        )
     }
 }
 
