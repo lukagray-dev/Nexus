@@ -3,8 +3,9 @@
  * @description Settings Navigation Sidebar component for Nexus Parent.
  *
  * Hey friend! This module renders the tactical left navigation bar inside the Settings modal:
- * 1. Renders the 6 category tabs (General, Audio, Surveillance, Security, Devices, Diagnostics).
- * 2. Uses professional vector SVG icons matching the monochrome tactical theme (no emojis).
+ * 1. Renders the 6 category tabs (General, Audio, Surveillance, Security, Devices, About).
+ * 2. Uses professional vector SVG icons matching the monochrome tactical theme (no emojis),
+ *    preserving the native silver finish on the Nexus Parent brand logo.
  * 3. Highlights the active tab with an animated left accent indicator.
  * 4. Dynamically reflects live Child Device status (`Online`, `Reconnecting`, `Offline`) on the
  *    Paired Devices tab badge.
@@ -96,7 +97,7 @@ export class SettingsSidebar {
 
     return `
       <span class="settings-nav-item-left">
-        <img class="settings-nav-icon" src="${tab.iconPath}" alt="" />
+        <img class="settings-nav-icon${tab.preserveIconColors ? ' is-brand-logo' : ''}" src="${tab.iconPath}" alt="" />
         <span class="settings-nav-label">${tab.label}</span>
       </span>
       ${badgeHtml}

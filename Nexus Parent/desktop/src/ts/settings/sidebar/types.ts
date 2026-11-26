@@ -20,7 +20,7 @@ export type SettingsTabId =
   | 'security'
   | 'general'
   | 'devices'
-  | 'diagnostics';
+  | 'about';
 
 /**
  * Contract representing an item in the Settings left navigation sidebar.
@@ -30,6 +30,7 @@ export interface SettingsTabItem {
   label: string;
   description: string;
   iconPath: string;
+  preserveIconColors?: boolean;
   badge?: string;
 }
 
@@ -71,9 +72,6 @@ export interface SettingsValues {
   keepScreenAwake: boolean;
   closeAction: 'tray' | 'exit';
   autoCheckUpdates: boolean;
-
-  // 5. Diagnostics & Storage
-  diagnosticLogging: boolean;
 }
 
 /**
@@ -111,10 +109,11 @@ export const SETTINGS_TABS: SettingsTabItem[] = [
     iconPath: 'assets/icons/settings/devices.svg',
   },
   {
-    id: 'diagnostics',
-    label: 'Diagnostics & Storage',
-    description: 'Cache, logs & system metrics',
-    iconPath: 'assets/icons/settings/diagnostics.svg',
+    id: 'about',
+    label: 'About Nexus Parent',
+    description: 'App info, runtime specs & workspace data',
+    iconPath: 'assets/logo/nexus-parent.svg',
+    preserveIconColors: true,
   },
 ];
 
@@ -157,8 +156,5 @@ export function getDefaultSettingsValues(): SettingsValues {
     keepScreenAwake: true,
     closeAction: 'tray',
     autoCheckUpdates: true,
-
-    // 5. Diagnostics & Storage
-    diagnosticLogging: true,
   };
 }

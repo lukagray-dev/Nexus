@@ -55,6 +55,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::open_external_url,
+            commands::get_parent_system_info,
+            commands::open_local_folder,
             downloads::get_default_downloads_directory,
             downloads::pick_downloads_directory,
             downloads::pick_save_file_path,

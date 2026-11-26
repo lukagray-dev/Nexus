@@ -5,7 +5,7 @@
  * Hey friend! These tests verify:
  * 1. Category Registry: All 6 required categories are registered with proper labels, descriptions, and vector icons.
  * 2. Default Configuration: Baseline factory defaults across General, Audio, Surveillance, Security,
- *    Devices, and Diagnostics are complete and valid (with Connection & WebRTC removed).
+ *    Devices, and About are complete and valid (with Connection & WebRTC and Diagnostics removed).
  * 3. State & Auto-Save: Tab switching, property mutations, instant localStorage persistence,
  *    legacy key cleanup, and resetToDefaults recovery.
  * 4. Navigation Sidebar: DOM structure, aria accessibility attributes, and reactive active item updates.
@@ -34,7 +34,7 @@ describe('Settings Category Registry & Default Values Tests', () => {
       'surveillance',
       'security',
       'devices',
-      'diagnostics',
+      'about',
     ];
 
     const expectedLabels = [
@@ -43,12 +43,17 @@ describe('Settings Category Registry & Default Values Tests', () => {
       'Surveillance & DVR',
       'Security & App Lock',
       'Paired Devices',
-      'Diagnostics & Storage',
+      'About Nexus Parent',
     ];
 
     assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.id), expectedIds);
     assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.label), expectedLabels);
     assert.strictEqual(SETTINGS_TABS.some((t) => t.id === 'connection'), false);
+    assert.strictEqual(SETTINGS_TABS.some((t) => t.id === 'diagnostics'), false);
+
+    const aboutTab = SETTINGS_TABS[5];
+    assert.strictEqual(aboutTab.iconPath, 'assets/logo/nexus-parent.svg');
+    assert.strictEqual(aboutTab.preserveIconColors, true);
   });
 
   it('Each category tab must possess non-empty label, description, and valid SVG iconPath without emojis', () => {
@@ -111,11 +116,9 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.closeAction, 'tray');
     assert.strictEqual(defaults.autoCheckUpdates, true);
 
-    // Removed legacy deviceAlias key must not exist
+    // Removed legacy deviceAlias & diagnosticLogging keys must not exist
     assert.strictEqual('deviceAlias' in defaults, false);
-
-    // 6. Diagnostics
-    assert.strictEqual(defaults.diagnosticLogging, true);
+    assert.strictEqual('diagnosticLogging' in defaults, false);
   });
 });
 
@@ -220,7 +223,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual(state.getValue('startMinimized'), true);
   });
 
-  it('Strips removed legacy Connection & WebRTC and deviceAlias keys when loading persisted settings', () => {
+  it('Strips removed legacy Connection & WebRTC, deviceAlias, and diagnosticLogging keys when loading persisted settings', () => {
     mockStorage[SETTINGS_STORAGE_KEY] = JSON.stringify({
       defaultVoicePreset: 'echo',
       autoReconnect: false,
@@ -230,6 +233,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
       iceGatherTimeout: 900,
       signalingHeartbeat: 45,
       deviceAlias: 'Old Nickname',
+      diagnosticLogging: false,
     });
     const state = new SettingsState();
     const values = state.getValues();
@@ -242,6 +246,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual('iceGatherTimeout' in values, false);
     assert.strictEqual('signalingHeartbeat' in values, false);
     assert.strictEqual('deviceAlias' in values, false);
+    assert.strictEqual('diagnosticLogging' in values, false);
   });
 });
 
@@ -326,6 +331,12 @@ describe('Settings Navigation Sidebar Component Tests', () => {
     assert.strictEqual(firstTab.dataset.tabId, 'general');
     assert.strictEqual(firstTab.classList.contains('is-active'), true);
     assert.strictEqual(firstTab.attributes['aria-selected'], 'true');
+
+    // Final tab 'about' must use app logo without invert filter class
+    const aboutNavItem = nav.children[5];
+    assert.strictEqual(aboutNavItem.dataset.tabId, 'about');
+    assert.ok(aboutNavItem.innerHTML.includes('assets/logo/nexus-parent.svg'));
+    assert.ok(aboutNavItem.innerHTML.includes('is-brand-logo'));
 
     sidebar.destroy();
   });

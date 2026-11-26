@@ -87,6 +87,23 @@ export interface UpdateStatusPayload {
 }
 
 /**
+ * Live host, runtime, and storage directory metadata returned by Rust `get_parent_system_info`.
+ */
+export interface ParentSystemInfo {
+  appName: string;
+  appVersion: string;
+  identifier: string;
+  tauriVersion: string;
+  webviewVersion: string | null;
+  os: string;
+  arch: string;
+  cpuCores: number;
+  exePath: string | null;
+  configDir: string | null;
+  localDataDir: string | null;
+}
+
+/**
  * Request to minimize the native application window to the OS taskbar.
  */
 export async function minimizeWindow(): Promise<void> {
@@ -323,6 +340,30 @@ export async function setKeepScreenAwake(enabled: boolean): Promise<boolean> {
  */
 export async function getAppVersion(): Promise<string | null> {
   return await invokeCommand<string>('get_app_version');
+}
+
+/**
+ * Queries live OS, Tauri runtime, WebView2, and directory path metadata from Rust.
+ */
+export async function getParentSystemInfo(): Promise<ParentSystemInfo | null> {
+  return await invokeCommand<ParentSystemInfo>('get_parent_system_info');
+}
+
+/**
+ * Opens an existing local directory in the OS file manager via Rust `open_local_folder`.
+ */
+export async function openLocalFolder(path: string): Promise<boolean> {
+  const trimmed = path.trim();
+  if (!trimmed) return false;
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (!invoke) return false;
+  try {
+    await invoke('open_local_folder', { path: trimmed });
+    return true;
+  } catch (err) {
+    console.error('[IPC] Failed to open local folder:', err);
+    return false;
+  }
 }
 
 /**

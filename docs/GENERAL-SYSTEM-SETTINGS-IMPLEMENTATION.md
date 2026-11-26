@@ -23,7 +23,7 @@ Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TA
 | 3 | `surveillance` | **Surveillance & DVR** | - |
 | 4 | `security` | **Security & App Lock** | - |
 | 5 | `devices` | **Paired Devices** | - |
-| 6 | `diagnostics` | **Diagnostics & Storage** | - |
+| 6 | `about` | **About Nexus Parent** | - |
 
 > Desktop Alert Notifications (`Intruder Selfie Triggered`, `Child Device Low Battery`, `Child Device Disconnection`) are hosted on **Security & App Lock** (`security-forensics/desktop-alerts.ts`) as toggle switches rather than checkboxes.
 

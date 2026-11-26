@@ -22,7 +22,7 @@ import {
   renderGeneralSystemContent,
 } from './general-system/general-system.js';
 import { renderPairedDevicesContent } from './paired-devices/paired-devices.js';
-import { renderDiagnosticsStorageContent } from './diagnostics-storage/diagnostics-storage.js';
+import { renderAboutContent } from './about/about.js';
 
 /**
  * Builds the DOM section element for the given Settings category tab ID.
@@ -39,8 +39,8 @@ export function renderSettingsMainContent(tabId: SettingsTabId): HTMLElement {
       return renderGeneralSystemContent();
     case 'devices':
       return renderPairedDevicesContent();
-    case 'diagnostics':
-      return renderDiagnosticsStorageContent();
+    case 'about':
+      return renderAboutContent();
     default:
       return renderGeneralSystemContent();
   }

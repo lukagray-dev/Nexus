@@ -169,6 +169,14 @@
   flex-shrink: 0;
 }
 
+.settings-nav-icon.is-brand-logo {
+  filter: none;
+  opacity: 0.92;
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
 .settings-nav-item.is-active .settings-nav-icon {
   opacity: 1;
 }
@@ -925,4 +933,121 @@
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+}
+
+/* About Nexus Parent Page */
+.settings-about-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-about-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-about-logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #0e0e0e;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-about-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.settings-about-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.settings-about-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-about-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.settings-about-status-pill {
+  font-family: var(--mono-font-family);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  background-color: #1f1f1f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.settings-about-status-pill.is-ready {
+  color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.settings-about-id {
+  font-family: var(--mono-font-family);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.settings-about-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.settings-about-path-row {
+  align-items: center;
+}
+
+.settings-about-path-val {
+  font-family: var(--mono-font-family);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.settings-about-path-val.is-muted {
+  color: rgba(255, 255, 255, 0.38);
+  font-style: italic;
+}
+
+.settings-about-links-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.settings-btn-danger.is-armed {
+  background-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35);
 }
