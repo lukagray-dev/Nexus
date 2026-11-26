@@ -130,3 +130,6 @@ If the peer connection or DataChannel closes (network drop, app closed, child re
 | **Desktop Camera UI** | `Nexus Parent/.../camera/camera.ts` | Dual-surface video player, loading spinners, YouTube-style scrubber, rotate, clip recorder. |
 | **Desktop Styles** | `Nexus Parent/.../camera/camera.css` | Edge-to-edge layout, scrubber hover animations, pulsing/dimmed live dot, button spinners. |
 | **Desktop WebRTC Manager**| `Nexus Parent/.../webrtc/webrtc-manager.ts` | `cameraStream` cache, `nexus-camera-stream` global event dispatch. |
+| **Android Parent Protocol & State** | `Nexus Parent/android/.../data/SurveillanceProtocols.kt`, `SurveillanceCoordinator.kt` | Command/ACK lifecycle (`20s` timeout), mutual-exclusivity preemption, live `SpinningLoaderIcon` states. |
+| **Android Parent DVR & Export** | `Nexus Parent/android/.../media/RollingDvrEngine.kt`, `ClipExportManager.kt` | 4s segmented hardware `MediaCodec` + `MediaMuxer` buffer (`15m`/`30m`/`60m`), `MediaStore`/SAF export. |
+| **Android Parent Surfaces** | `Nexus Parent/android/.../ui/surveillance/camera/CameraFeedScreen.kt`, `video/` | Live `NexusVideoSurface` (`TextureView` + `EglRenderer`) & `DvrPlaybackTextureView` (`MediaPlayer`). |

@@ -55,7 +55,7 @@ Unlike traditional commercial monitoring tools that upload camera feeds, audio r
 
 Nexus is partitioned into two specialized subsystems:
 
-1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and the **Android Parent Client** (`Nexus Parent/android`, built with **Kotlin**, **Jetpack Compose**, zero-blocker `TextureView` + `EglRenderer` video surface, Google WebRTC Android SDK, persistent `dataSync` background Foreground Service for screen-off resilience, 1:1 5-tab settings console, and live DataChannel monitoring/control panels for SMS, Call Log, Notifications, Keyboard Audit, Digital Wellbeing, App Lock, Vibrate & Flash, and Wallpaper).
+1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and the **Android Parent Client** (`Nexus Parent/android`, built with **Kotlin**, **Jetpack Compose**, zero-blocker `TextureView` + `EglRenderer` video surface, Google WebRTC Android SDK, native `MediaCodec`/`MediaMuxer` segmented Rolling DVR + Clip Export, `MediaCodec` + `AudioTrack` 48kHz Opus internal system audio playback, `osmdroid` Esri Satellite / CartoDB Dark Streets live GPS tracking + Nominatim geocoding, persistent `dataSync` background Foreground Service for screen-off resilience, 1:1 5-tab settings console, and live DataChannel monitoring/control panels for SMS, Call Log, Notifications, Keyboard Audit, Digital Wellbeing, App Lock, Vibrate & Flash, and Wallpaper).
 2. **Nexus Child (Mobile Client)**: An autonomous Android client written in **Kotlin** integrating device-level telemetry, background accessibility hooks, hardware media capture, Digital Wellbeing usage tracking, active call alerting, and a 5-tier process survival engine.
 
 ## **Why Nexus?**
@@ -268,13 +268,14 @@ D:\Nexus\
 │   ├── android/               # Native Android Parent client (Kotlin + Jetpack Compose)
 │   │   ├── app/
 │   │   │   ├── src/main/java/com/nexus/parent/
-│   │   │   │   ├── data/      # DeviceStateCoordinator, DeviceStorage, ReconnectManager, TelemetryParser, monitor/
+│   │   │   │   ├── data/      # DeviceStateCoordinator, DeviceStorage, ReconnectManager, TelemetryParser, Surveillance*/Monitor* Coordinators
+│   │   │   │   ├── media/     # RollingDvrEngine, ClipExportManager (MediaStore/SAF), OpusAudioPlayer (48kHz Opus -> AudioTrack)
 │   │   │   │   ├── service/   # ParentConnectionService (dataSync), ParentNotificationManager
 │   │   │   │   ├── state/     # ParentUiModels, FeatureRegistry, ParentStateHolder
 │   │   │   │   ├── webrtc/    # AppConfig, AuthManager, SignalingClient, WebRtcManager, WebRtcExtensions
-│   │   │   │   └── ui/        # Monochrome theme, PushDrawer, Home, Surveillance, Monitor, 1:1 Settings
+│   │   │   │   └── ui/        # Monochrome theme, PushDrawer, Home, Surveillance (Camera, Screen+DVR, osmdroid Location), Monitor, 1:1 Settings
 │   │   │   ├── src/main/res/  # Lucide & loading SVG-derived Vector Drawables, dark #000000 theme
-│   │   │   ├── src/test/      # JVM unit tests (telemetry, storage, reconnect, WebRTC, state, monitor)
+│   │   │   ├── src/test/      # JVM unit tests (telemetry, storage, reconnect, WebRTC, DVR/Opus, Location, state, monitor)
 │   │   │   └── build.gradle.kts
 │   │   └── gradle/            # Gradle wrapper & version catalog
 │   └── desktop/               # Tauri v2 Desktop Application

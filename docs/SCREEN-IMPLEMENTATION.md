@@ -146,4 +146,5 @@ On Android 10+ (API 29+):
 All components are strictly verified across both Android and Desktop test suites:
 - **Android Child**: 101 tests pass (`ScreenComponentTest`, `PermissionManagerTest`, etc.).
 - **Desktop Parent**: 82 tests pass (`screen-protocol.test.js`, `camera-protocol.test.js`, etc.).
+- **Android Parent (`Nexus Parent/android`)**: Implements 1:1 protocol/DVR parity via `SurveillanceCoordinator.kt`, `RollingDvrEngine.kt`, `DvrPlaybackTextureView.kt`, `ClipExportManager.kt`, and `OpusAudioPlayer.kt` (`MediaCodec` `audio/opus` with RFC 7845 `OpusHead` CSD headers -> `AudioTrack` PCM playback + interactive mute toggle in `ScreenFeedScreen.kt`); **36 / 36** JVM unit tests pass across 13 test files (`SurveillanceProtocolsTest`, `DvrAndOpusHelpersTest`, `NominatimGeocoderTest`, `ParentStateHolderTest`, etc.) and `0` source lint warnings.
 - **Build Quality**: Zero compilation warnings, zero errors.

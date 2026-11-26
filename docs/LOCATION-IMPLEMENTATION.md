@@ -144,3 +144,9 @@ To maintain industrial reliability without draining child battery:
 * `src/ts/main-content/location/location.ts`: Full-bleed interactive view controller with loading spinner synchronization and DataChannel bindings.
 * `src/css/main-content/location/location.css`: Tactical dark surveillance stylesheet with zero emojis.
 * `test/location-protocol.test.js`: Comprehensive unit tests for state machine, timeouts, error recovery, and formatting utilities.
+
+### Android Parent (`Nexus Parent/android`)
+* `data/SurveillanceProtocols.kt` & `data/SurveillanceCoordinator.kt`: DataChannel `LOCATION_ON` / `LOCATION_OFF` command state machine (`20s` timeout), `LOCATION_UPDATE` JSON decoder, `LOCATION_ERROR:` surfacing, and 5-second relative ping ticker.
+* `ui/surveillance/location/NexusOsmMapView.kt`: `osmdroid` (`6.1.20`) Compose `AndroidView` switching live between Esri World Imagery + Reference Boundaries (`Satellite`) and CartoDB Dark Matter (`Dark Streets`) with a native `TacticalGpsTargetOverlay` accuracy halo and center pinpoint.
+* `ui/surveillance/location/NominatimGeocoder.kt`: 2s-throttled OpenStreetMap Nominatim reverse geocoder with 4-decimal grid caching.
+* `ui/surveillance/location/LocationScreen.kt` & `ui/shell/PushDrawerScaffold.kt`: Floating telemetry card, Start/Stop `SpinningLoaderIcon` busy states, `+`/`-` zoom & Center Target controls, and a `24dp` left-edge drawer swipe bezel for unobstructed map panning.
