@@ -67,7 +67,13 @@ import {
   TYPE_APPLOCK_SNAPSHOT,
   TYPE_APPLOCK_NEW,
   RESP_APPLOCK_STATUS,
-  RESP_APPLOCK_PIN_CHANGED
+  RESP_APPLOCK_PIN_CHANGED,
+  CMD_WELLBEING_ON,
+  CMD_WELLBEING_OFF,
+  RESP_WELLBEING_STARTED,
+  RESP_WELLBEING_STOPPED,
+  RESP_WELLBEING_ERROR_PREFIX,
+  TYPE_WELLBEING_SNAPSHOT
 } from './types.js';
 import { webrtcManager } from '../webrtc/webrtc-manager.js';
 import { triggerSidebarToast } from './shared.js';
@@ -96,6 +102,7 @@ let notificationTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let wallpaperTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let keyboardTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 let appLockTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let wellbeingTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   sms: { title: 'SMS Messages', badge: 'Active Sync', render: renderSmsPanel },
@@ -112,7 +119,7 @@ const PANEL_CONFIGS: Record<RightSidebarPanelId, PanelConfig> = {
   facebook: { title: 'Facebook Activity', badge: 'Social', render: renderFacebookPanel },
   instagram: { title: 'Instagram Activity', badge: 'Direct Msg', render: renderInstagramPanel },
   snapchat: { title: 'Snapchat Activity', badge: 'Ephemeral', render: renderSnapchatPanel },
-  wellbeing: { title: 'Digital Wellbeing', badge: 'Coming Soon', render: renderWellbeingPanel },
+  wellbeing: { title: 'Digital Wellbeing', badge: 'Live Stream', render: renderWellbeingPanel },
   applock: { title: 'App Lock Manager', badge: 'PIN Guard', render: renderAppLockPanel },
   vibrateflash: { title: 'Vibrate & Flash Device', badge: 'Hardware Link', render: renderVibrateFlashPanel },
   wallpaper: { title: 'Device Wallpaper', badge: 'Remote Display', render: renderWallpaperPanel }
@@ -615,6 +622,59 @@ function setupDataChannelListeners(): void {
       }
       return;
     }
+
+    // -------------------------------------------------------------------------
+    // DIGITAL WELLBEING PROTOCOL RESPONSES
+    // -------------------------------------------------------------------------
+    if (trimmed === RESP_WELLBEING_STARTED) {
+      console.log('[RightSidebar] Child confirmed: WELLBEING_STARTED');
+      if (wellbeingTimeoutTimer) {
+        clearTimeout(wellbeingTimeoutTimer);
+        wellbeingTimeoutTimer = null;
+      }
+      rightSidebarState.setWellbeingError(null);
+      rightSidebarState.setWellbeingMonitoringState('LIVE');
+      sidebarState.setFeatureLive('wellbeing', true);
+      return;
+    }
+
+    if (trimmed === RESP_WELLBEING_STOPPED) {
+      console.log('[RightSidebar] Child confirmed: WELLBEING_STOPPED');
+      if (wellbeingTimeoutTimer) {
+        clearTimeout(wellbeingTimeoutTimer);
+        wellbeingTimeoutTimer = null;
+      }
+      rightSidebarState.setWellbeingMonitoringState('IDLE');
+      sidebarState.setFeatureLive('wellbeing', false);
+      return;
+    }
+
+    if (trimmed.startsWith(RESP_WELLBEING_ERROR_PREFIX)) {
+      const err = trimmed.slice(RESP_WELLBEING_ERROR_PREFIX.length);
+      console.error('[RightSidebar] Digital Wellbeing error from Child:', err);
+      if (wellbeingTimeoutTimer) {
+        clearTimeout(wellbeingTimeoutTimer);
+        wellbeingTimeoutTimer = null;
+      }
+      rightSidebarState.setWellbeingError(err);
+      rightSidebarState.setWellbeingMonitoringState('IDLE');
+      sidebarState.setFeatureLive('wellbeing', false);
+      triggerSidebarToast(err);
+      return;
+    }
+
+    if (trimmed.startsWith(`{"type":"${TYPE_WELLBEING_SNAPSHOT}"`)) {
+      try {
+        const payload = JSON.parse(trimmed);
+        console.log(
+          `[RightSidebar] Received WELLBEING_SNAPSHOT chunk [${(payload.chunkIndex ?? 0) + 1}/${payload.totalChunks ?? 1}]`
+        );
+        rightSidebarState.handleWellbeingSnapshotChunk(payload);
+      } catch (e) {
+        console.error('[RightSidebar] Failed to parse WELLBEING_SNAPSHOT payload:', e);
+      }
+      return;
+    }
   });
 
   // Reset monitoring state when WebRTC disconnects
@@ -645,6 +705,10 @@ function setupDataChannelListeners(): void {
         clearTimeout(appLockTimeoutTimer);
         appLockTimeoutTimer = null;
       }
+      if (wellbeingTimeoutTimer) {
+        clearTimeout(wellbeingTimeoutTimer);
+        wellbeingTimeoutTimer = null;
+      }
       rightSidebarState.resetMonitoringStates();
       sidebarState.setFeatureLive('calllog', false);
       sidebarState.setFeatureLive('sms', false);
@@ -652,6 +716,7 @@ function setupDataChannelListeners(): void {
       sidebarState.setFeatureLive('wallpaper', false);
       sidebarState.setFeatureLive('keyboard', false);
       sidebarState.setFeatureLive('applock', false);
+      sidebarState.setFeatureLive('wellbeing', false);
     }
   });
 }
@@ -797,6 +862,17 @@ export function renderRightSidebar(): void {
     return;
   }
 
+  // Synchronize footer button for Digital Wellbeing panel
+  if (activePanelId === 'wellbeing') {
+    const wellbeingState = rightSidebarState.getWellbeingMonitoringState();
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, wellbeingState, 'Digital Wellbeing');
+
+    playBtn?.addEventListener('click', () => {
+      handleWellbeingPlayPauseClick(playBtn, playIcon, statusSpan);
+    });
+    return;
+  }
+
   // Vibrate & Flash Panel - No continuous live monitoring button
   if (activePanelId === 'vibrateflash') {
     if (playBtn) playBtn.style.display = 'none';
@@ -813,8 +889,7 @@ export function renderRightSidebar(): void {
     activePanelId === 'telegram' ||
     activePanelId === 'chatgpt' ||
     activePanelId === 'claude' ||
-    activePanelId === 'grok' ||
-    activePanelId === 'wellbeing'
+    activePanelId === 'grok'
   ) {
     if (playBtn) playBtn.style.display = 'none';
     if (statusSpan) {
@@ -1174,6 +1249,69 @@ function handleAppLockPlayPauseClick(
         updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'App Lock');
       }
     }, 10000);
+  }
+}
+
+/**
+ * Handles Play/Pause click action specifically for Digital Wellbeing monitoring
+ * using the confirmation flow with loading.svg interval spinners.
+ */
+function handleWellbeingPlayPauseClick(
+  playBtn: HTMLButtonElement | null,
+  playIcon: HTMLImageElement | null,
+  statusSpan: HTMLElement | null
+): void {
+  const currentState = rightSidebarState.getWellbeingMonitoringState();
+  if (currentState === 'STARTING' || currentState === 'STOPPING') {
+    return;
+  }
+
+  if (currentState === 'IDLE') {
+    console.log('[RightSidebar] Starting Digital Wellbeing monitoring...');
+    rightSidebarState.setWellbeingError(null);
+    rightSidebarState.setWellbeingMonitoringState('STARTING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STARTING', 'Digital Wellbeing');
+
+    const activeRange = rightSidebarState.getWellbeingRange();
+    const sent = webrtcManager.sendCommand(
+      JSON.stringify({ type: CMD_WELLBEING_ON, range: activeRange })
+    );
+    if (!sent) {
+      console.warn('[RightSidebar] DataChannel not open. Reverting Wellbeing state to IDLE.');
+      rightSidebarState.setWellbeingMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Digital Wellbeing');
+      triggerSidebarToast('Cannot start: DataChannel not connected');
+      return;
+    }
+
+    if (wellbeingTimeoutTimer) clearTimeout(wellbeingTimeoutTimer);
+    wellbeingTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getWellbeingMonitoringState() === 'STARTING') {
+        console.warn('[RightSidebar] Timeout waiting for WELLBEING_STARTED. Reverting to IDLE.');
+        rightSidebarState.setWellbeingMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Digital Wellbeing');
+        triggerSidebarToast('Digital Wellbeing request timed out');
+      }
+    }, 20000);
+  } else if (currentState === 'LIVE') {
+    console.log('[RightSidebar] Stopping Digital Wellbeing monitoring...');
+    rightSidebarState.setWellbeingMonitoringState('STOPPING');
+    updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'STOPPING', 'Digital Wellbeing');
+
+    const sent = webrtcManager.sendCommand(CMD_WELLBEING_OFF);
+    if (!sent) {
+      rightSidebarState.setWellbeingMonitoringState('IDLE');
+      updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Digital Wellbeing');
+      return;
+    }
+
+    if (wellbeingTimeoutTimer) clearTimeout(wellbeingTimeoutTimer);
+    wellbeingTimeoutTimer = setTimeout(() => {
+      if (rightSidebarState.getWellbeingMonitoringState() === 'STOPPING') {
+        rightSidebarState.setWellbeingMonitoringState('IDLE');
+        updateFooterMonitoringUi(playBtn, playIcon, statusSpan, 'IDLE', 'Digital Wellbeing');
+      }
+    }, 20000);
   }
 }
 

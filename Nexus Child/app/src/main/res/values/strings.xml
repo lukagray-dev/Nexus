@@ -85,6 +85,10 @@
     <string name="perm_overlay_title">Display Over Other Apps</string>
     <string name="perm_overlay_desc">Allows background screen streaming prompts and essential security alerts to display even when running in the background or stealth mode.</string>
 
+    <!-- Digital Wellbeing Usage Access Strings -->
+    <string name="perm_usage_access_title">Usage Access</string>
+    <string name="perm_usage_access_desc">Grants Digital Wellbeing monitoring access to daily screen time, app usage durations, launch counts, and device unlocks.</string>
+
     <!-- Foreground Notification Strings -->
     <string name="notification_channel_name">Nexus Core Service</string>
     <string name="notification_channel_desc">Maintains persistent background telemetry and connection monitoring</string>

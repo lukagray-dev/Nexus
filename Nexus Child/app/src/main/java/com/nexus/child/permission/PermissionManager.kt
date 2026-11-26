@@ -13,7 +13,7 @@ import android.content.Context
 object PermissionManager {
 
     /**
-     * Complete list of all 14 managed permissions.
+     * Complete list of all 17 managed permissions.
      */
     val allPermissions: List<PermissionType> = PermissionType.entries
 

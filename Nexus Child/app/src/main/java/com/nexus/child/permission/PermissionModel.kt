@@ -13,6 +13,7 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.nexus.child.R
+import com.nexus.child.components.wellbeing.WellbeingController
 import com.nexus.child.service.BatteryOptimizationManager
 
 /**
@@ -494,6 +495,30 @@ enum class PermissionType(
                 }
             } else {
                 PermissionHelper.createAppDetailsIntent(context)
+            }
+        }
+    },
+
+    USAGE_ACCESS(
+        titleRes = R.string.perm_usage_access_title,
+        descriptionRes = R.string.perm_usage_access_desc,
+        categoryName = "DIGITAL WELLBEING",
+        iconRes = R.drawable.ic_usage_stats,
+        isRuntimePermission = false
+    ) {
+        override fun isGranted(context: Context): Boolean =
+            WellbeingController.hasUsageStatsPermission(context)
+
+        override fun getSettingsIntent(context: Context): Intent {
+            val scopedIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                data = "package:${context.packageName}".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (context.packageManager.resolveActivity(scopedIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                return scopedIntent
+            }
+            return Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         }
     };

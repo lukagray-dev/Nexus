@@ -71,8 +71,7 @@ const nexusSections: SidebarSection[] = [
       { id: 'telegram', label: 'Monitor Telegram', iconClass: 'icon-sidebar-telegram' },
       { id: 'chatgpt', label: 'Monitor ChatGPT', iconClass: 'icon-sidebar-bot' },
       { id: 'claude', label: 'Monitor Claude', iconClass: 'icon-sidebar-bot' },
-      { id: 'grok', label: 'Monitor Grok', iconClass: 'icon-sidebar-bot' },
-      { id: 'wellbeing', label: 'Digital Wellbeing', iconClass: 'icon-sidebar-activity' }
+      { id: 'grok', label: 'Monitor Grok', iconClass: 'icon-sidebar-bot' }
     ]
   },
   {
@@ -82,7 +81,8 @@ const nexusSections: SidebarSection[] = [
     items: [
       { id: 'applock', label: 'Monitor App Lock', iconClass: 'icon-sidebar-lock' },
       { id: 'vibrateflash', label: 'Vibrate & Flash Device', iconClass: 'icon-sidebar-zap' },
-      { id: 'wallpaper', label: 'Change Wallpaper', iconClass: 'icon-sidebar-image' }
+      { id: 'wallpaper', label: 'Change Wallpaper', iconClass: 'icon-sidebar-image' },
+      { id: 'wellbeing', label: 'Digital Wellbeing', iconClass: 'icon-sidebar-activity' }
     ]
   }
 ];

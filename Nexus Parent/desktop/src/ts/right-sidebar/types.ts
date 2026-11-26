@@ -235,10 +235,92 @@ export interface AiPromptItem {
   time: string;
 }
 
+export const CMD_WELLBEING_ON = 'WELLBEING_ON';
+export const CMD_WELLBEING_OFF = 'WELLBEING_OFF';
+export const CMD_WELLBEING_REFRESH = 'WELLBEING_REFRESH';
+export const CMD_WELLBEING_RANGE_PREFIX = 'WELLBEING_RANGE:';
+
+export const RESP_WELLBEING_STARTED = 'WELLBEING_STARTED';
+export const RESP_WELLBEING_STOPPED = 'WELLBEING_STOPPED';
+export const RESP_WELLBEING_ERROR_PREFIX = 'WELLBEING_ERROR: ';
+
+export const TYPE_WELLBEING_SNAPSHOT = 'WELLBEING_SNAPSHOT';
+
+export type WellbeingRange = 'today' | '7d';
+
+export type WellbeingAppCategory =
+  | 'social'
+  | 'video'
+  | 'audio'
+  | 'game'
+  | 'productivity'
+  | 'news'
+  | 'maps'
+  | 'other';
+
+export interface WellbeingAppUsage {
+  packageName: string;
+  appName: string;
+  category: WellbeingAppCategory;
+  totalTimeMs: number;
+  launchCount: number;
+  lastUsedTimestamp: number;
+  percent: number;
+}
+
+export interface WellbeingTimeBucket {
+  label: string;
+  durationMs: number;
+}
+
+export interface WellbeingSummary {
+  range: WellbeingRange;
+  totalScreenTimeMs: number;
+  unlockCount: number;
+  totalLaunches: number;
+  activeAppName: string | null;
+  activePackageName: string | null;
+  generatedAt: number;
+}
+
+export interface WellbeingSnapshotChunkPayload {
+  type: typeof TYPE_WELLBEING_SNAPSHOT;
+  range: WellbeingRange;
+  chunkIndex: number;
+  totalChunks: number;
+  totalScreenTimeMs?: number;
+  unlockCount?: number;
+  totalLaunches?: number;
+  activeAppName?: string | null;
+  activePackageName?: string | null;
+  generatedAt?: number;
+  buckets?: WellbeingTimeBucket[];
+  apps?: WellbeingAppUsage[];
+}
+
 export interface WellbeingAppItem {
   app: string;
   time: string;
   percent: number;
+}
+
+/**
+ * Formats a duration in milliseconds into a concise human-readable screen-time label
+ * (e.g., "2h 14m", "42m", "18s", or "0m").
+ */
+export function formatScreenTimeDuration(durationMs: number): string {
+  if (!durationMs || isNaN(durationMs) || durationMs <= 0) return '0m';
+  const totalSeconds = Math.floor(durationMs / 1000);
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s`;
+  }
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  return `${minutes}m`;
 }
 
 // -----------------------------------------------------------------------------

@@ -19,7 +19,12 @@ import type {
   WallpaperTarget,
   WallpaperDataState,
   WallpaperChunkPayload,
-  VibrateFlashStatusState
+  VibrateFlashStatusState,
+  WellbeingRange,
+  WellbeingSummary,
+  WellbeingAppUsage,
+  WellbeingTimeBucket,
+  WellbeingSnapshotChunkPayload
 } from './types.js';
 
 class RightSidebarStateManager {
@@ -34,6 +39,7 @@ class RightSidebarStateManager {
   private wallpaperMonitoringState: MonitoringState = 'IDLE';
   private keyboardMonitoringState: MonitoringState = 'IDLE';
   private appLockMonitoringState: MonitoringState = 'IDLE';
+  private wellbeingMonitoringState: MonitoringState = 'IDLE';
 
   // In-Memory Telemetry Data Stores
   private callLogs: CallRecord[] = [];
@@ -63,6 +69,20 @@ class RightSidebarStateManager {
     statusMessage: null,
     timestamp: 0
   };
+
+  // Digital Wellbeing Telemetry State
+  private wellbeingRange: WellbeingRange = 'today';
+  private wellbeingSummary: WellbeingSummary | null = null;
+  private wellbeingApps: WellbeingAppUsage[] = [];
+  private wellbeingBuckets: WellbeingTimeBucket[] = [];
+  private wellbeingError: string | null = null;
+  private incomingWellbeingChunks: {
+    range: WellbeingRange;
+    totalChunks: number;
+    summary: WellbeingSummary | null;
+    buckets: WellbeingTimeBucket[];
+    chunks: Map<number, WellbeingAppUsage[]>;
+  } | null = null;
 
   /**
    * Returns whether the right sidebar is currently open.
@@ -454,6 +474,112 @@ class RightSidebarStateManager {
     this.notify();
   }
 
+  // ---------------------------------------------------------------------------
+  // DIGITAL WELLBEING MONITORING & TELEMETRY ACCESSORS
+  // ---------------------------------------------------------------------------
+
+  public getWellbeingMonitoringState(): MonitoringState {
+    return this.wellbeingMonitoringState;
+  }
+
+  public setWellbeingMonitoringState(state: MonitoringState): void {
+    if (this.wellbeingMonitoringState !== state) {
+      this.wellbeingMonitoringState = state;
+      this.notify();
+    }
+  }
+
+  public getWellbeingRange(): WellbeingRange {
+    return this.wellbeingRange;
+  }
+
+  public setWellbeingRange(range: WellbeingRange): void {
+    if (this.wellbeingRange !== range) {
+      this.wellbeingRange = range;
+      this.notify();
+    }
+  }
+
+  public getWellbeingSummary(): WellbeingSummary | null {
+    return this.wellbeingSummary ? { ...this.wellbeingSummary } : null;
+  }
+
+  public getWellbeingApps(): WellbeingAppUsage[] {
+    return [...this.wellbeingApps];
+  }
+
+  public getWellbeingBuckets(): WellbeingTimeBucket[] {
+    return [...this.wellbeingBuckets];
+  }
+
+  public getWellbeingError(): string | null {
+    return this.wellbeingError;
+  }
+
+  public setWellbeingError(error: string | null): void {
+    this.wellbeingError = error;
+    this.notify();
+  }
+
+  /**
+   * Reassembles chunked WELLBEING_SNAPSHOT payloads into a consistent dashboard snapshot.
+   */
+  public handleWellbeingSnapshotChunk(payload: WellbeingSnapshotChunkPayload): void {
+    const range: WellbeingRange = payload.range === '7d' ? '7d' : 'today';
+    const chunkIndex = Math.max(0, payload.chunkIndex ?? 0);
+    const totalChunks = Math.max(1, payload.totalChunks ?? 1);
+
+    if (chunkIndex === 0 || !this.incomingWellbeingChunks || this.incomingWellbeingChunks.range !== range) {
+      const summary: WellbeingSummary = {
+        range,
+        totalScreenTimeMs: payload.totalScreenTimeMs ?? 0,
+        unlockCount: payload.unlockCount ?? 0,
+        totalLaunches: payload.totalLaunches ?? 0,
+        activeAppName: payload.activeAppName ?? null,
+        activePackageName: payload.activePackageName ?? null,
+        generatedAt: payload.generatedAt ?? Date.now()
+      };
+      this.incomingWellbeingChunks = {
+        range,
+        totalChunks,
+        summary,
+        buckets: Array.isArray(payload.buckets) ? [...payload.buckets] : [],
+        chunks: new Map()
+      };
+    }
+
+    this.incomingWellbeingChunks.chunks.set(
+      chunkIndex,
+      Array.isArray(payload.apps) ? [...payload.apps] : []
+    );
+
+    if (this.incomingWellbeingChunks.chunks.size >= totalChunks) {
+      const assembledApps: WellbeingAppUsage[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        const slice = this.incomingWellbeingChunks.chunks.get(i);
+        if (slice) {
+          assembledApps.push(...slice);
+        }
+      }
+      this.wellbeingRange = this.incomingWellbeingChunks.range;
+      this.wellbeingSummary = this.incomingWellbeingChunks.summary;
+      this.wellbeingBuckets = this.incomingWellbeingChunks.buckets;
+      this.wellbeingApps = assembledApps.sort((a, b) => b.totalTimeMs - a.totalTimeMs);
+      this.wellbeingError = null;
+      this.incomingWellbeingChunks = null;
+      this.notify();
+    }
+  }
+
+  public clearWellbeingData(): void {
+    this.wellbeingSummary = null;
+    this.wellbeingApps = [];
+    this.wellbeingBuckets = [];
+    this.wellbeingError = null;
+    this.incomingWellbeingChunks = null;
+    this.notify();
+  }
+
   /**
    * Resets all monitoring states to IDLE when peer connection drops.
    */
@@ -483,6 +609,11 @@ class RightSidebarStateManager {
       this.appLockMonitoringState = 'IDLE';
       changed = true;
     }
+    if (this.wellbeingMonitoringState !== 'IDLE') {
+      this.wellbeingMonitoringState = 'IDLE';
+      changed = true;
+    }
+    this.incomingWellbeingChunks = null;
     if (this.wallpaperData.isFetching || this.wallpaperData.isPushing) {
       this.wallpaperData.isFetching = false;
       this.wallpaperData.isPushing = false;

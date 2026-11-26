@@ -1,7 +1,7 @@
 /**
  * @file wellbeing.css
- * @description Digital Wellbeing Panel styles for Guardian G-Home Right Sidebar.
- * Pure Black & White theme.
+ * @description Digital Wellbeing Panel styles for Nexus Parent Right Sidebar.
+ * Pure Black & White tactical monochrome theme.
  */
 
 .rs-wellbeing-panel {
@@ -13,7 +13,93 @@
   background-color: #0c0c0c;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.wellbeing-controls-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wellbeing-range-group {
+  display: inline-flex;
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.wellbeing-range-btn {
+  height: 22px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.wellbeing-range-btn:hover {
+  color: #ffffff;
+}
+
+.wellbeing-range-btn.is-active {
+  background-color: #262626;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.wellbeing-refresh-btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background-color: #181818;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.wellbeing-refresh-btn:hover {
+  background-color: #242424;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.wellbeing-error-banner {
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+  color: #fca5a5;
+  line-height: 1.35;
+}
+
+.wellbeing-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
+}
+
+.wellbeing-kpi-card {
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .wellbeing-stat-header {
@@ -23,14 +109,14 @@
 }
 
 .wellbeing-stat-label {
-  font-size: 11px;
+  font-size: 9.5px;
   color: var(--text-muted);
   font-family: var(--mono-font-family);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
 .wellbeing-stat-value {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #ffffff;
   font-family: var(--mono-font-family);
@@ -39,9 +125,128 @@
 .wellbeing-metrics-row {
   display: flex;
   justify-content: space-between;
-  font-size: 10.5px;
+  align-items: center;
+  font-size: 10px;
   color: var(--text-muted);
   font-family: var(--mono-font-family);
+  gap: 8px;
+}
+
+.wellbeing-active-indicator {
+  color: #22c55e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wellbeing-chart-card {
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wellbeing-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wellbeing-chart-peak {
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--mono-font-family);
+}
+
+.wellbeing-chart-bars {
+  display: grid;
+  gap: 3px;
+  align-items: end;
+  height: 54px;
+}
+
+.wellbeing-chart-bars.is-hourly {
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+}
+
+.wellbeing-chart-bars.is-weekly {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.wellbeing-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  gap: 3px;
+}
+
+.wellbeing-bar-track {
+  flex: 1;
+  width: 100%;
+  background-color: #1c1c1c;
+  border-radius: 2px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.wellbeing-bar-fill {
+  width: 100%;
+  background-color: #ffffff;
+  border-radius: 2px;
+  transition: height 0.2s ease;
+}
+
+.wellbeing-bar-label {
+  font-size: 8.5px;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--mono-font-family);
+  line-height: 1;
+  height: 9px;
+}
+
+.wellbeing-category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wellbeing-cat-pill {
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #151515;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+}
+
+.wellbeing-cat-pill:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.wellbeing-cat-pill.active {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  font-weight: 600;
+}
+
+.wellbeing-cat-count {
+  font-family: var(--mono-font-family);
+  font-size: 9.5px;
+  opacity: 0.75;
 }
 
 .usage-app-row {
@@ -49,37 +254,89 @@
   flex-direction: column;
   gap: 6px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .usage-app-meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 12px;
+}
+
+.usage-app-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
 }
 
 .usage-app-name {
   color: #ffffff;
-  font-weight: 500;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usage-app-pkg {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: var(--mono-font-family);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usage-app-stats-right {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .usage-app-time {
-  color: var(--text-secondary);
+  color: #ffffff;
+  font-weight: 600;
   font-family: var(--mono-font-family);
+  font-size: 11.5px;
+}
+
+.usage-app-pct {
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+  font-size: 10px;
 }
 
 .usage-progress-bar {
   width: 100%;
-  height: 5px;
+  height: 4px;
   background-color: #1e1e1e;
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .usage-progress-fill {
   height: 100%;
   background-color: #ffffff;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
+.usage-app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--mono-font-family);
+}
+
+.usage-category-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 9.5px;
+}

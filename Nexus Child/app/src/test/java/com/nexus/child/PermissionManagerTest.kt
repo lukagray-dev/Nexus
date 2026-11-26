@@ -16,8 +16,8 @@ class PermissionManagerTest {
     @Test
     fun testTotalPermissionCount() {
         val total = PermissionManager.getTotalCount()
-        assertEquals("Permission manager must track exactly 16 permissions", 16, total)
-        assertEquals(16, PermissionManager.allPermissions.size)
+        assertEquals("Permission manager must track exactly 17 permissions", 17, total)
+        assertEquals(17, PermissionManager.allPermissions.size)
     }
 
     @Test
@@ -25,8 +25,8 @@ class PermissionManagerTest {
         val runtimeCount = PermissionManager.runtimePermissions.size
         val specialCount = PermissionManager.specialPermissions.size
         assertEquals("There should be 10 runtime permissions", 10, runtimeCount)
-        assertEquals("There should be 6 special system permissions", 6, specialCount)
-        assertEquals(16, runtimeCount + specialCount)
+        assertEquals("There should be 7 special system permissions", 7, specialCount)
+        assertEquals(17, runtimeCount + specialCount)
     }
 
     @Test
@@ -59,6 +59,7 @@ class PermissionManagerTest {
         assertFalse("Accessibility must be special", PermissionType.ACCESSIBILITY_SERVICE.isRuntimePermission)
         assertFalse("Notification listener must be special", PermissionType.NOTIFICATION_LISTENER.isRuntimePermission)
         assertFalse("Display over other apps must be special", PermissionType.DISPLAY_OVER_OTHER_APPS.isRuntimePermission)
+        assertFalse("Usage access must be special", PermissionType.USAGE_ACCESS.isRuntimePermission)
     }
 
     @Test
