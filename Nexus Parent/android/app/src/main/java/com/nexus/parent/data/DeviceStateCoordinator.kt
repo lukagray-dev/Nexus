@@ -6,6 +6,7 @@ import com.nexus.parent.data.mic.MicCoordinator
 import com.nexus.parent.data.mic.ParentAudioRouteManager
 import com.nexus.parent.data.mic.WebRtcMicMediaBridge
 import com.nexus.parent.data.monitor.MonitorCoordinator
+import com.nexus.parent.data.storage.StorageCoordinator
 import com.nexus.parent.service.ParentConnectionService
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.DeviceRecord
@@ -61,6 +62,12 @@ class DeviceStateCoordinator(
         sendCommand = webRtcManager::sendCommand
     )
 
+    val storageCoordinator: StorageCoordinator = StorageCoordinator(
+        context = appContext,
+        scope = scope,
+        sendCommand = webRtcManager::sendCommand
+    )
+
     val surveillanceCoordinator: SurveillanceCoordinator = SurveillanceCoordinator(
         appContext = appContext,
         scope = scope,
@@ -109,6 +116,7 @@ class DeviceStateCoordinator(
     fun attachStateHolder(holder: ParentStateHolder) {
         stateHolder = holder
         monitorCoordinator.attachStateHolder(holder)
+        storageCoordinator.attachStateHolder(holder)
         surveillanceCoordinator.attachStateHolder(holder)
         micCoordinator.attachStateHolder(holder)
     }
@@ -276,6 +284,7 @@ class DeviceStateCoordinator(
         activeSessionDevice = null
 
         monitorCoordinator.onPeerDisconnected()
+        storageCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
         micCoordinator.onPeerDisconnected()
         includeMicFgsType = false
@@ -297,6 +306,7 @@ class DeviceStateCoordinator(
         disconnectGraceJob = null
         activeSessionDevice = null
         monitorCoordinator.onPeerDisconnected()
+        storageCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
         micCoordinator.onPeerDisconnected()
         includeMicFgsType = false
@@ -447,6 +457,7 @@ class DeviceStateCoordinator(
 
         Log.w(TAG, "Unexpected WebRTC drop for ${active.rawId}; starting 9-attempt backoff")
         monitorCoordinator.onPeerDisconnected()
+        storageCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
         micCoordinator.onPeerDisconnected()
         includeMicFgsType = false
@@ -473,6 +484,7 @@ class DeviceStateCoordinator(
     private fun handleDataChannelMessage(rawMessage: String) {
         if (surveillanceCoordinator.handleIncomingMessage(rawMessage)) return
         if (micCoordinator.handleIncomingMessage(rawMessage)) return
+        if (storageCoordinator.handleIncomingMessage(rawMessage)) return
 
         val holder = stateHolder ?: return
         val trimmed = rawMessage.trim()
@@ -483,6 +495,7 @@ class DeviceStateCoordinator(
             disconnectGraceJob = null
             activeSessionDevice = null
             monitorCoordinator.onPeerDisconnected()
+            storageCoordinator.onPeerDisconnected()
             surveillanceCoordinator.onPeerDisconnected()
             micCoordinator.onPeerDisconnected()
             includeMicFgsType = false

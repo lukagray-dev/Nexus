@@ -256,27 +256,59 @@ enum class StorageCategory(val label: String) {
     VIDEO("Videos"),
     AUDIO("Audio"),
     DOCUMENT("Documents"),
-    ARCHIVE("Archives")
+    ARCHIVE("Archives"),
+    OTHER("Other")
 }
+
+data class StorageBreadcrumb(
+    val label: String,
+    val fullPath: String
+)
+
+data class StorageTransferProgress(
+    val transferId: String,
+    val fileName: String,
+    val purpose: String,
+    val progressPercent: Int,
+    val receivedBytes: Long,
+    val totalBytes: Long
+)
 
 data class StorageFileItem(
     val path: String,
     val name: String,
     val isDirectory: Boolean,
     val category: StorageCategory,
+    val rawBytes: Long = 0L,
     val sizeLabel: String,
-    val modifiedLabel: String
+    val modifiedMillis: Long = 0L,
+    val modifiedLabel: String,
+    val extension: String = "",
+    val mimeType: String = "application/octet-stream",
+    val thumbnailBase64: String? = null
 )
 
 data class StorageUiState(
-    val breadcrumbs: List<String> = listOf("Internal Storage"),
+    val currentPath: String = "/storage/emulated/0",
+    val breadcrumbs: List<StorageBreadcrumb> = listOf(
+        StorageBreadcrumb(label = "0 (Internal)", fullPath = "/storage/emulated/0")
+    ),
     val searchQuery: String = "",
     val selectedCategory: StorageCategory = StorageCategory.ALL,
     val items: List<StorageFileItem> = emptyList(),
     val selectedItem: StorageFileItem? = null,
+    val deleteConfirmTarget: StorageFileItem? = null,
+    val imagePreviewItem: StorageFileItem? = null,
+    val imagePreviewLocalPath: String? = null,
+    val isImagePreviewCached: Boolean = false,
     val storageUsedPercent: Float = 0.0f,
     val storageUsageText: String = "CONNECT TO INSPECT STORAGE",
-    val hasMorePages: Boolean = false
+    val isLoadingDirectory: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMorePages: Boolean = false,
+    val totalCount: Int = 0,
+    val activeTransfer: StorageTransferProgress? = null,
+    val errorMessage: String? = null
 )
 
 data class SmsUiItem(

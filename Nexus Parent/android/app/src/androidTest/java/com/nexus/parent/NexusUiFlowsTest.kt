@@ -9,6 +9,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.nexus.parent.state.ParentStateHolder
+import com.nexus.parent.state.StorageCategory
+import com.nexus.parent.state.StorageFileItem
 import com.nexus.parent.ui.theme.NexusParentTheme
 import org.junit.Rule
 import org.junit.Test
@@ -59,5 +61,43 @@ class NexusUiFlowsTest {
         composeRule.onNodeWithTag("paired_device_row_482194021104").performClick()
         composeRule.onNodeWithTag("paired_devices_back_btn").performClick()
         composeRule.onNodeWithTag("settings_done_btn").performClick()
+    }
+
+    @Test
+    fun storage_explorer_filters_and_delete_confirm_flow_works() {
+        val stateHolder = ParentStateHolder()
+        stateHolder.submitPairingPreview("482194021104")
+        stateHolder.updateStorageState {
+            it.copy(
+                items = listOf(
+                    StorageFileItem(
+                        path = "/storage/emulated/0/shot.jpg",
+                        name = "shot.jpg",
+                        isDirectory = false,
+                        category = StorageCategory.IMAGE,
+                        rawBytes = 2048L,
+                        sizeLabel = "2.0 KB",
+                        modifiedLabel = "Just now",
+                        extension = "JPG",
+                        mimeType = "image/jpeg"
+                    )
+                ),
+                totalCount = 1
+            )
+        }
+
+        composeRule.setContent {
+            NexusParentTheme {
+                NexusParentRoot(stateHolder = stateHolder)
+            }
+        }
+
+        composeRule.onNodeWithTag("capsule_menu_btn").performClick()
+        composeRule.onNodeWithTag("drawer_item_storage").performClick()
+        composeRule.onNodeWithTag("storage_item_shot.jpg").assertIsDisplayed().performClick()
+        composeRule.onNodeWithTag("inspector_view_full_image_btn").assertIsDisplayed()
+        composeRule.onNodeWithTag("inspector_delete_btn").performClick()
+        composeRule.onNodeWithText("Confirm Delete").assertIsDisplayed()
+        composeRule.onNodeWithTag("storage_delete_confirm_btn").performClick()
     }
 }

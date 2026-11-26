@@ -5,6 +5,7 @@ import com.nexus.parent.data.DeviceStateCoordinator
 import com.nexus.parent.data.monitor.CombinedPattern
 import com.nexus.parent.data.monitor.FlashAction
 import com.nexus.parent.data.monitor.VibratePattern
+import com.nexus.parent.data.storage.StorageProtocol
 import com.nexus.parent.webrtc.VideoFeedType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -200,6 +201,10 @@ class ParentStateHolder(
         toastMessage: String?
     ) {
         val isSwitchingDevice = _uiState.value.connectedDevice?.rawId?.let { it != record.rawId } ?: false
+        val (usageLabel, usageFraction) = StorageProtocol.formatStorageCapacityStrip(
+            record.telemetry.freeStorageBytes,
+            record.telemetry.totalStorageBytes
+        )
         _uiState.update { state ->
             state.copy(
                 connectionPhase = ConnectionPhase.CONNECTED,
@@ -212,6 +217,11 @@ class ParentStateHolder(
                 lastPairedDevice = record,
                 pairedDevicesHistory = history,
                 activeFeature = if (isSwitchingDevice) null else state.activeFeature,
+                storage = if (isSwitchingDevice) {
+                    StorageUiState(storageUsageText = usageLabel, storageUsedPercent = usageFraction)
+                } else {
+                    state.storage.copy(storageUsageText = usageLabel, storageUsedPercent = usageFraction)
+                },
                 isDevicePopoverOpen = false,
                 toastMessage = toastMessage ?: state.toastMessage
             )
@@ -242,6 +252,7 @@ class ParentStateHolder(
                 screen = ScreenFeedUiState(quality = state.settings.screenQuality),
                 mic = MicUiState(selectedVoice = state.settings.defaultVoicePreset),
                 location = LocationUiState(),
+                storage = StorageUiState(),
                 activeCallAlert = null,
                 toastMessage = toastMessage ?: state.toastMessage
             )
@@ -260,11 +271,19 @@ class ParentStateHolder(
     }
 
     fun onTelemetryUpdated(record: DeviceRecord, history: List<DeviceRecord>) {
+        val (usageLabel, usageFraction) = StorageProtocol.formatStorageCapacityStrip(
+            record.telemetry.freeStorageBytes,
+            record.telemetry.totalStorageBytes
+        )
         _uiState.update { state ->
             state.copy(
                 connectedDevice = record,
                 lastPairedDevice = record,
                 pairedDevicesHistory = history,
+                storage = state.storage.copy(
+                    storageUsageText = usageLabel,
+                    storageUsedPercent = usageFraction
+                ),
                 stealthStatus = when {
                     state.stealthStatus == StealthStatus.WAIT -> StealthStatus.WAIT
                     record.telemetry.isStealthMode -> StealthStatus.ACTIVE
@@ -321,6 +340,7 @@ class ParentStateHolder(
                 screen = ScreenFeedUiState(quality = state.settings.screenQuality),
                 mic = MicUiState(selectedVoice = state.settings.defaultVoicePreset),
                 location = LocationUiState(),
+                storage = StorageUiState(),
                 monitor = MonitorPanelsUiState(),
                 activeCallAlert = null,
                 stealthStatus = StealthStatus.ARMED,
@@ -410,13 +430,19 @@ class ParentStateHolder(
             return
         }
 
+        var switchedToStorage = false
         _uiState.update { state ->
             val nextActive = if (state.activeFeature == featureId) null else featureId
+            switchedToStorage = nextActive == FeatureId.STORAGE && state.connectionPhase == ConnectionPhase.CONNECTED
             state.copy(
                 activeFeature = nextActive,
                 isDrawerOpen = false,
                 isDevicePopoverOpen = false
             )
+        }
+
+        if (switchedToStorage) {
+            coordinator?.storageCoordinator?.openStorageMonitor()
         }
     }
 
@@ -831,6 +857,12 @@ class ParentStateHolder(
         }
     }
 
+    fun updateStorageState(transform: (StorageUiState) -> StorageUiState) {
+        _uiState.update { state ->
+            state.copy(storage = transform(state.storage))
+        }
+    }
+
     fun setStorageSearchQuery(query: String) {
         _uiState.update { it.copy(storage = it.storage.copy(searchQuery = query)) }
     }
@@ -840,14 +872,50 @@ class ParentStateHolder(
     }
 
     fun selectStorageItem(item: StorageFileItem?) {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.selectItem(item)
+            return
+        }
         _uiState.update { it.copy(storage = it.storage.copy(selectedItem = item)) }
     }
 
-    fun navigateStorageBreadcrumb(index: Int) {
+    fun openStorageDirectory(item: StorageFileItem) {
+        if (!item.isDirectory) return
+        if (coordinator != null) {
+            coordinator.storageCoordinator.openDirectory(item)
+            return
+        }
         _uiState.update { state ->
-            val clamped = index.coerceIn(0, state.storage.breadcrumbs.lastIndex.coerceAtLeast(0))
             state.copy(
                 storage = state.storage.copy(
+                    currentPath = item.path,
+                    breadcrumbs = StorageProtocol.buildBreadcrumbs(item.path),
+                    selectedItem = null
+                )
+            )
+        }
+    }
+
+    fun refreshStorageDirectory() {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.refreshCurrentDirectory()
+        } else {
+            showToast("Directory refresh queued")
+        }
+    }
+
+    fun navigateStorageBreadcrumb(index: Int) {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.navigateToBreadcrumb(index)
+            return
+        }
+        _uiState.update { state ->
+            val clamped = index.coerceIn(0, state.storage.breadcrumbs.lastIndex.coerceAtLeast(0))
+            val targetPath = state.storage.breadcrumbs.getOrNull(clamped)?.fullPath
+                ?: StorageProtocol.DEFAULT_STORAGE_ROOT
+            state.copy(
+                storage = state.storage.copy(
+                    currentPath = targetPath,
                     breadcrumbs = state.storage.breadcrumbs.take(clamped + 1),
                     selectedItem = null
                 )
@@ -856,13 +924,109 @@ class ParentStateHolder(
     }
 
     fun navigateStorageUp() {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.navigateUp()
+            return
+        }
         _uiState.update { state ->
             if (state.storage.breadcrumbs.size <= 1) return@update state
+            val nextBreadcrumbs = state.storage.breadcrumbs.dropLast(1)
             state.copy(
                 storage = state.storage.copy(
-                    breadcrumbs = state.storage.breadcrumbs.dropLast(1),
+                    currentPath = nextBreadcrumbs.lastOrNull()?.fullPath
+                        ?: StorageProtocol.DEFAULT_STORAGE_ROOT,
+                    breadcrumbs = nextBreadcrumbs,
                     selectedItem = null
                 )
+            )
+        }
+    }
+
+    fun loadMoreStorageFiles() {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.loadMore()
+        } else {
+            showToast("Pagination requires active child connection")
+        }
+    }
+
+    fun loadStorageImagePreview(item: StorageFileItem) {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.loadFullImagePreview(item)
+        } else {
+            showToast("Full image preview requires active child connection")
+        }
+    }
+
+    fun closeStorageImagePreview() {
+        _uiState.update { state ->
+            state.copy(
+                storage = state.storage.copy(
+                    imagePreviewItem = null,
+                    imagePreviewLocalPath = null
+                )
+            )
+        }
+    }
+
+    fun downloadPreviewedStorageImage() {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.downloadPreviewedImage()
+        } else {
+            showToast("Image download requires active child connection")
+        }
+    }
+
+    fun requestStorageDownload(item: StorageFileItem) {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.requestDownload(item)
+        } else {
+            showToast("Download queued: ${item.name}")
+        }
+    }
+
+    fun completeStorageDownloadPick(uri: Uri?) {
+        coordinator?.storageCoordinator?.completeCreateDocumentSelection(uri)
+    }
+
+    fun cancelStorageTransfer() {
+        coordinator?.storageCoordinator?.cancelActiveTransfer()
+    }
+
+    fun requestStorageDeleteConfirmation(item: StorageFileItem) {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.requestDeleteConfirmation(item)
+            return
+        }
+        _uiState.update { state ->
+            state.copy(storage = state.storage.copy(deleteConfirmTarget = item))
+        }
+    }
+
+    fun dismissStorageDeleteConfirmation() {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.dismissDeleteConfirmation()
+            return
+        }
+        _uiState.update { state ->
+            state.copy(storage = state.storage.copy(deleteConfirmTarget = null))
+        }
+    }
+
+    fun confirmStorageDelete() {
+        if (coordinator != null) {
+            coordinator.storageCoordinator.confirmDelete()
+            return
+        }
+        val target = _uiState.value.storage.deleteConfirmTarget ?: return
+        _uiState.update { state ->
+            state.copy(
+                storage = state.storage.copy(
+                    items = state.storage.items.filterNot { it.path == target.path },
+                    selectedItem = if (state.storage.selectedItem?.path == target.path) null else state.storage.selectedItem,
+                    deleteConfirmTarget = null
+                ),
+                toastMessage = "Removed ${target.name} (preview mode)"
             )
         }
     }

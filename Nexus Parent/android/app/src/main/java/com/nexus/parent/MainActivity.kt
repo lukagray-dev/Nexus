@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nexus.parent.data.PendingDocumentExportRequest
+import com.nexus.parent.data.storage.PendingStorageDownloadRequest
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.FeatureId
 import com.nexus.parent.state.FeatureTarget
@@ -103,6 +104,10 @@ class MainActivity : ComponentActivity() {
                 app?.coordinator?.surveillanceCoordinator?.pendingExportRequests
                     ?: MutableSharedFlow<PendingDocumentExportRequest>()
             }
+            val pendingStorageDownloadFlow = remember(app) {
+                app?.coordinator?.storageCoordinator?.pendingDownloadRequests
+                    ?: MutableSharedFlow<PendingStorageDownloadRequest>()
+            }
             val recordAudioPermissionFlow = remember(app) {
                 app?.coordinator?.micCoordinator?.recordAudioPermissionRequests
                     ?: MutableSharedFlow<Unit>()
@@ -118,6 +123,7 @@ class MainActivity : ComponentActivity() {
                     stateHolder = stateHolder,
                     videoTrackFlow = videoTrackFlow,
                     pendingExportFlow = pendingExportFlow,
+                    pendingStorageDownloadFlow = pendingStorageDownloadFlow,
                     recordAudioPermissionFlow = recordAudioPermissionFlow,
                     eglContext = eglContext,
                     hasLiveCoordinator = app != null
@@ -132,6 +138,7 @@ fun NexusParentRoot(
     stateHolder: ParentStateHolder,
     videoTrackFlow: StateFlow<VideoTrack?> = remember { MutableStateFlow(null) },
     pendingExportFlow: SharedFlow<PendingDocumentExportRequest> = remember { MutableSharedFlow() },
+    pendingStorageDownloadFlow: SharedFlow<PendingStorageDownloadRequest> = remember { MutableSharedFlow() },
     recordAudioPermissionFlow: SharedFlow<Unit> = remember { MutableSharedFlow() },
     eglContext: EglBase.Context? = null,
     hasLiveCoordinator: Boolean = false
@@ -183,6 +190,24 @@ fun NexusParentRoot(
                 putExtra(Intent.EXTRA_TITLE, req.fileName)
             }
             saveClipDocumentLauncher.launch(createIntent)
+        }
+    }
+
+    val saveStorageDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
+        stateHolder.completeStorageDownloadPick(uri)
+    }
+
+    LaunchedEffect(pendingStorageDownloadFlow) {
+        pendingStorageDownloadFlow.collect { req ->
+            val createIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = req.mimeType
+                putExtra(Intent.EXTRA_TITLE, req.fileName)
+            }
+            saveStorageDocumentLauncher.launch(createIntent)
         }
     }
 
@@ -448,14 +473,22 @@ private fun MainContentRouter(
         )
         FeatureId.STORAGE -> StorageScreen(
             state = state.storage,
-            onRefreshClick = { stateHolder.showToast("Directory refresh queued") },
+            onRefreshClick = stateHolder::refreshStorageDirectory,
             onParentDirClick = stateHolder::navigateStorageUp,
             onBreadcrumbClick = stateHolder::navigateStorageBreadcrumb,
             onSearchChange = stateHolder::setStorageSearchQuery,
             onSelectCategory = stateHolder::selectStorageCategory,
+            onOpenDirectory = stateHolder::openStorageDirectory,
             onSelectItem = stateHolder::selectStorageItem,
-            onDownloadItem = { item -> stateHolder.showToast("Download queued: ${item.name}") },
-            onDeleteItem = { item -> stateHolder.showToast("Delete queued: ${item.name}") }
+            onLoadMoreClick = stateHolder::loadMoreStorageFiles,
+            onLoadFullImage = stateHolder::loadStorageImagePreview,
+            onCloseImagePreview = stateHolder::closeStorageImagePreview,
+            onDownloadPreviewedImage = stateHolder::downloadPreviewedStorageImage,
+            onDownloadItem = stateHolder::requestStorageDownload,
+            onRequestDelete = stateHolder::requestStorageDeleteConfirmation,
+            onDismissDeleteConfirm = stateHolder::dismissStorageDeleteConfirmation,
+            onConfirmDelete = stateHolder::confirmStorageDelete,
+            onCancelTransfer = stateHolder::cancelStorageTransfer
         )
         FeatureId.MIC -> {
             // Mic renders as a persistent floating overlay rather than replacing the main viewport

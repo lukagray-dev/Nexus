@@ -203,4 +203,57 @@ class ParentStateHolderTest {
         holder.updateSettings { it.copy(preferredCameraLens = CameraLens.REAR) }
         assertEquals(CameraLens.FRONT, holder.uiState.value.camera.lens)
     }
+
+    @Test
+    fun `storage telemetry sync, directory navigation, and delete confirmation flow work in state holder`() {
+        val holder = ParentStateHolder()
+        val dev = DeviceRecord(
+            rawId = "482194021104",
+            formattedId = "4821 9402 1104",
+            name = "Child Phone",
+            model = "Pixel 8",
+            lastSyncedLabel = "Online",
+            telemetry = DeviceTelemetry(
+                freeStorageBytes = 64L * 1024 * 1024 * 1024,
+                totalStorageBytes = 256L * 1024 * 1024 * 1024
+            )
+        )
+        holder.onConnectionEstablished(dev, listOf(dev), toastMessage = null)
+        assertEquals("192.0 GB / 256.0 GB USED (75%)", holder.uiState.value.storage.storageUsageText)
+
+        val folder = StorageFileItem(
+            path = "/storage/emulated/0/DCIM",
+            name = "DCIM",
+            isDirectory = true,
+            category = StorageCategory.ALL,
+            sizeLabel = "--",
+            modifiedLabel = "Just now"
+        )
+        val file = StorageFileItem(
+            path = "/storage/emulated/0/DCIM/shot.jpg",
+            name = "shot.jpg",
+            isDirectory = false,
+            category = StorageCategory.IMAGE,
+            rawBytes = 1024L,
+            sizeLabel = "1.0 KB",
+            modifiedLabel = "Just now"
+        )
+        holder.updateStorageState { it.copy(items = listOf(folder, file)) }
+
+        holder.openStorageDirectory(folder)
+        assertEquals("/storage/emulated/0/DCIM", holder.uiState.value.storage.currentPath)
+        assertEquals(2, holder.uiState.value.storage.breadcrumbs.size)
+
+        holder.navigateStorageUp()
+        assertEquals("/storage/emulated/0", holder.uiState.value.storage.currentPath)
+
+        holder.selectStorageItem(file)
+        assertEquals(file.path, holder.uiState.value.storage.selectedItem?.path)
+
+        holder.requestStorageDeleteConfirmation(file)
+        assertEquals(file.path, holder.uiState.value.storage.deleteConfirmTarget?.path)
+        holder.confirmStorageDelete()
+        assertNull(holder.uiState.value.storage.deleteConfirmTarget)
+        assertFalse(holder.uiState.value.storage.items.any { it.path == file.path })
+    }
 }
