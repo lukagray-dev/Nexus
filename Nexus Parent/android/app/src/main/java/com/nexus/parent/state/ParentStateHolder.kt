@@ -657,13 +657,40 @@ class ParentStateHolder(
     // FLOATING MICROPHONE & VOICE INTERCOM HUD
     // -------------------------------------------------------------------------
 
+    fun updateMicState(transform: (MicUiState) -> MicUiState) {
+        _uiState.update { state ->
+            state.copy(mic = transform(state.mic))
+        }
+    }
+
+    fun setActiveCallAlert(alert: ActiveCallAlert?) {
+        _uiState.update { it.copy(activeCallAlert = alert) }
+    }
+
+    fun applyPersistedSettingsSnapshot(settings: SettingsValues, toastMessage: String? = null) {
+        _uiState.update { state ->
+            state.copy(
+                settings = settings,
+                toastMessage = toastMessage ?: state.toastMessage
+            )
+        }
+    }
+
     fun setMicOverlayOpen(open: Boolean) {
+        if (coordinator != null) {
+            coordinator.micCoordinator.setOverlayOpen(open)
+            return
+        }
         _uiState.update {
             it.copy(mic = it.mic.copy(isOverlayOpen = open, isVoiceMenuExpanded = false))
         }
     }
 
     fun toggleMicListen() {
+        if (coordinator != null) {
+            coordinator.micCoordinator.toggleListen()
+            return
+        }
         _uiState.update { state ->
             val next = if (state.mic.listenState == MonitoringState.LIVE) {
                 MonitoringState.IDLE
@@ -687,7 +714,11 @@ class ParentStateHolder(
         }
     }
 
-    fun toggleMicSpeak() {
+    fun toggleMicSpeak(hasRecordAudioPermission: Boolean = true) {
+        if (coordinator != null) {
+            coordinator.micCoordinator.toggleSpeak(hasRecordAudioPermission)
+            return
+        }
         _uiState.update { state ->
             val next = if (state.mic.speakState == MonitoringState.LIVE) {
                 MonitoringState.IDLE
@@ -698,6 +729,10 @@ class ParentStateHolder(
         }
     }
 
+    fun onRecordAudioPermissionResult(granted: Boolean) {
+        coordinator?.micCoordinator?.onRecordAudioPermissionResult(granted)
+    }
+
     fun toggleVoiceMenu() {
         _uiState.update {
             it.copy(mic = it.mic.copy(isVoiceMenuExpanded = !it.mic.isVoiceMenuExpanded))
@@ -705,6 +740,10 @@ class ParentStateHolder(
     }
 
     fun selectVoicePreset(preset: VoicePresetId) {
+        if (coordinator != null) {
+            coordinator.micCoordinator.selectVoicePreset(preset)
+            return
+        }
         _uiState.update {
             it.copy(
                 mic = it.mic.copy(selectedVoice = preset, isVoiceMenuExpanded = false),
@@ -1122,6 +1161,10 @@ class ParentStateHolder(
     }
 
     fun acceptCallAlertAndListenMic() {
+        if (coordinator != null) {
+            coordinator.micCoordinator.acceptCallAlertAndListenMic()
+            return
+        }
         _uiState.update { state ->
             state.copy(
                 activeCallAlert = null,

@@ -27,15 +27,22 @@ class ParentConnectionService : Service() {
         private const val ACTION_STOP = "com.nexus.parent.action.STOP"
         private const val EXTRA_TITLE = "extra_title"
         private const val EXTRA_BODY = "extra_body"
+        private const val EXTRA_INCLUDE_MICROPHONE = "extra_include_microphone"
         private const val WAKE_LOCK_TAG = "NexusParent::WebRtcConnectionWakeLock"
         private const val WAKE_LOCK_TIMEOUT_MS = 12L * 60L * 60L * 1000L
 
-        fun startOrUpdate(context: Context, title: String, body: String) {
+        fun startOrUpdate(
+            context: Context,
+            title: String,
+            body: String,
+            includeMicrophoneFgsType: Boolean = false
+        ) {
             val appCtx = context.applicationContext
             val intent = Intent(appCtx, ParentConnectionService::class.java).apply {
                 action = ACTION_START_OR_UPDATE
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_BODY, body)
+                putExtra(EXTRA_INCLUDE_MICROPHONE, includeMicrophoneFgsType)
             }
             runCatching {
                 ContextCompat.startForegroundService(appCtx, intent)
@@ -59,6 +66,7 @@ class ParentConnectionService : Service() {
 
     private var wakeLock: PowerManager.WakeLock? = null
     private var isForegroundStarted = false
+    private var activeIncludesMicrophone = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -66,18 +74,22 @@ class ParentConnectionService : Service() {
         if (intent?.action == ACTION_STOP) {
             releaseWakeLock()
             stopForegroundCompat()
+            isForegroundStarted = false
+            activeIncludesMicrophone = false
             stopSelf()
             return START_NOT_STICKY
         }
 
         val title = intent?.getStringExtra(EXTRA_TITLE) ?: "Nexus Parent Active"
         val body = intent?.getStringExtra(EXTRA_BODY) ?: "Maintaining encrypted P2P session"
+        val includeMicrophone = intent?.getBooleanExtra(EXTRA_INCLUDE_MICROPHONE, false) ?: false
         val notification = ParentNotificationManager.buildNotification(this, title, body)
 
-        if (!isForegroundStarted) {
-            startForegroundCompat(notification)
+        if (!isForegroundStarted || activeIncludesMicrophone != includeMicrophone) {
+            startForegroundCompat(notification, includeMicrophone)
             acquireWakeLock()
             isForegroundStarted = true
+            activeIncludesMicrophone = includeMicrophone
         } else {
             val manager = getSystemService(NotificationManager::class.java)
             manager?.notify(ParentNotificationManager.NOTIFICATION_ID, notification)
@@ -90,14 +102,23 @@ class ParentConnectionService : Service() {
         releaseWakeLock()
         stopForegroundCompat()
         isForegroundStarted = false
+        activeIncludesMicrophone = false
         super.onDestroy()
     }
 
-    private fun startForegroundCompat(notification: android.app.Notification) {
+    private fun startForegroundCompat(
+        notification: android.app.Notification,
+        includeMicrophone: Boolean
+    ) {
+        val fgsType = if (includeMicrophone && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        } else {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+        }
         startForeground(
             ParentNotificationManager.NOTIFICATION_ID,
             notification,
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            fgsType
         )
     }
 

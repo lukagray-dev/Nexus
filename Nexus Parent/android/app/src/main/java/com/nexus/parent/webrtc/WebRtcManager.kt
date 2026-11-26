@@ -2,6 +2,8 @@ package com.nexus.parent.webrtc
 
 import android.content.Context
 import android.util.Log
+import com.nexus.parent.media.mic.AudioSpectrumAnalyzer
+import com.nexus.parent.media.mic.VoiceChangerDspEngine
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
+import org.webrtc.AudioTrackSink
 import org.webrtc.DataChannel
 import org.webrtc.DefaultVideoDecoderFactory
 import org.webrtc.DefaultVideoEncoderFactory
@@ -32,6 +36,7 @@ import org.webrtc.RtpTransceiver
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import org.webrtc.VideoTrack
+import org.webrtc.audio.JavaAudioDeviceModule
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import kotlin.coroutines.resume
@@ -68,9 +73,16 @@ class WebRtcManager(context: Context) {
     private val signalingClient = SignalingClient()
 
     private val eglBase: EglBase
+    private val audioDeviceModule: JavaAudioDeviceModule
     private val peerConnectionFactory: PeerConnectionFactory
 
+    val voiceChangerDsp = VoiceChangerDspEngine()
+    val audioSpectrumAnalyzer = AudioSpectrumAnalyzer()
+
     private var peerConnection: PeerConnection? = null
+    private var audioTransceiver: RtpTransceiver? = null
+    private var localAudioSource: AudioSource? = null
+    private var localAudioTrack: AudioTrack? = null
     private var dataChannel: DataChannel? = null
     private var currentChildId: String? = null
     private var unsubscribeAnswer: (() -> Unit)? = null
@@ -78,6 +90,14 @@ class WebRtcManager(context: Context) {
 
     private var rawVideoTrack: VideoTrack? = null
     private var activeVideoType: VideoFeedType? = null
+
+    @Volatile
+    private var remoteMicAudioEnabled = false
+
+    private val remoteAudioSink = AudioTrackSink { audioData, _, _, numberOfChannels, _, _ ->
+        audioSpectrumAnalyzer.onRenderPcmBuffer(audioData, numberOfChannels)
+    }
+    private var sinkAttachedTrack: AudioTrack? = null
 
     private val _connectionState = MutableStateFlow(PeerConnection.PeerConnectionState.NEW)
     val connectionState: StateFlow<PeerConnection.PeerConnectionState> = _connectionState.asStateFlow()
@@ -107,12 +127,27 @@ class WebRtcManager(context: Context) {
             .createInitializationOptions()
         PeerConnectionFactory.initialize(initOptions)
 
+        audioDeviceModule = JavaAudioDeviceModule.builder(appContext)
+            .setUseHardwareAcousticEchoCanceler(true)
+            .setUseHardwareNoiseSuppressor(true)
+            .setAudioBufferCallback { audioBuffer, _, channelCount, sampleRate, bytesRead, captureTimeNs ->
+                // Mutate 10ms captured PCM bytes in-place with active Voice Changer preset BEFORE Opus encoding!
+                val boundedSlice = audioBuffer.duplicate().apply {
+                    position(0)
+                    limit(bytesRead.coerceIn(0, capacity()))
+                }
+                voiceChangerDsp.processCaptureBufferInPlace(boundedSlice, sampleRate, channelCount)
+                captureTimeNs
+            }
+            .createAudioDeviceModule()
+
         eglBase = EglBase.create()
         val encoderFactory = DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)
         val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
 
         peerConnectionFactory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
+            .setAudioDeviceModule(audioDeviceModule)
             .setVideoEncoderFactory(encoderFactory)
             .setVideoDecoderFactory(decoderFactory)
             .createPeerConnectionFactory()
@@ -126,6 +161,87 @@ class WebRtcManager(context: Context) {
         if (activeVideoType == type) return
         activeVideoType = type
         _activeVideoTrack.value = if (type != null) rawVideoTrack else null
+    }
+
+    fun setRemoteAudioEnabled(enabled: Boolean) {
+        remoteMicAudioEnabled = enabled
+        _remoteAudioTrack.value?.let { track ->
+            runCatching {
+                track.setEnabled(enabled)
+                track.setVolume(if (enabled) 1.0 else 0.0)
+            }
+        }
+    }
+
+    /**
+     * Captures Parent's local microphone into WebRTC and attaches it to the existing `SEND_RECV`
+     * audio transceiver sender without triggering SDP renegotiation.
+     */
+    @Synchronized
+    fun startOutboundAudioTrack(noiseSuppression: Boolean): Boolean {
+        val transceiver = audioTransceiver ?: return false
+        stopOutboundAudioTrack()
+
+        return runCatching {
+            runCatching { audioDeviceModule.setNoiseSuppressorEnabled(noiseSuppression) }
+            val constraints = buildAudioConstraints(noiseSuppression)
+            val source = peerConnectionFactory.createAudioSource(constraints)
+                ?: return false
+            val trackId = "NEXUS_PARENT_MIC_${System.currentTimeMillis()}"
+            val track = peerConnectionFactory.createAudioTrack(trackId, source)
+                ?: run {
+                    source.dispose()
+                    return false
+                }
+            track.setEnabled(true)
+            val attached = transceiver.sender.setTrack(track, false)
+            if (!attached) {
+                track.setEnabled(false)
+                track.dispose()
+                source.dispose()
+                return false
+            }
+            localAudioSource = source
+            localAudioTrack = track
+            true
+        }.getOrElse { err ->
+            Log.e(TAG, "Failed starting outbound parent audio track: ${err.message}", err)
+            stopOutboundAudioTrack()
+            false
+        }
+    }
+
+    @Synchronized
+    fun stopOutboundAudioTrack() {
+        runCatching {
+            audioTransceiver?.sender?.setTrack(null, false)
+        }
+        runCatching {
+            localAudioTrack?.setEnabled(false)
+            localAudioTrack?.dispose()
+        }
+        localAudioTrack = null
+
+        runCatching {
+            localAudioSource?.dispose()
+        }
+        localAudioSource = null
+    }
+
+    @Synchronized
+    fun reconfigureOutboundAudio(noiseSuppression: Boolean): Boolean {
+        if (localAudioTrack == null) return true
+        return startOutboundAudioTrack(noiseSuppression)
+    }
+
+    private fun buildAudioConstraints(noiseSuppression: Boolean): MediaConstraints {
+        val flag = noiseSuppression.toString()
+        return MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", flag))
+            mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression", flag))
+            mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl", flag))
+            mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter", "true"))
+        }
     }
 
     /**
@@ -158,7 +274,7 @@ class WebRtcManager(context: Context) {
         )
         applyVideoCodecPreference(videoTransceiver, hardwareAcceleration)
 
-        pc.addTransceiver(
+        audioTransceiver = pc.addTransceiver(
             MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
             RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
         )
@@ -313,6 +429,15 @@ class WebRtcManager(context: Context) {
     }
 
     private fun teardownPeerObjectsOnly() {
+        stopOutboundAudioTrack()
+        audioTransceiver = null
+        remoteMicAudioEnabled = false
+
+        sinkAttachedTrack?.let { prevTrack ->
+            runCatching { prevTrack.removeSink(remoteAudioSink) }
+        }
+        sinkAttachedTrack = null
+
         rawVideoTrack = null
         activeVideoType = null
         _activeVideoTrack.value = null
@@ -394,7 +519,20 @@ class WebRtcManager(context: Context) {
         override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
             val track = receiver?.track() ?: return
             when (track) {
-                is AudioTrack -> _remoteAudioTrack.value = track
+                is AudioTrack -> {
+                    if (sinkAttachedTrack !== track) {
+                        sinkAttachedTrack?.let { prev ->
+                            runCatching { prev.removeSink(remoteAudioSink) }
+                        }
+                        runCatching { track.addSink(remoteAudioSink) }
+                        sinkAttachedTrack = track
+                    }
+                    runCatching {
+                        track.setEnabled(remoteMicAudioEnabled)
+                        track.setVolume(if (remoteMicAudioEnabled) 1.0 else 0.0)
+                    }
+                    _remoteAudioTrack.value = track
+                }
                 is VideoTrack -> {
                     rawVideoTrack = track
                     if (activeVideoType != null) {

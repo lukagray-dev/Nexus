@@ -103,6 +103,10 @@ class MainActivity : ComponentActivity() {
                 app?.coordinator?.surveillanceCoordinator?.pendingExportRequests
                     ?: MutableSharedFlow<PendingDocumentExportRequest>()
             }
+            val recordAudioPermissionFlow = remember(app) {
+                app?.coordinator?.micCoordinator?.recordAudioPermissionRequests
+                    ?: MutableSharedFlow<Unit>()
+            }
             val eglContext = remember(app) { app?.coordinator?.getEglBaseContext() }
 
             LaunchedEffect(app) {
@@ -114,6 +118,7 @@ class MainActivity : ComponentActivity() {
                     stateHolder = stateHolder,
                     videoTrackFlow = videoTrackFlow,
                     pendingExportFlow = pendingExportFlow,
+                    recordAudioPermissionFlow = recordAudioPermissionFlow,
                     eglContext = eglContext,
                     hasLiveCoordinator = app != null
                 )
@@ -127,6 +132,7 @@ fun NexusParentRoot(
     stateHolder: ParentStateHolder,
     videoTrackFlow: StateFlow<VideoTrack?> = remember { MutableStateFlow(null) },
     pendingExportFlow: SharedFlow<PendingDocumentExportRequest> = remember { MutableSharedFlow() },
+    recordAudioPermissionFlow: SharedFlow<Unit> = remember { MutableSharedFlow() },
     eglContext: EglBase.Context? = null,
     hasLiveCoordinator: Boolean = false
 ) {
@@ -139,6 +145,18 @@ fun NexusParentRoot(
     ) { granted ->
         if (!granted) {
             stateHolder.showToast("Notification permission helps keep background WebRTC status visible.")
+        }
+    }
+
+    val recordAudioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        stateHolder.onRecordAudioPermissionResult(granted)
+    }
+
+    LaunchedEffect(recordAudioPermissionFlow) {
+        recordAudioPermissionFlow.collect {
+            recordAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
@@ -288,7 +306,14 @@ fun NexusParentRoot(
                     state = state.mic,
                     onClose = { stateHolder.setMicOverlayOpen(false) },
                     onToggleListen = stateHolder::toggleMicListen,
-                    onToggleSpeak = stateHolder::toggleMicSpeak,
+                    onToggleSpeak = {
+                        val hasAudioPerm = !hasLiveCoordinator ||
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+                        stateHolder.toggleMicSpeak(hasAudioPerm)
+                    },
                     onToggleVoiceMenu = stateHolder::toggleVoiceMenu,
                     onSelectVoice = stateHolder::selectVoicePreset
                 )

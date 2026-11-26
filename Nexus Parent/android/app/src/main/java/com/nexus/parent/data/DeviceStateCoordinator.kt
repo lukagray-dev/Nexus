@@ -2,6 +2,9 @@ package com.nexus.parent.data
 
 import android.content.Context
 import android.util.Log
+import com.nexus.parent.data.mic.MicCoordinator
+import com.nexus.parent.data.mic.ParentAudioRouteManager
+import com.nexus.parent.data.mic.WebRtcMicMediaBridge
 import com.nexus.parent.data.monitor.MonitorCoordinator
 import com.nexus.parent.service.ParentConnectionService
 import com.nexus.parent.state.ConnectionPhase
@@ -49,6 +52,7 @@ class DeviceStateCoordinator(
 
     private val appContext = context.applicationContext
     private val reconnectManager = ReconnectManager(scope)
+    private val audioRouteManager = ParentAudioRouteManager(appContext)
     private val startupAttempted = AtomicBoolean(false)
 
     val monitorCoordinator: MonitorCoordinator = MonitorCoordinator(
@@ -63,11 +67,36 @@ class DeviceStateCoordinator(
         webRtcManager = webRtcManager
     )
 
+    val micCoordinator: MicCoordinator = MicCoordinator(
+        scope = scope,
+        mediaBridge = WebRtcMicMediaBridge(
+            webRtcManager = webRtcManager,
+            routeManager = audioRouteManager,
+            onSpeechFgsChanged = { active ->
+                includeMicFgsType = active
+                val activeDev = activeSessionDevice
+                if (activeDev != null) {
+                    updateServiceNotification(
+                        title = "Connected to ${activeDev.name}",
+                        body = if (active) {
+                            "Broadcast Intercom active (${activeDev.formattedId})"
+                        } else {
+                            "Encrypted P2P session active (${activeDev.formattedId})"
+                        }
+                    )
+                }
+            }
+        ),
+        sendCommand = webRtcManager::sendCommand,
+        onPersistSettings = { updated -> storage.saveSettings(updated) }
+    )
+
     private var stateHolder: ParentStateHolder? = null
     private var activeSessionDevice: DeviceRecord? = null
     private var lastStealthBeforeWait: StealthStatus = StealthStatus.ARMED
     private var wasManuallyDisconnected = false
     private var isAttemptingConnection = false
+    private var includeMicFgsType = false
     private var disconnectGraceJob: Job? = null
     private var lastServiceText: String = ""
 
@@ -81,6 +110,7 @@ class DeviceStateCoordinator(
         stateHolder = holder
         monitorCoordinator.attachStateHolder(holder)
         surveillanceCoordinator.attachStateHolder(holder)
+        micCoordinator.attachStateHolder(holder)
     }
 
     fun buildInitialUiState(): ParentUiState {
@@ -247,6 +277,8 @@ class DeviceStateCoordinator(
 
         monitorCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
+        micCoordinator.onPeerDisconnected()
+        includeMicFgsType = false
         reconnectManager.cancel(silent = true)
         webRtcManager.disconnect(clearRemoteSignaling = true)
         ParentConnectionService.stop(appContext)
@@ -266,6 +298,8 @@ class DeviceStateCoordinator(
         activeSessionDevice = null
         monitorCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
+        micCoordinator.onPeerDisconnected()
+        includeMicFgsType = false
         reconnectManager.cancel(silent = false)
         webRtcManager.disconnect(clearRemoteSignaling = false)
         ParentConnectionService.stop(appContext)
@@ -290,6 +324,7 @@ class DeviceStateCoordinator(
     fun saveSettings(settings: SettingsValues) {
         storage.saveSettings(settings)
         surveillanceCoordinator.onSettingsUpdated(settings)
+        micCoordinator.onSettingsUpdated(settings)
     }
 
     fun clearLocalWorkspaceHistory() {
@@ -413,6 +448,8 @@ class DeviceStateCoordinator(
         Log.w(TAG, "Unexpected WebRTC drop for ${active.rawId}; starting 9-attempt backoff")
         monitorCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
+        micCoordinator.onPeerDisconnected()
+        includeMicFgsType = false
         webRtcManager.setActiveVideoType(null)
         webRtcManager.disconnect(clearRemoteSignaling = false)
 
@@ -435,6 +472,7 @@ class DeviceStateCoordinator(
 
     private fun handleDataChannelMessage(rawMessage: String) {
         if (surveillanceCoordinator.handleIncomingMessage(rawMessage)) return
+        if (micCoordinator.handleIncomingMessage(rawMessage)) return
 
         val holder = stateHolder ?: return
         val trimmed = rawMessage.trim()
@@ -446,6 +484,8 @@ class DeviceStateCoordinator(
             activeSessionDevice = null
             monitorCoordinator.onPeerDisconnected()
             surveillanceCoordinator.onPeerDisconnected()
+            micCoordinator.onPeerDisconnected()
+            includeMicFgsType = false
             reconnectManager.cancel(silent = true)
             webRtcManager.disconnect(clearRemoteSignaling = false)
             ParentConnectionService.stop(appContext)
@@ -504,9 +544,14 @@ class DeviceStateCoordinator(
     }
 
     private fun updateServiceNotification(title: String, body: String) {
-        val composite = "$title|$body"
+        val composite = "$title|$body|$includeMicFgsType"
         if (composite == lastServiceText) return
         lastServiceText = composite
-        ParentConnectionService.startOrUpdate(appContext, title, body)
+        ParentConnectionService.startOrUpdate(
+            context = appContext,
+            title = title,
+            body = body,
+            includeMicrophoneFgsType = includeMicFgsType
+        )
     }
 }

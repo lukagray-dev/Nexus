@@ -9,7 +9,7 @@ kotlin = "2.2.10"
 composeBom = "2026.02.01"
 firebaseBom = "34.4.0"
 kotlinxCoroutines = "1.10.2"
-webrtc = "123.0.0"
+webrtc = "125.6422.07"
 orgJson = "20240303"
 osmdroid = "6.1.20"
 
@@ -35,7 +35,7 @@ kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-cor
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
-webrtc = { module = "com.dafruits:webrtc", version.ref = "webrtc" }
+webrtc = { module = "io.github.webrtc-sdk:android", version.ref = "webrtc" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

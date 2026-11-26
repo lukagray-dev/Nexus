@@ -192,19 +192,28 @@ fun FloatingMicOverlay(
                         modifier = Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // 36-Bar Audio Spectrum Visualizer
+                        // 36-Bar Audio Spectrum Visualizer (White while listening, Green while speaking)
                         SpectrumVisualizer(
                             bars = state.spectrumBars,
-                            isActive = state.listenState == MonitoringState.LIVE
+                            isListening = state.listenState == MonitoringState.LIVE,
+                            isSpeaking = state.speakState == MonitoringState.LIVE
                         )
 
                         // Controls Row: Listen Play/Pause + Split Speak / Voice Changer
+                        val isListenBusy =
+                            state.listenState == MonitoringState.STARTING ||
+                                state.listenState == MonitoringState.STOPPING
+                        val isSpeakBusy =
+                            state.speakState == MonitoringState.STARTING ||
+                                state.speakState == MonitoringState.STOPPING
+                        val isSpeaking = state.speakState == MonitoringState.LIVE
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // 1. Listen Toggle Button
+                            // 1. Listen Toggle Button (intermediate SpinningLoaderIcon until Child confirms)
                             Box(
                                 modifier = Modifier
                                     .size(38.dp)
@@ -225,7 +234,7 @@ fun FloatingMicOverlay(
                                         },
                                         RoundedCornerShape(NexusDimens.RadiusMd)
                                     )
-                                    .clickable(onClick = onToggleListen)
+                                    .clickable(enabled = !isListenBusy, onClick = onToggleListen)
                                     .testTag("mic_listen_btn"),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -247,7 +256,6 @@ fun FloatingMicOverlay(
                             }
 
                             // 2. Split Speak + Voice Selector Group
-                            val isSpeaking = state.speakState == MonitoringState.LIVE
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
@@ -265,22 +273,33 @@ fun FloatingMicOverlay(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(38.dp)
-                                        .clickable(onClick = onToggleSpeak)
+                                        .clickable(enabled = !isSpeakBusy, onClick = onToggleSpeak)
                                         .padding(horizontal = 10.dp)
                                         .testTag("mic_speak_btn"),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_mic),
-                                        contentDescription = null,
-                                        tint = if (isSpeaking) NexusColors.DangerRed else NexusColors.TextPrimary,
-                                        modifier = Modifier.size(14.dp)
-                                    )
+                                    if (isSpeakBusy) {
+                                        SpinningLoaderIcon(size = 14.dp)
+                                    } else {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_mic),
+                                            contentDescription = null,
+                                            tint = if (isSpeaking) NexusColors.DangerRed else NexusColors.TextPrimary,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
                                     Text(
-                                        text = if (isSpeaking) "Speaking" else "Speak",
+                                        text = when (state.speakState) {
+                                            MonitoringState.STARTING -> "Connecting..."
+                                            MonitoringState.STOPPING -> "Stopping..."
+                                            MonitoringState.LIVE -> "Speaking"
+                                            MonitoringState.IDLE -> "Speak"
+                                        },
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = NexusColors.TextPrimary
+                                        color = NexusColors.TextPrimary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     TacticalBadgePill(
                                         text = state.selectedVoice.displayName,
@@ -323,7 +342,8 @@ fun FloatingMicOverlay(
 @Composable
 private fun SpectrumVisualizer(
     bars: List<Float>,
-    isActive: Boolean
+    isListening: Boolean,
+    isSpeaking: Boolean
 ) {
     Box(
         modifier = Modifier
@@ -339,7 +359,11 @@ private fun SpectrumVisualizer(
             val gap = 2.dp.toPx()
             val totalGap = gap * (count - 1)
             val barWidth = ((size.width - totalGap) / count).coerceAtLeast(1f)
-            val barColor = if (isActive) NexusColors.AccentWhite else NexusColors.TextMuted.copy(alpha = 0.45f)
+            val barColor = when {
+                isSpeaking -> NexusColors.LiveGreen
+                isListening -> NexusColors.AccentWhite
+                else -> NexusColors.TextMuted.copy(alpha = 0.45f)
+            }
 
             bars.forEachIndexed { index, amp ->
                 val clamped = amp.coerceIn(0.08f, 1f)
