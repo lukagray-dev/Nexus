@@ -1,5 +1,6 @@
 package com.nexus.parent.data.mic
 
+import com.nexus.parent.data.alerts.GeneralAlertsController
 import com.nexus.parent.media.mic.AudioSpectrumAnalyzer
 import com.nexus.parent.media.mic.VoiceChangerDspEngine
 import com.nexus.parent.state.FeatureId
@@ -72,7 +73,8 @@ class MicCoordinator(
     private val scope: CoroutineScope,
     private val mediaBridge: MicMediaBridge,
     private val sendCommand: (String) -> Boolean,
-    private val onPersistSettings: (SettingsValues) -> Unit
+    private val onPersistSettings: (SettingsValues) -> Unit,
+    private val alertsController: GeneralAlertsController? = null
 ) {
 
     private val _recordAudioPermissionRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 2)
@@ -324,6 +326,8 @@ class MicCoordinator(
                 mediaBridge.engageVoiceRoute()
                 mediaBridge.setRemoteAudioEnabled(true)
                 mediaBridge.spectrumAnalyzer.setListeningActive(true)
+                alertsController?.onMicListeningActivated()
+                holder.setActiveCallAlert(null)
                 holder.updateMicState { it.copy(listenState = MonitoringState.LIVE) }
                 holder.setFeatureLive(FeatureId.MIC, isLive = true)
                 return true
@@ -383,11 +387,22 @@ class MicCoordinator(
 
         val callPacket = MicProtocol.parseCallStatePacket(trimmed)
         if (callPacket != null) {
-            if (!holder.uiState.value.settings.alertChildActiveCall || callPacket.state == "idle") {
-                holder.setActiveCallAlert(null)
+            val current = holder.uiState.value
+            val isMicActive = current.mic.listenState == MonitoringState.LIVE ||
+                current.mic.listenState == MonitoringState.STARTING
+            val nextAlert = if (alertsController != null) {
+                alertsController.evaluateCallState(
+                    packet = callPacket,
+                    settings = current.settings,
+                    isMicListeningOrStarting = isMicActive,
+                    deviceName = current.connectedDevice?.name
+                )
+            } else if (!current.settings.alertChildActiveCall || callPacket.state == "idle" || isMicActive) {
+                null
             } else {
-                holder.setActiveCallAlert(MicProtocol.toActiveCallAlert(callPacket))
+                MicProtocol.toActiveCallAlert(callPacket)
             }
+            holder.setActiveCallAlert(nextAlert)
             return true
         }
 

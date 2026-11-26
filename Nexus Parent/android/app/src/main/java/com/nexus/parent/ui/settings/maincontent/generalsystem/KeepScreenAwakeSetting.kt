@@ -13,8 +13,8 @@ fun KeepScreenAwakeSetting(
     onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
 ) {
     SettingsToggleRow(
-        title = "Keep Screen Awake During Live Feeds",
-        subtitle = "Prevents device sleep while monitoring Camera, Screen, or Location.",
+        title = "Keep Screen On When Connected",
+        subtitle = "Prevents screen timeout while connected or reconnecting to a child device.",
         checked = checked,
         onCheckedChange = { value ->
             onUpdateSettings { it.copy(keepScreenAwake = value) }

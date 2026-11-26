@@ -76,11 +76,11 @@ class DeviceStorageTest {
             dvrBufferDuration = DvrDuration.M60,
             dvrClipFormat = ClipFormat.WEBM,
             hardwareAcceleration = false,
-            downloadsDirectoryLabel = "Movies/NexusExports",
+            downloadsDirectoryLabel = "Internal/Documents/Evidence",
+            downloadsTreeUri = "content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FEvidence",
             askBeforeDownload = true,
             autoConnectLastDevice = true,
             keepScreenAwake = false,
-            alertIntruderSelfie = false,
             alertLowBattery = false,
             alertChildDisconnected = false,
             alertChildActiveCall = false

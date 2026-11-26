@@ -16,15 +16,9 @@ fun SafetyAlertsSetting(
     SettingsSectionGroup(title = "Notifications & Safety Alerts") {
         SettingsToggleRow(
             title = "Active Cellular Call Alert",
-            subtitle = "Show floating banner with 1-click Mic Listen when child enters a call.",
+            subtitle = "Show floating banner with 1-click Mic Listen & urgent alert when child enters a call.",
             checked = settings.alertChildActiveCall,
             onCheckedChange = { v -> onUpdateSettings { it.copy(alertChildActiveCall = v) } }
-        )
-        SettingsToggleRow(
-            title = "Intruder Selfie Alerts",
-            subtitle = "Notify immediately when failed App Lock PIN attempts trigger a front selfie.",
-            checked = settings.alertIntruderSelfie,
-            onCheckedChange = { v -> onUpdateSettings { it.copy(alertIntruderSelfie = v) } }
         )
         SettingsToggleRow(
             title = "Low Battery Alerts",

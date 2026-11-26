@@ -128,7 +128,9 @@ class ParentStateHolderTest {
             it.copy(
                 screenQuality = ScreenQuality.P540,
                 preferredCameraLens = CameraLens.FRONT,
-                keepScreenAwake = false
+                keepScreenAwake = false,
+                downloadsDirectoryLabel = "Internal/Custom",
+                downloadsTreeUri = "content://tree/1"
             )
         }
         assertEquals(ScreenQuality.P540, holder.uiState.value.settings.screenQuality)
@@ -137,6 +139,8 @@ class ParentStateHolderTest {
         assertEquals(ScreenQuality.P1080, holder.uiState.value.settings.screenQuality)
         assertEquals(CameraLens.REAR, holder.uiState.value.settings.preferredCameraLens)
         assertTrue(holder.uiState.value.settings.keepScreenAwake)
+        assertEquals("Downloads/NexusParent", holder.uiState.value.settings.downloadsDirectoryLabel)
+        assertNull(holder.uiState.value.settings.downloadsTreeUri)
 
         holder.disconnectDevice()
         assertEquals(ConnectionPhase.DISCONNECTED, holder.uiState.value.connectionPhase)

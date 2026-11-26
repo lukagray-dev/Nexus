@@ -5,8 +5,10 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -200,6 +202,27 @@ fun NexusParentRoot(
         stateHolder.completeStorageDownloadPick(uri)
     }
 
+    val browseDownloadsFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            }
+            val label = formatSafTreeLabel(uri)
+            stateHolder.updateSettings {
+                it.copy(
+                    downloadsTreeUri = uri.toString(),
+                    downloadsDirectoryLabel = label
+                )
+            }
+            stateHolder.showToast("Downloads folder set to: $label")
+        }
+    }
+
     LaunchedEffect(pendingStorageDownloadFlow) {
         pendingStorageDownloadFlow.collect { req ->
             val createIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
@@ -223,8 +246,12 @@ fun NexusParentRoot(
         }
     }
 
-    // Keep screen awake cleanly when monitoring live feeds with setting enabled
-    val shouldKeepAwake = state.settings.keepScreenAwake && state.liveFeatures.isNotEmpty()
+    // Keep screen awake whenever connected, connecting, or reconnecting (matching Desktop keepScreenAwake)
+    val shouldKeepAwake = state.settings.keepScreenAwake && state.connectionPhase in setOf(
+        ConnectionPhase.CONNECTING,
+        ConnectionPhase.CONNECTED,
+        ConnectionPhase.RECONNECTING
+    )
     DisposableEffect(shouldKeepAwake, context) {
         val window = (context as? Activity)?.window
         if (shouldKeepAwake) {
@@ -379,6 +406,13 @@ fun NexusParentRoot(
         state = state,
         onSelectTab = stateHolder::selectSettingsTab,
         onUpdateSettings = stateHolder::updateSettings,
+        onBrowseDownloadsFolder = {
+            if (hasLiveCoordinator) {
+                browseDownloadsFolderLauncher.launch(null)
+            } else {
+                stateHolder.showToast("Folder picker requires active Android runtime")
+            }
+        },
         onSelectPairedDevice = stateHolder::selectPairedDevice,
         onClearSelectedPairedDevice = stateHolder::clearSelectedPairedDevice,
         onConnectPairedDevice = { targetId ->
@@ -589,4 +623,16 @@ private fun MainContentRouter(
             }
         }
     }
+}
+
+private fun formatSafTreeLabel(uri: Uri): String {
+    val docId = runCatching { DocumentsContract.getTreeDocumentId(uri) }.getOrNull().orEmpty()
+    if (docId.startsWith("primary:")) {
+        val rel = docId.removePrefix("primary:").trim('/')
+        return if (rel.isEmpty()) "Internal Storage" else "Internal/$rel"
+    }
+    if (docId.isNotBlank()) {
+        return docId.replace(':', '/')
+    }
+    return uri.lastPathSegment?.takeIf { it.isNotBlank() } ?: "Custom Folder"
 }

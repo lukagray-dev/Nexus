@@ -4,8 +4,10 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Base64
+import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -143,16 +145,36 @@ class StorageFileSaver(
         stagedFile: File,
         fileName: String,
         mimeType: String,
-        deleteSource: Boolean
+        deleteSource: Boolean,
+        customTreeUri: String? = null,
+        directoryLabel: String = "Downloads/NexusParent"
     ): String? = withContext(ioDispatcher) {
         val appCtx = context?.applicationContext ?: return@withContext null
-        val uniqueName = resolveUniqueDownloadName(appCtx, sanitizeFileName(fileName))
+        val sanitized = sanitizeFileName(fileName)
+        val normalizedMime = mimeType.ifBlank { "application/octet-stream" }
+
+        // If parent configured a custom SAF folder via "Browse Folder", save directly into that tree
+        if (!customTreeUri.isNullOrBlank()) {
+            val savedTreeName = saveToCustomTreeUri(
+                context = appCtx,
+                stagedFile = stagedFile,
+                treeUriString = customTreeUri,
+                desiredName = sanitized,
+                mimeType = normalizedMime,
+                deleteSource = deleteSource
+            )
+            if (savedTreeName != null) {
+                return@withContext "$directoryLabel/$savedTreeName"
+            }
+        }
+
+        val uniqueName = resolveUniqueDownloadName(appCtx, sanitized)
         val relativeDir = "${Environment.DIRECTORY_DOWNLOADS}/NexusParent"
         val resolver = appCtx.contentResolver
 
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, uniqueName)
-            put(MediaStore.Downloads.MIME_TYPE, mimeType.ifBlank { "application/octet-stream" })
+            put(MediaStore.Downloads.MIME_TYPE, normalizedMime)
             put(MediaStore.Downloads.RELATIVE_PATH, relativeDir)
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
@@ -182,6 +204,75 @@ class StorageFileSaver(
             stagedFile.delete()
         }
         "$relativeDir/$uniqueName"
+    }
+
+    private fun saveToCustomTreeUri(
+        context: Context,
+        stagedFile: File,
+        treeUriString: String,
+        desiredName: String,
+        mimeType: String,
+        deleteSource: Boolean
+    ): String? {
+        return runCatching {
+            val resolver = context.contentResolver
+            val treeUri = treeUriString.toUri()
+            val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
+            val parentDocUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId)
+            val uniqueName = resolveUniqueTreeDocumentName(context, treeUri, treeDocId, desiredName)
+            val docUri = DocumentsContract.createDocument(resolver, parentDocUri, mimeType, uniqueName)
+                ?: return null
+            val ok = resolver.openOutputStream(docUri)?.use { out ->
+                FileInputStream(stagedFile).use { input ->
+                    input.copyTo(out)
+                }
+            } != null
+            if (!ok) {
+                runCatching { DocumentsContract.deleteDocument(resolver, docUri) }
+                return null
+            }
+            if (deleteSource) {
+                stagedFile.delete()
+            }
+            uniqueName
+        }.getOrNull()
+    }
+
+    private fun resolveUniqueTreeDocumentName(
+        context: Context,
+        treeUri: Uri,
+        treeDocId: String,
+        desiredName: String
+    ): String {
+        val existingNames = HashSet<String>()
+        runCatching {
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeDocId)
+            context.contentResolver.query(
+                childrenUri,
+                arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                val idx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                if (idx >= 0) {
+                    while (cursor.moveToNext()) {
+                        cursor.getString(idx)?.let { existingNames.add(it) }
+                    }
+                }
+            }
+        }
+        if (!existingNames.contains(desiredName)) return desiredName
+        val dotIndex = desiredName.lastIndexOf('.')
+        val base = if (dotIndex > 0) desiredName.substring(0, dotIndex) else desiredName
+        val ext = if (dotIndex > 0) desiredName.substring(dotIndex) else ""
+        var counter = 1
+        while (counter < 1000) {
+            val candidate = "$base ($counter)$ext"
+            if (!existingNames.contains(candidate)) return candidate
+            counter++
+        }
+        return "${base}_${System.currentTimeMillis()}$ext"
     }
 
     suspend fun copyFileToUri(

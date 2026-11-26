@@ -295,12 +295,15 @@ class StorageCoordinator(
             return
         }
 
+        val settings = holder.uiState.value.settings
         scope.launch {
             val savedPath = fileSaver.saveStagedFileToDownloads(
                 stagedFile = localFile,
                 fileName = item.name,
                 mimeType = item.mimeType,
-                deleteSource = false
+                deleteSource = false,
+                customTreeUri = settings.downloadsTreeUri,
+                directoryLabel = settings.downloadsDirectoryLabel
             )
             holder.showToast(
                 if (savedPath != null) "Saved to: $savedPath" else "Failed to save preview image"
@@ -682,11 +685,14 @@ class StorageCoordinator(
                     holder.showToast(if (ok) "Saved cleanly: ${writer.fileName}" else "Failed saving ${writer.fileName}")
                 }
             } else {
+                val settings = holder.uiState.value.settings
                 val relativePath = fileSaver.saveStagedFileToDownloads(
                     stagedFile = stagedFile,
                     fileName = writer.fileName,
                     mimeType = writer.mimeType,
-                    deleteSource = true
+                    deleteSource = true,
+                    customTreeUri = settings.downloadsTreeUri,
+                    directoryLabel = settings.downloadsDirectoryLabel
                 )
                 scope.launch {
                     holder.updateStorageState { it.copy(activeTransfer = null) }

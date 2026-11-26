@@ -17,6 +17,7 @@ import com.nexus.parent.ui.settings.maincontent.surveillancedvr.SurveillanceDvrS
 fun SettingsMainContent(
     state: ParentUiState,
     onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onBrowseDownloadsFolder: () -> Unit = {},
     onSelectPairedDevice: (String) -> Unit,
     onClearSelectedPairedDevice: () -> Unit,
     onConnectPairedDevice: (String) -> Unit,
@@ -27,7 +28,8 @@ fun SettingsMainContent(
     when (state.activeSettingsTab) {
         SettingsTabId.GENERAL -> GeneralSystemSection(
             settings = state.settings,
-            onUpdateSettings = onUpdateSettings
+            onUpdateSettings = onUpdateSettings,
+            onBrowseDownloadsFolder = onBrowseDownloadsFolder
         )
         SettingsTabId.AUDIO -> AudioIntercomSection(
             settings = state.settings,

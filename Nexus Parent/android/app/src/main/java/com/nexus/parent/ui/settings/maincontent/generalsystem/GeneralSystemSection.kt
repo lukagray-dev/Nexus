@@ -18,7 +18,8 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSectionGroup
 @Composable
 fun GeneralSystemSection(
     settings: SettingsValues,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onBrowseDownloadsFolder: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -39,7 +40,21 @@ fun GeneralSystemSection(
         }
 
         SettingsSectionGroup(title = "Downloads & Storage") {
-            DownloadsDirectorySetting(directoryLabel = settings.downloadsDirectoryLabel)
+            DownloadsDirectorySetting(
+                directoryLabel = settings.downloadsDirectoryLabel,
+                hasCustomFolder = !settings.downloadsTreeUri.isNullOrBlank(),
+                disabled = settings.askBeforeDownload,
+                onBrowseClick = onBrowseDownloadsFolder,
+                onResetClick = {
+                    val defaults = SettingsValues()
+                    onUpdateSettings {
+                        it.copy(
+                            downloadsDirectoryLabel = defaults.downloadsDirectoryLabel,
+                            downloadsTreeUri = null
+                        )
+                    }
+                }
+            )
             AskBeforeDownloadSetting(
                 checked = settings.askBeforeDownload,
                 onUpdateSettings = onUpdateSettings

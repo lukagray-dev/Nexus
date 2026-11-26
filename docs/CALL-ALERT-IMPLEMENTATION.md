@@ -82,7 +82,7 @@ npm test
 ```
 
 ### Android (`Nexus Parent/android`)
-- **`MicProtocol.kt` & `MicCoordinator.kt`**: Parses incoming `CALL_STATE` JSON payloads (`ringing`, `active`, `idle`) when `settings.alertChildActiveCall` is enabled, surfaces `ActiveCallBanner` with caller ID/direction metadata, clears automatically on `idle` or disconnect, and wires the banner's **Turn On Mic** button directly to `MicCoordinator.startChildMicMonitoring()` (opening the floating Mic HUD and dispatching `MIC_ON`).
+- **`MicProtocol.kt`, `MicCoordinator.kt`, & `GeneralAlertsController.kt`**: Synchronizes `CALL_ALERT_ON` / `CALL_ALERT_OFF` on DataChannel open and settings change, parses incoming `CALL_STATE` JSON payloads (`ringing`, `active`, `idle`) when `settings.alertChildActiveCall` is enabled, surfaces `ActiveCallBanner` + `IMPORTANCE_HIGH` notification (`ALERT_ID_ACTIVE_CALL`), suppresses repeats once Mic monitoring is `STARTING` or `LIVE`, clears automatically on `idle` / `MIC_STARTED` / disconnect, and wires **Turn On Mic** directly to `MicCoordinator.startChildMicMonitoring()`. Verified via `GeneralAlertsControllerTest.kt` and `MicCoordinatorTest.kt`.
 
 ### Android (`Nexus Child`)
 - **`CallAlertComponentTest.kt`**: Verifies `CallAlertStateMachine` incoming/outgoing lifecycles, duplicate broadcast deduplication + enrichment, repeat reminder payloads, JSON serialization, and `CallAlertCommandHandler` lifecycle.

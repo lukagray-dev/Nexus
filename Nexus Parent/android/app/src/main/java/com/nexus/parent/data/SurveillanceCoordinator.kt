@@ -422,7 +422,7 @@ class SurveillanceCoordinator(
         }
 
         setExportingFlag(feedType, exporting = true)
-        val askBeforeDownload = holder.uiState.value.settings.askBeforeDownload
+        val settingsSnapshot = holder.uiState.value.settings
 
         scope.launch {
             val outcome = ClipExportManager.exportClip(
@@ -430,13 +430,15 @@ class SurveillanceCoordinator(
                 feedType = feedType,
                 segmentFiles = segments,
                 container = container,
-                askBeforeDownload = askBeforeDownload
+                askBeforeDownload = settingsSnapshot.askBeforeDownload,
+                customTreeUri = settingsSnapshot.downloadsTreeUri,
+                directoryLabel = settingsSnapshot.downloadsDirectoryLabel
             )
             setExportingFlag(feedType, exporting = false)
 
             when (outcome) {
                 is ClipExportOutcome.SavedToDownloads -> {
-                    holder.showToast("Saved ${outcome.fileName} to Downloads/NexusParent")
+                    holder.showToast("Saved clip to ${outcome.relativePath}")
                 }
                 is ClipExportOutcome.NeedsUserDestination -> {
                     pendingStagedFile?.delete()

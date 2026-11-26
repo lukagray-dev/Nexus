@@ -118,10 +118,10 @@ class DeviceStorage(private val store: StorageStore) {
                 dvrClipFormat = enumOrDefault(j.optString("dvrClipFormat"), defaults.dvrClipFormat),
                 hardwareAcceleration = j.optBoolean("hardwareAcceleration", defaults.hardwareAcceleration),
                 downloadsDirectoryLabel = j.optString("downloadsDirectoryLabel", defaults.downloadsDirectoryLabel),
+                downloadsTreeUri = j.optString("downloadsTreeUri", "").takeIf { it.isNotBlank() },
                 askBeforeDownload = j.optBoolean("askBeforeDownload", defaults.askBeforeDownload),
                 autoConnectLastDevice = j.optBoolean("autoConnectLastDevice", defaults.autoConnectLastDevice),
                 keepScreenAwake = j.optBoolean("keepScreenAwake", defaults.keepScreenAwake),
-                alertIntruderSelfie = j.optBoolean("alertIntruderSelfie", defaults.alertIntruderSelfie),
                 alertLowBattery = j.optBoolean("alertLowBattery", defaults.alertLowBattery),
                 alertChildDisconnected = j.optBoolean("alertChildDisconnected", defaults.alertChildDisconnected),
                 alertChildActiveCall = j.optBoolean("alertChildActiveCall", defaults.alertChildActiveCall)
@@ -140,10 +140,10 @@ class DeviceStorage(private val store: StorageStore) {
             put("dvrClipFormat", settings.dvrClipFormat.name)
             put("hardwareAcceleration", settings.hardwareAcceleration)
             put("downloadsDirectoryLabel", settings.downloadsDirectoryLabel)
+            put("downloadsTreeUri", settings.downloadsTreeUri ?: "")
             put("askBeforeDownload", settings.askBeforeDownload)
             put("autoConnectLastDevice", settings.autoConnectLastDevice)
             put("keepScreenAwake", settings.keepScreenAwake)
-            put("alertIntruderSelfie", settings.alertIntruderSelfie)
             put("alertLowBattery", settings.alertLowBattery)
             put("alertChildDisconnected", settings.alertChildDisconnected)
             put("alertChildActiveCall", settings.alertChildActiveCall)

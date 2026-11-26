@@ -8,7 +8,9 @@ import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.net.Uri
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidx.core.net.toUri
 import com.nexus.parent.state.ClipFormat
 import com.nexus.parent.webrtc.VideoFeedType
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +36,9 @@ object ClipExportManager {
         feedType: VideoFeedType,
         segmentFiles: List<File>,
         container: ClipFormat,
-        askBeforeDownload: Boolean
+        askBeforeDownload: Boolean,
+        customTreeUri: String? = null,
+        directoryLabel: String = "Downloads/NexusParent"
     ): ClipExportOutcome = withContext(Dispatchers.IO) {
         if (segmentFiles.isEmpty()) {
             return@withContext ClipExportOutcome.Failed("No recorded DVR segments ready yet. Wait a few seconds and retry.")
@@ -60,15 +64,26 @@ object ClipExportManager {
             )
         }
 
-        val saved = writeToMediaStoreDownloads(appCtx, stagedFile, fileName, mimeType)
+        if (!customTreeUri.isNullOrBlank()) {
+            val savedTreeFile = writeToCustomTreeUri(appCtx, stagedFile, customTreeUri, fileName, mimeType)
+            if (savedTreeFile != null) {
+                stagedFile.delete()
+                return@withContext ClipExportOutcome.SavedToDownloads(
+                    fileName = savedTreeFile,
+                    relativePath = "$directoryLabel/$savedTreeFile"
+                )
+            }
+        }
+
+        val savedMediaName = writeToMediaStoreDownloads(appCtx, stagedFile, fileName, mimeType)
         stagedFile.delete()
-        if (saved) {
+        if (savedMediaName != null) {
             ClipExportOutcome.SavedToDownloads(
-                fileName = fileName,
-                relativePath = "${Environment.DIRECTORY_DOWNLOADS}/NexusParent/$fileName"
+                fileName = savedMediaName,
+                relativePath = "${Environment.DIRECTORY_DOWNLOADS}/NexusParent/$savedMediaName"
             )
         } else {
-            ClipExportOutcome.Failed("Failed writing clip to Downloads/NexusParent.")
+            ClipExportOutcome.Failed("Failed writing clip to $directoryLabel.")
         }
     }
 
@@ -159,35 +174,94 @@ object ClipExportManager {
         }
     }
 
+    private fun writeToCustomTreeUri(
+        context: Context,
+        sourceFile: File,
+        treeUriString: String,
+        desiredName: String,
+        mimeType: String
+    ): String? {
+        return runCatching {
+            val resolver = context.contentResolver
+            val treeUri = treeUriString.toUri()
+            val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
+            val parentDocUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId)
+            val docUri = DocumentsContract.createDocument(resolver, parentDocUri, mimeType, desiredName)
+                ?: return null
+            val ok = resolver.openOutputStream(docUri)?.use { out ->
+                FileInputStream(sourceFile).use { input ->
+                    input.copyTo(out)
+                }
+            } != null
+            if (!ok) {
+                runCatching { DocumentsContract.deleteDocument(resolver, docUri) }
+                return null
+            }
+            desiredName
+        }.getOrNull()
+    }
+
     private fun writeToMediaStoreDownloads(
         context: Context,
         sourceFile: File,
         fileName: String,
         mimeType: String
-    ): Boolean {
+    ): String? {
+        val resolver = context.contentResolver
         val relativeDir = "${Environment.DIRECTORY_DOWNLOADS}/NexusParent"
+        val uniqueName = resolveUniqueDownloadName(context, fileName)
         val values = ContentValues().apply {
-            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.DISPLAY_NAME, uniqueName)
             put(MediaStore.Downloads.MIME_TYPE, mimeType)
             put(MediaStore.Downloads.RELATIVE_PATH, relativeDir)
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
 
-        val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return null
         return runCatching {
             resolver.openOutputStream(uri)?.use { out ->
                 FileInputStream(sourceFile).use { input ->
                     input.copyTo(out)
                 }
-            } ?: return false
+            } ?: return null
             values.clear()
             values.put(MediaStore.Downloads.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
-            true
+            uniqueName
         }.getOrElse {
             runCatching { resolver.delete(uri, null, null) }
-            false
+            null
         }
+    }
+
+    private fun resolveUniqueDownloadName(context: Context, desiredName: String): String {
+        val existingNames = HashSet<String>()
+        runCatching {
+            context.contentResolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Downloads.DISPLAY_NAME),
+                "${MediaStore.Downloads.RELATIVE_PATH} LIKE ?",
+                arrayOf("${Environment.DIRECTORY_DOWNLOADS}/NexusParent%"),
+                null
+            )?.use { cursor ->
+                val idx = cursor.getColumnIndex(MediaStore.Downloads.DISPLAY_NAME)
+                if (idx >= 0) {
+                    while (cursor.moveToNext()) {
+                        cursor.getString(idx)?.let { existingNames.add(it) }
+                    }
+                }
+            }
+        }
+        if (!existingNames.contains(desiredName)) return desiredName
+        val dotIndex = desiredName.lastIndexOf('.')
+        val base = if (dotIndex > 0) desiredName.substring(0, dotIndex) else desiredName
+        val ext = if (dotIndex > 0) desiredName.substring(dotIndex) else ""
+        var counter = 1
+        while (counter < 1000) {
+            val candidate = "$base ($counter)$ext"
+            if (!existingNames.contains(candidate)) return candidate
+            counter++
+        }
+        return "${base}_${System.currentTimeMillis()}$ext"
     }
 }

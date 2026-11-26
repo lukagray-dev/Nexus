@@ -7,4 +7,6 @@
     <string name="cd_close">Close</string>
     <string name="service_notification_channel_name">Nexus Parent Connection</string>
     <string name="service_notification_channel_desc">Maintains encrypted WebRTC connection and auto-reconnect while screen is off.</string>
+    <string name="alert_notification_channel_name">Nexus Parent Safety Alerts</string>
+    <string name="alert_notification_channel_desc">Urgent alerts for child active calls, low battery, and unexpected disconnections.</string>
 </resources>

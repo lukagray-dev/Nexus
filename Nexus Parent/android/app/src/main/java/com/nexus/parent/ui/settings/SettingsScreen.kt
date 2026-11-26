@@ -56,6 +56,7 @@ fun SettingsScreen(
     state: ParentUiState,
     onSelectTab: (SettingsTabId) -> Unit,
     onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onBrowseDownloadsFolder: () -> Unit = {},
     onSelectPairedDevice: (String) -> Unit,
     onClearSelectedPairedDevice: () -> Unit,
     onConnectPairedDevice: (String) -> Unit,
@@ -160,6 +161,7 @@ fun SettingsScreen(
                                 SettingsMainContent(
                                     state = state,
                                     onUpdateSettings = onUpdateSettings,
+                                    onBrowseDownloadsFolder = onBrowseDownloadsFolder,
                                     onSelectPairedDevice = onSelectPairedDevice,
                                     onClearSelectedPairedDevice = onClearSelectedPairedDevice,
                                     onConnectPairedDevice = onConnectPairedDevice,
@@ -186,6 +188,7 @@ fun SettingsScreen(
                                 SettingsMainContent(
                                     state = state,
                                     onUpdateSettings = onUpdateSettings,
+                                    onBrowseDownloadsFolder = onBrowseDownloadsFolder,
                                     onSelectPairedDevice = onSelectPairedDevice,
                                     onClearSelectedPairedDevice = onClearSelectedPairedDevice,
                                     onConnectPairedDevice = onConnectPairedDevice,

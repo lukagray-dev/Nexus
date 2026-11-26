@@ -546,10 +546,10 @@ data class SettingsValues(
     val dvrClipFormat: ClipFormat = ClipFormat.MP4,
     val hardwareAcceleration: Boolean = true,
     val downloadsDirectoryLabel: String = "Downloads/NexusParent",
+    val downloadsTreeUri: String? = null,
     val askBeforeDownload: Boolean = false,
     val autoConnectLastDevice: Boolean = false,
     val keepScreenAwake: Boolean = true,
-    val alertIntruderSelfie: Boolean = true,
     val alertLowBattery: Boolean = true,
     val alertChildDisconnected: Boolean = true,
     val alertChildActiveCall: Boolean = true

@@ -2,12 +2,15 @@ package com.nexus.parent.data
 
 import android.content.Context
 import android.util.Log
+import com.nexus.parent.data.alerts.GeneralAlertsController
+import com.nexus.parent.data.alerts.SafetyAlertDispatcher
 import com.nexus.parent.data.mic.MicCoordinator
 import com.nexus.parent.data.mic.ParentAudioRouteManager
 import com.nexus.parent.data.mic.WebRtcMicMediaBridge
 import com.nexus.parent.data.monitor.MonitorCoordinator
 import com.nexus.parent.data.storage.StorageCoordinator
 import com.nexus.parent.service.ParentConnectionService
+import com.nexus.parent.service.ParentNotificationManager
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.state.DeviceTelemetry
@@ -56,6 +59,33 @@ class DeviceStateCoordinator(
     private val audioRouteManager = ParentAudioRouteManager(appContext)
     private val startupAttempted = AtomicBoolean(false)
 
+    val alertsController: GeneralAlertsController = GeneralAlertsController(
+        dispatcher = object : SafetyAlertDispatcher {
+            override fun showToast(message: String) {
+                stateHolder?.showToast(message)
+            }
+
+            override fun postNotification(
+                notificationId: Int,
+                title: String,
+                body: String,
+                onlyAlertOnce: Boolean
+            ) {
+                ParentNotificationManager.postSafetyAlert(
+                    context = appContext,
+                    notificationId = notificationId,
+                    title = title,
+                    body = body,
+                    onlyAlertOnce = onlyAlertOnce
+                )
+            }
+
+            override fun cancelNotification(notificationId: Int) {
+                ParentNotificationManager.cancelNotification(appContext, notificationId)
+            }
+        }
+    )
+
     val monitorCoordinator: MonitorCoordinator = MonitorCoordinator(
         context = appContext,
         scope = scope,
@@ -95,7 +125,8 @@ class DeviceStateCoordinator(
             }
         ),
         sendCommand = webRtcManager::sendCommand,
-        onPersistSettings = { updated -> storage.saveSettings(updated) }
+        onPersistSettings = { updated -> storage.saveSettings(updated) },
+        alertsController = alertsController
     )
 
     private var stateHolder: ParentStateHolder? = null
@@ -145,6 +176,7 @@ class DeviceStateCoordinator(
         if (!current.settings.autoConnectLastDevice) return
         if (current.connectionPhase != ConnectionPhase.DISCONNECTED) return
 
+        holder.showToast("Auto-connecting to ${target.name}...")
         scope.launch {
             val ok = connectLive(
                 rawId = target.rawId,
@@ -155,7 +187,7 @@ class DeviceStateCoordinator(
             if (ok) {
                 holder.showToast("Auto-connected to ${target.name}")
             } else {
-                holder.showToast("Auto-connect paused: ${target.name} offline")
+                holder.showToast("${target.name} is offline — ready for manual connect")
             }
         }
     }
@@ -287,6 +319,7 @@ class DeviceStateCoordinator(
         storageCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
         micCoordinator.onPeerDisconnected()
+        alertsController.resetSession()
         includeMicFgsType = false
         reconnectManager.cancel(silent = true)
         webRtcManager.disconnect(clearRemoteSignaling = true)
@@ -309,6 +342,7 @@ class DeviceStateCoordinator(
         storageCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
         micCoordinator.onPeerDisconnected()
+        alertsController.resetSession()
         includeMicFgsType = false
         reconnectManager.cancel(silent = false)
         webRtcManager.disconnect(clearRemoteSignaling = false)
@@ -335,6 +369,16 @@ class DeviceStateCoordinator(
         storage.saveSettings(settings)
         surveillanceCoordinator.onSettingsUpdated(settings)
         micCoordinator.onSettingsUpdated(settings)
+        if (!settings.alertChildActiveCall) {
+            stateHolder?.dismissCallAlert()
+        }
+        if (activeSessionDevice != null) {
+            alertsController.syncCallAlertSettingToChild(
+                enabled = settings.alertChildActiveCall,
+                sendCommand = webRtcManager::sendCommand,
+                force = false
+            )
+        }
     }
 
     fun clearLocalWorkspaceHistory() {
@@ -356,6 +400,7 @@ class DeviceStateCoordinator(
             },
             onExhausted = { target ->
                 activeSessionDevice = null
+                alertsController.resetSession()
                 ParentConnectionService.stop(appContext)
                 lastServiceText = ""
                 val label = target?.name ?: "child device"
@@ -381,6 +426,12 @@ class DeviceStateCoordinator(
         scope.launch {
             webRtcManager.dataChannelOpened.collect {
                 Log.i(TAG, "DataChannel opened cleanly for active session")
+                val enabled = stateHolder?.uiState?.value?.settings?.alertChildActiveCall ?: true
+                alertsController.syncCallAlertSettingToChild(
+                    enabled = enabled,
+                    sendCommand = webRtcManager::sendCommand,
+                    force = true
+                )
             }
         }
 
@@ -460,16 +511,13 @@ class DeviceStateCoordinator(
         storageCoordinator.onPeerDisconnected()
         surveillanceCoordinator.onPeerDisconnected()
         micCoordinator.onPeerDisconnected()
+        alertsController.resetSession()
         includeMicFgsType = false
         webRtcManager.setActiveVideoType(null)
         webRtcManager.disconnect(clearRemoteSignaling = false)
 
-        val alertToast = if (holder.uiState.value.settings.alertChildDisconnected) {
-            "Connection lost with ${active.name}. Auto-reconnecting..."
-        } else {
-            null
-        }
-        holder.onConnectionDroppedReconnecting(toastMessage = alertToast)
+        alertsController.evaluateUnexpectedDisconnect(active, holder.uiState.value.settings)
+        holder.onConnectionDroppedReconnecting(toastMessage = null)
 
         reconnectManager.start(
             ReconnectTargetDevice(
@@ -498,6 +546,7 @@ class DeviceStateCoordinator(
             storageCoordinator.onPeerDisconnected()
             surveillanceCoordinator.onPeerDisconnected()
             micCoordinator.onPeerDisconnected()
+            alertsController.resetSession()
             includeMicFgsType = false
             reconnectManager.cancel(silent = true)
             webRtcManager.disconnect(clearRemoteSignaling = false)
@@ -535,6 +584,7 @@ class DeviceStateCoordinator(
                 record = updatedRecord,
                 history = updatedHistory
             )
+            alertsController.evaluateLowBattery(updatedRecord, holder.uiState.value.settings)
             return
         }
 

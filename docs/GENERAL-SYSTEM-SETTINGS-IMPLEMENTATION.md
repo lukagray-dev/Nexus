@@ -269,9 +269,16 @@ cargo test
 ## 6. Parent Android Parity (`Nexus Parent/android`)
 
 - **1:1 Modular Package (`ui/settings/maincontent/generalsystem/`)**:
-  - `GeneralSystemSection.kt`
-  - `AutoConnectLastDeviceSetting.kt` (triggers single startup `DeviceStateCoordinator.runStartupAutoConnect()` attempt when enabled and a prior paired device is saved)
-  - `KeepScreenAwakeSetting.kt` (toggles `WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON` in `MainActivity.kt` during active/live surveillance)
-  - `DownloadsDirectorySetting.kt`, `AskBeforeDownloadSetting.kt`, and `SafetyAlertsSetting.kt` (`alertChildActiveCall`, `alertIntruderSelfie`, `alertLowBattery`, `alertChildDisconnected`)
-- **Persistence**: `DeviceStorage.kt` serializes `SettingsValues` into `SharedPreferences` (`nexus_parent_settings_v1`) automatically on every edit and reset.
-- **Verification**: `DeviceStorageTest.kt` and `ParentStateHolderTest.kt` via `.\gradlew.bat testDebugUnitTest`.
+  - `GeneralSystemSection.kt`: Renders the 3 Android General & System groups (`Connection & Display`, `Downloads & Storage`, `Notifications & Safety Alerts`).
+  - `AutoConnectLastDeviceSetting.kt`: Triggers a single startup `DeviceStateCoordinator.runStartupAutoConnect()` attempt with feedback toasts when enabled and a prior paired device is saved.
+  - `KeepScreenAwakeSetting.kt`: Toggles `WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON` in `MainActivity.kt` whenever `keepScreenAwake == true` and `connectionPhase` is `CONNECTING`, `CONNECTED`, or `RECONNECTING` (matching Desktop `keep-screen-awake.ts`).
+  - `DownloadsDirectorySetting.kt`: Uses Android Storage Access Framework (`ActivityResultContracts.OpenDocumentTree`) via **Browse Folder** (`downloadsTreeUri`) + **Reset Default** (`Downloads/NexusParent`), visually disables when `askBeforeDownload == true`, and routes both [StorageFileSaver.kt](file:///d:/Nexus/Nexus%20Parent/android/app/src/main/java/com/nexus/parent/data/storage/StorageFileSaver.kt) (`DocumentsContract` / `MediaStore.Downloads`) and [ClipExportManager.kt](file:///d:/Nexus/Nexus%20Parent/android/app/src/main/java/com/nexus/parent/media/ClipExportManager.kt) into the configured destination with collision-safe filename resolution.
+  - `AskBeforeDownloadSetting.kt`: Launches `ACTION_CREATE_DOCUMENT` on remote Storage downloads, preview image saves, and DVR clip exports when `true`.
+  - `SafetyAlertsSetting.kt`: Exposes `alertChildActiveCall`, `alertLowBattery`, and `alertChildDisconnected` (excluding Desktop's removed/omitted `alertIntruderSelfie` toggle on Android).
+- **Real-Time Alerts Engine (`data/alerts/GeneralAlertsController.kt` + `service/ParentNotificationManager.kt`)**:
+  - Dedicated `IMPORTANCE_HIGH` notification channel (`nexus_parent_alerts_channel`) separate from `ParentConnectionService`'s silent `IMPORTANCE_LOW` channel (`nexus_parent_connection_channel`).
+  - **Active Cellular Call Alert (`alertChildActiveCall`)**: Synchronizes `CALL_ALERT_ON` / `CALL_ALERT_OFF` on DataChannel open and settings change, displays `ActiveCallBanner` + `IMPORTANCE_HIGH` notification on `CALL_STATE`, and suppresses repeats once Mic monitoring starts (`LIVE` / `STARTING`).
+  - **Low Battery (`alertLowBattery`)**: Fires toast + `IMPORTANCE_HIGH` notification once when unplugged child battery drops `< 15%`, resetting only at `>= 20%` or charging (`evaluateLowBattery`).
+  - **Unexpected Disconnection (`alertChildDisconnected`)**: Resets session alert latches and fires toast + `IMPORTANCE_HIGH` notification on unexpected peer drops.
+- **Persistence**: `DeviceStorage.kt` serializes `SettingsValues` (including `downloadsTreeUri`) into `SharedPreferences` (`nexus_parent_settings_v1`) automatically on every edit and reset.
+- **Verification**: `GeneralAlertsControllerTest.kt`, `DeviceStorageTest.kt`, and `ParentStateHolderTest.kt` via `.\gradlew.bat testDebugUnitTest`.
