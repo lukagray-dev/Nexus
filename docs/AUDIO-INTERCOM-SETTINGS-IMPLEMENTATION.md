@@ -110,7 +110,7 @@ npm test
 
 - **1:1 Modular Package (`ui/settings/maincontent/audiointercom/`)**:
   - `AudioIntercomSection.kt`
-  - `VoicePresetSetting.kt` (syncs `defaultVoicePreset` bidirectionally with `FloatingMicOverlay.kt` and `SettingsValues`)
-  - `NoiseSuppressionSetting.kt` (`noiseSuppression`)
-  - `LoudspeakerVolumeSetting.kt` (`LoudspeakerVolume.MAX` / `HIGH` / `NORMAL`)
-- **WebRTC Audio Transceiver**: `WebRtcManager.kt` attaches a `SEND_RECV` audio transceiver (`remoteAudioTrack`) alongside Settings persistence in `DeviceStorage.kt`; individual `MIC_ON` / `MIC_OFF` / DSP command wiring is staged for the feature-wiring phase.
+  - `VoicePresetSetting.kt` (syncs `defaultVoicePreset` bidirectionally with `FloatingMicOverlay.kt`, `VoiceChangerDspEngine.kt` 25ms crossfade, and `SettingsValues`)
+  - `NoiseSuppressionSetting.kt` (`noiseSuppression` wired live to `WebRtcManager.reconfigureOutboundAudio()`)
+  - `LoudspeakerVolumeSetting.kt` (`LoudspeakerVolume.MAX` / `HIGH` / `NORMAL` wired to `PARENT_AUDIO_UNMUTE:<mode>` & live `PARENT_AUDIO_VOLUME:<mode>`)
+- **WebRTC Audio Transceiver & Pre-Encode DSP**: `WebRtcManager.kt` attaches a `SEND_RECV` audio transceiver (`remoteAudioTrack` + `AudioTrackSink` FFT spectrum + `JavaAudioDeviceModule.AudioBufferCallback` real-time DSP via `io.github.webrtc-sdk:android:125.6422.07`) coordinated by `MicCoordinator.kt`.

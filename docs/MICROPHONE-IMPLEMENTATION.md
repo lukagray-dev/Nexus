@@ -164,3 +164,21 @@ If the WebRTC peer connection or DataChannel drops for any reason (network loss,
 | **Desktop Styles** | `Nexus Parent/.../mic/mic.css` | Tactical layout, glassmorphic dropdown, active item badges, responsive placement. |
 | **Desktop WebRTC** | `Nexus Parent/.../webrtc/webrtc-manager.ts` | `sendrecv` audio transceiver configuration, renegotiation answer routing. |
 | **Voice Changer Tests** | `Nexus Parent/desktop/test/voice-changer.test.js` | Unit test suite covering presets, DSP lifecycle, and split button state machine. |
+
+---
+
+## 6. Parent Android Architecture (`Nexus Parent/android`)
+
+Nexus Parent Android implements 1:1 parity with Desktop's microphone monitor and real-time voice-changed broadcast intercom:
+
+| Subsystem | File Path | Responsibility |
+| :--- | :--- | :--- |
+| **Voice Changer DSP Engine** | `Nexus Parent/android/.../media/mic/VoiceChangerDspEngine.kt` | Real-time 10-preset Kotlin PCM processor (`JavaAudioDeviceModule.AudioBufferCallback`) with 25ms click-free crossfade and RMS amplitude envelope. |
+| **Spectrum FFT Analyzer** | `Nexus Parent/android/.../media/mic/AudioSpectrumAnalyzer.kt` | 128-point radix-2 FFT + logarithmic mapping onto 36 bars from remote `AudioTrackSink` frames, plus green voice-reactive pulse animation while speaking. |
+| **Mic Protocol & Call Parser**| `Nexus Parent/android/.../data/mic/MicProtocol.kt` | `MIC_ON`/`MIC_OFF`, `PARENT_AUDIO_UNMUTE:<mode>`, `PARENT_AUDIO_VOLUME:<mode>`, `PARENT_AUDIO_MUTE`, and `CALL_STATE` JSON parsing. |
+| **Audio Route Manager** | `Nexus Parent/android/.../data/mic/ParentAudioRouteManager.kt` | `MODE_IN_COMMUNICATION` management automatically routing to built-in speaker unless wired/USB/Bluetooth headset is attached. |
+| **Mic Coordinator** | `Nexus Parent/android/.../data/mic/MicCoordinator.kt` | `IDLE -> STARTING -> LIVE -> STOPPING -> IDLE` state machines with 20s timeouts, `RECORD_AUDIO` gating, Settings hot-swap (`loudspeakerVolume` & `noiseSuppression`), and background persistence. |
+| **WebRTC Audio Hook** | `Nexus Parent/android/.../webrtc/WebRtcManager.kt` | `io.github.webrtc-sdk:android:125.6422.07` `AudioBufferCallback` (pre-encode DSP), remote `AudioTrackSink` (spectrum), and `SEND_RECV` `RtpSender.setTrack(...)` mic lifecycle. |
+| **Foreground Service** | `Nexus Parent/android/.../service/ParentConnectionService.kt` | Dynamically upgrades `dataSync` foreground service to `dataSync\|microphone` while actively broadcasting so screen-off doesn't silence intercom. |
+| **Floating HUD** | `Nexus Parent/android/.../ui/surveillance/mic/FloatingMicOverlay.kt` | Draggable overlay with intermediate `SpinningLoaderIcon` spinners until Child confirmation, 10-preset drop-up menu, and 36-bar spectrum. |
+| **Android Unit Tests** | `Nexus Parent/android/.../test/.../mic/` | `VoiceChangerDspEngineTest`, `AudioSpectrumAnalyzerTest`, `MicProtocolTest`, and `MicCoordinatorTest`. |

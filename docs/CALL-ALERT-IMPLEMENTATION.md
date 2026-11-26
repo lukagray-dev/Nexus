@@ -81,6 +81,9 @@ Set-Location "d:\Nexus\Nexus Parent\desktop"
 npm test
 ```
 
+### Android (`Nexus Parent/android`)
+- **`MicProtocol.kt` & `MicCoordinator.kt`**: Parses incoming `CALL_STATE` JSON payloads (`ringing`, `active`, `idle`) when `settings.alertChildActiveCall` is enabled, surfaces `ActiveCallBanner` with caller ID/direction metadata, clears automatically on `idle` or disconnect, and wires the banner's **Turn On Mic** button directly to `MicCoordinator.startChildMicMonitoring()` (opening the floating Mic HUD and dispatching `MIC_ON`).
+
 ### Android (`Nexus Child`)
 - **`CallAlertComponentTest.kt`**: Verifies `CallAlertStateMachine` incoming/outgoing lifecycles, duplicate broadcast deduplication + enrichment, repeat reminder payloads, JSON serialization, and `CallAlertCommandHandler` lifecycle.
 
