@@ -4,11 +4,12 @@
 
 This document specifies the architecture, persistence model, frontend UI modules, Tauri v2 IPC contracts, native Rust backend services, and verification tests for the **General & System** settings category in **Nexus Parent** (`Nexus Parent/desktop`).
 
-The **General & System** page is the primary tab of the Settings dialog (`Preferences`) and governs four functional groups:
+The **General & System** page is the primary tab of the Settings dialog (`Preferences`) and governs five functional groups:
 1. **File Storage & Export** (`Downloads & Media Save Directory`, `Ask Every Time Before Downloading`)
 2. **Startup & Connection** (`Auto-Connect Last Paired Device on Launch`, `Launch on System Startup`, `Start Minimized to Tray`)
 3. **Window & Display Behavior** (`Always on Top`, `Keep Screen On When Connected`, `Close Button [X] Behavior`)
-4. **Application Updates** (`Check for Updates Automatically`, `Release Channel & Status`, and Titlebar `Restart to update`)
+4. **Desktop Alert Notifications** (`Intruder Selfie Triggered`, `Child Device Low Battery`, `Child Device Disconnection`)
+5. **Application Updates** (`Check for Updates Automatically`, `Release Channel & Status`, and Titlebar `Restart to update`)
 
 ---
 
@@ -21,11 +22,10 @@ Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TA
 | 1 | `general` | **General & System** | Yes |
 | 2 | `audio` | **Audio & Intercom** | - |
 | 3 | `surveillance` | **Surveillance & DVR** | - |
-| 4 | `security` | **Security & App Lock** | - |
-| 5 | `devices` | **Paired Devices** | - |
-| 6 | `about` | **About Nexus Parent** | - |
+| 4 | `devices` | **Paired Devices** | - |
+| 5 | `about` | **About Nexus Parent** | - |
 
-> Desktop Alert Notifications (`Intruder Selfie Triggered`, `Child Device Low Battery`, `Child Device Disconnection`) are hosted on **Security & App Lock** (`security-forensics/desktop-alerts.ts`) as toggle switches rather than checkboxes.
+> Note: The former **Security & App Lock** settings tab was removed because remote PIN changing (`CMD_APPLOCK_SET_PIN`) already lives in the Right Sidebar App Lock panel, while password masking and lockout thresholds are enforced on the Android child. Its three **Desktop Alert Notifications** toggles now live directly inside **General & System** (`general-system/desktop-alerts.ts`).
 
 ---
 
@@ -56,6 +56,9 @@ Settings are stored across two complementary layers so both the WebView frontend
 | `keepScreenAwake` | `boolean` | `true` | `localStorage` + Rust `KeepAwakeState` | Prevents PC display and system sleep while connected or reconnecting to a child device. |
 | `closeAction` | `'tray' \| 'exit'` | `'tray'` | `localStorage` + `window-settings.json` | Controls whether `[X]` / `Alt+F4` minimizes to system tray or terminates the process. |
 | `autoCheckUpdates` | `boolean` | `true` | `localStorage` | Enables background GitHub stable release checks on startup and every 6 hours. |
+| `alertIntruderSelfie` | `boolean` | `true` | `localStorage` | Triggers a native desktop notification & toast when `APPLOCK_NEW` reports an unauthorized PIN attempt (`pinCorrect === false`). |
+| `alertLowBattery` | `boolean` | `true` | `localStorage` | Triggers a deduplicated native desktop notification & toast when live child battery drops below `15%` while unplugged. |
+| `alertChildDisconnected` | `boolean` | `true` | `localStorage` | Triggers a native desktop notification & toast when the active P2P connection drops unexpectedly. |
 
 ---
 
@@ -171,9 +174,24 @@ Monitor Storage Download (Table / Inspector / Image Preview Modal)
 
 ---
 
-### Group D: Application Updates (GitHub Stable Releases)
+### Group D: Desktop Alert Notifications
 
-#### 3.9 Check for Updates Automatically & Release Status
+#### 3.9 Intruder Selfie, Low Battery (<15%), and Unexpected Disconnection Alerts
+- **Module**: `src/ts/settings/main-content/general-system/desktop-alerts.ts`
+- **Rust Backend**: `show_desktop_notification` in `src-tauri/src/commands.rs` via `tauri-plugin-notification`
+- **Capability**: `notification:default` in `src-tauri/capabilities/default.json`
+- **DOM Controls**: Toggle switches `#setting-alert-intruder`, `#setting-alert-low-battery`, and `#setting-alert-disconnect` (all default `true`)
+- **Behavior**:
+  - Each enabled alert fires both an in-app toast (`showToast`) and a native OS desktop notification (`showDesktopNotification`, working even while the window is minimized to the system tray; outside Tauri it falls back to `window.Notification` when granted).
+  - **Intruder Selfie Triggered**: Listens to `APPLOCK_NEW` DataChannel packets and fires only when `record.pinCorrect === false` (ignoring valid unlocks and historical `APPLOCK_SNAPSHOT` syncs).
+  - **Child Device Low Battery**: Listens to live `deviceState.onTelemetryUpdate` updates, firing once per device episode when `batteryPercent < 15` and `isCharging !== true`, resetting when charging starts or battery rises to `>= 20%`.
+  - **Child Device Disconnection**: Listens to `deviceState.onUnexpectedDisconnect` (never firing on manual `deviceState.disconnect()`).
+
+---
+
+### Group E: Application Updates (GitHub Stable Releases)
+
+#### 3.10 Check for Updates Automatically & Release Status
 - **Frontend Modules**:
   - `src/ts/settings/main-content/general-system/auto-update.ts`
   - `src/ts/titlebar/updater-ui.ts` (`#btn-restart-to-update` in `index.html`)
@@ -212,6 +230,7 @@ Monitor Storage Download (Table / Inspector / Image Preview Modal)
 | `set_always_on_top` | TS -> Rust | `tray.rs` | Sets and persists window Always on Top pinning. |
 | `set_keep_screen_awake` | TS -> Rust | `power.rs` | Acquires or drops `KeepAwake` OS display/idle wake lock. |
 | `get_app_version` | TS -> Rust | `updater.rs` | Returns running `CARGO_PKG_VERSION`. |
+| `show_desktop_notification` | TS -> Rust | `commands.rs` | Dispatches native OS desktop notification via `tauri-plugin-notification`. |
 | `get_update_status` | TS -> Rust | `updater.rs` | Returns current `UpdateStatusPayload` snapshot. |
 | `check_for_updates` | TS -> Rust | `updater.rs` | Checks GitHub stable releases and stages any newer binary. |
 | `restart_to_update` | TS -> Rust | `updater.rs` | Swaps staged binary after exit and relaunches immediately. |
@@ -223,10 +242,11 @@ Monitor Storage Download (Table / Inspector / Image Preview Modal)
 ## 5. Verification & Test Coverage
 
 ### TypeScript & Node.js Tests (`Nexus Parent/desktop`)
-- **`test/settings.test.js`**: Sidebar 7-tab order, schema defaults, legacy `launchMinimized` migration, `localStorage` auto-save, `resetToDefaults`, and Security & App Lock alert toggles.
+- **`test/settings.test.js`**: Sidebar 5-tab order, schema defaults, legacy `launchMinimized` migration, stripped removed-tab keys, `localStorage` auto-save, `resetToDefaults`, and General & System alert toggles.
 - **`test/general-system-tray.test.js`**: Category router, separated `launchOnStartup` / `startMinimized` / `alwaysOnTop` / `closeAction` IPC sync, startup reconciliation, and `closeWindow` vs `exitApplication`.
 - **`test/general-system-downloads.test.js`**: `ask-before-download.ts`, `downloads-directory.ts` native browse + reactive `.is-disabled` locking, Monitor Storage fresh-install once-prompt, Save As mode, and atomic Rust chunk streaming.
 - **`test/general-system-features.test.js`**: `auto-connect-last-device.ts`, `always-on-top.ts`, `keep-screen-awake.ts` (connection-based wake lock activation/release), and titlebar `#btn-restart-to-update` visibility lifecycle.
+- **`test/desktop-alerts.test.js`**: Intruder selfie (`APPLOCK_NEW`), low battery (`< 15%` with `>= 20%`/charging hysteresis), unexpected disconnect vs manual disconnect, and Tauri/browser notification fallback.
 
 ```powershell
 Set-Location "d:\Nexus\Nexus Parent\desktop"

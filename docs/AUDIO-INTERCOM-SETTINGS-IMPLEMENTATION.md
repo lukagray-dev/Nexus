@@ -17,7 +17,7 @@ The **Audio & Intercom** tab governs two functional groups:
 
 ---
 
-## 1. Settings Navigation Order (6 Categories)
+## 1. Settings Navigation Order (5 Categories)
 
 Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TABS`):
 
@@ -26,9 +26,8 @@ Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TA
 | 1 | `general` | **General & System** | Yes |
 | 2 | `audio` | **Audio & Intercom** | - |
 | 3 | `surveillance` | **Surveillance & DVR** | - |
-| 4 | `security` | **Security & App Lock** | - |
-| 5 | `devices` | **Paired Devices** | - |
-| 6 | `about` | **About Nexus Parent** | - |
+| 4 | `devices` | **Paired Devices** | - |
+| 5 | `about` | **About Nexus Parent** | - |
 
 ---
 

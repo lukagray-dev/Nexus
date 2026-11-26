@@ -11,7 +11,7 @@
 
 @import '../tokens.css';
 
-/* Full viewport dimmed backdrop overlay */
+/* Full viewport dimmed backdrop overlay (no backdrop blur) */
 .settings-overlay {
   position: fixed;
   top: 0;
@@ -19,8 +19,6 @@
   width: 100vw;
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,10 +43,10 @@
   max-width: 92vw;
   height: 520px;
   max-height: 88vh;
-  background-color: #121212;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background-color: #000000;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -59,8 +57,8 @@
 /* Modal Top Header */
 .settings-header {
   height: 44px;
-  background-color: #181818;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #000000;
+  border-bottom: none;
   padding: 0 16px;
   display: flex;
   align-items: center;
@@ -113,8 +111,8 @@
 .settings-sidebar-container {
   width: 220px;
   flex-shrink: 0;
-  background-color: #141414;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #000000;
+  border-right: none;
   display: flex;
   flex-direction: column;
 }
@@ -220,7 +218,7 @@
 /* Right Content Area */
 .settings-content-area {
   flex: 1;
-  background-color: #0f0f0f;
+  background-color: var(--sidebar-background);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -927,8 +925,8 @@
 .settings-footer {
   height: 48px;
   padding: 0 16px;
-  background-color: #181818;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #000000;
+  border-top: none;
   display: flex;
   align-items: center;
   justify-content: space-between;

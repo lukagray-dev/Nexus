@@ -80,7 +80,7 @@ export function openSettingsDialog(initialTab?: SettingsTabId): void {
       <div class="settings-header">
         <div class="settings-header-left">
           <img src="assets/icons/settings/settings.svg" alt="" style="width: 14px; height: 14px; filter: invert(1); opacity: 0.8;" />
-          <span id="settings-modal-title" class="settings-title">Preferences</span>
+          <span id="settings-modal-title" class="settings-title">Settings</span>
         </div>
         <button id="btn-settings-close" class="settings-close-btn" title="Close Settings (Escape)">✕</button>
       </div>

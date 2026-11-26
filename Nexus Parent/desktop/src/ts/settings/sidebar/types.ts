@@ -3,9 +3,9 @@
  * @description Type definitions and registry constants for the Settings Panel.
  *
  * Hey friend! This file centralizes:
- * 1. The 6 core Settings category tab IDs.
+ * 1. The 5 core Settings category tab IDs.
  * 2. Navigation item metadata (icon path, labels, descriptions).
- * 3. Complete strongly typed settings state schema across all 6 operational domains.
+ * 3. Complete strongly typed settings state schema across all 5 operational domains.
  * 4. Factory function for deterministic default configurations.
  */
 
@@ -17,7 +17,6 @@ import { VoicePresetId } from '../main-content/audio-voice-intercom/audio-voice-
 export type SettingsTabId =
   | 'audio'
   | 'surveillance'
-  | 'security'
   | 'general'
   | 'devices'
   | 'about';
@@ -35,7 +34,7 @@ export interface SettingsTabItem {
 }
 
 /**
- * Complete strongly-typed Settings values contract across all 6 categories.
+ * Complete strongly-typed Settings values contract across all 5 categories.
  */
 export interface SettingsValues {
   // 1. Audio & Voice Intercom
@@ -52,17 +51,7 @@ export interface SettingsValues {
   dvrClipFormat: 'mp4' | 'webm';
   hardwareAcceleration: boolean;
 
-  // 3. Security & Forensics
-  remotePin: string;
-  intruderSelfie: boolean;
-  lockoutStrikes: '3' | '5' | 'disabled';
-  maskPasswords: boolean;
-  stealthConfirmation: boolean;
-  alertIntruderSelfie: boolean;
-  alertLowBattery: boolean;
-  alertChildDisconnected: boolean;
-
-  // 4. General & System
+  // 3. General & System
   downloadsDirectory: string;
   askBeforeDownload: boolean;
   autoConnectLastDevice: boolean;
@@ -72,16 +61,19 @@ export interface SettingsValues {
   keepScreenAwake: boolean;
   closeAction: 'tray' | 'exit';
   autoCheckUpdates: boolean;
+  alertIntruderSelfie: boolean;
+  alertLowBattery: boolean;
+  alertChildDisconnected: boolean;
 }
 
 /**
- * Ordered registry of all 6 Settings tabs with vector icons.
+ * Ordered registry of all 5 Settings tabs with vector icons.
  */
 export const SETTINGS_TABS: SettingsTabItem[] = [
   {
     id: 'general',
     label: 'General & System',
-    description: 'Downloads, window & tray behavior',
+    description: 'Downloads, window, tray & alert behavior',
     iconPath: 'assets/icons/settings/general.svg',
   },
   {
@@ -95,12 +87,6 @@ export const SETTINGS_TABS: SettingsTabItem[] = [
     label: 'Surveillance & DVR',
     description: 'Camera, screen & video recording',
     iconPath: 'assets/icons/settings/surveillance.svg',
-  },
-  {
-    id: 'security',
-    label: 'Security & App Lock',
-    description: 'PIN guard, anti-tamper & alerts',
-    iconPath: 'assets/icons/settings/security.svg',
   },
   {
     id: 'devices',
@@ -136,17 +122,7 @@ export function getDefaultSettingsValues(): SettingsValues {
     dvrClipFormat: 'mp4',
     hardwareAcceleration: true,
 
-    // 3. Security & Forensics
-    remotePin: '123456',
-    intruderSelfie: true,
-    lockoutStrikes: '3',
-    maskPasswords: true,
-    stealthConfirmation: true,
-    alertIntruderSelfie: true,
-    alertLowBattery: true,
-    alertChildDisconnected: true,
-
-    // 4. General & System
+    // 3. General & System
     downloadsDirectory: '',
     askBeforeDownload: false,
     autoConnectLastDevice: false,
@@ -156,5 +132,8 @@ export function getDefaultSettingsValues(): SettingsValues {
     keepScreenAwake: true,
     closeAction: 'tray',
     autoCheckUpdates: true,
+    alertIntruderSelfie: true,
+    alertLowBattery: true,
+    alertChildDisconnected: true,
   };
 }

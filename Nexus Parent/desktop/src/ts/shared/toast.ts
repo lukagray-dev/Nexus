@@ -16,7 +16,7 @@ let toastTimeout: ReturnType<typeof setTimeout> | null = null;
  */
 export function showToast(message: string, durationMs: number = 2500): void {
   // Gracefully no-op in headless/Node test environments where DOM is not loaded
-  if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
 
   let toastEl = document.getElementById('app-global-toast');
 

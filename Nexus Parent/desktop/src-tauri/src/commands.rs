@@ -8,6 +8,7 @@ use std::process::Command;
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime};
+use tauri_plugin_notification::NotificationExt;
 
 /// Live host, runtime, and storage directory metadata for the About page.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -142,9 +143,42 @@ pub async fn open_local_folder(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Validates that a desktop notification payload has non-empty title or body text.
+pub fn validate_notification_payload(title: &str, body: &str) -> Result<(String, String), String> {
+    let clean_title = title.trim().to_string();
+    let clean_body = body.trim().to_string();
+    if clean_title.is_empty() && clean_body.is_empty() {
+        return Err("Notification title and body cannot both be empty".into());
+    }
+    Ok((clean_title, clean_body))
+}
+
+/// Dispatches a native OS desktop notification (works even while minimized to system tray).
+#[tauri::command]
+pub fn show_desktop_notification<R: Runtime>(
+    app: AppHandle<R>,
+    title: String,
+    body: String,
+) -> Result<(), String> {
+    let (clean_title, clean_body) = validate_notification_payload(&title, &body)?;
+    app.notification()
+        .builder()
+        .title(clean_title)
+        .body(clean_body)
+        .show()
+        .map_err(|e| format!("Failed to display desktop notification: {}", e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validate_notification_payload_rejects_empty_and_accepts_text() {
+        assert!(validate_notification_payload("", "   ").is_err());
+        let ok = validate_notification_payload("  Alert  ", "  Battery 12%  ");
+        assert_eq!(ok, Ok(("Alert".to_string(), "Battery 12%".to_string())));
+    }
 
     #[test]
     fn validate_folder_path_rejects_empty_and_missing_paths() {

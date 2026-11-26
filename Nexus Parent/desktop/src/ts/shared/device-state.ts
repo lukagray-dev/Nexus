@@ -163,6 +163,8 @@ export interface DeviceInfo {
 }
 
 export type DeviceChangeListener = () => void;
+export type DeviceTelemetryListener = (device: DeviceInfo) => void;
+export type UnexpectedDisconnectListener = (device: DeviceInfo) => void;
 
 class DeviceStateManager {
   private connected: boolean = false;
@@ -172,6 +174,8 @@ class DeviceStateManager {
   private readonly LAST_DEVICE_STORAGE_KEY = 'nexus_last_connected_child_device';
   private readonly PAIRED_DEVICES_HISTORY_STORAGE_KEY = 'nexus_paired_devices_history_v1';
   private listeners: Set<DeviceChangeListener> = new Set();
+  private telemetryListeners: Set<DeviceTelemetryListener> = new Set();
+  private unexpectedDisconnectListeners: Set<UnexpectedDisconnectListener> = new Set();
   /** Tracks whether the disconnection was intentionally triggered by the user */
   private isManualDisconnect: boolean = false;
   private memoryStorage: Map<string, string> = new Map();
@@ -190,6 +194,7 @@ class DeviceStateManager {
         const shouldAutoReconnect = wasConnected && target && !this.isManualDisconnect;
         if (shouldAutoReconnect && target) {
           console.log('[DeviceState] Unexpected connection drop detected. Triggering auto-reconnect...');
+          const disconnectedSnapshot = { ...target };
           const cleanRaw = target.rawId ? target.rawId.replace(/\D/g, '') : target.id.replace(/\D/g, '');
           if (cleanRaw.length === 12) {
             reconnectManager.start({
@@ -199,6 +204,7 @@ class DeviceStateManager {
               model: target.model,
             });
           }
+          this.notifyUnexpectedDisconnect(disconnectedSnapshot);
         }
 
         if (this.connected) {
@@ -597,6 +603,7 @@ class DeviceStateManager {
     this.currentDevice.lastSeen = 'Just now';
     this.syncCachedLastDevice();
     this.notify();
+    this.notifyTelemetryUpdate({ ...this.currentDevice });
   }
 
   /**
@@ -841,9 +848,49 @@ class DeviceStateManager {
     };
   }
 
+  /**
+   * Subscribes to live telemetry updates received via `updateTelemetry()`.
+   */
+  public onTelemetryUpdate(listener: DeviceTelemetryListener): () => void {
+    this.telemetryListeners.add(listener);
+    return () => {
+      this.telemetryListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Subscribes to unexpected WebRTC disconnections (never fires on manual `disconnect()`).
+   */
+  public onUnexpectedDisconnect(listener: UnexpectedDisconnectListener): () => void {
+    this.unexpectedDisconnectListeners.add(listener);
+    return () => {
+      this.unexpectedDisconnectListeners.delete(listener);
+    };
+  }
+
   private notify(): void {
     for (const listener of this.listeners) {
       listener();
+    }
+  }
+
+  private notifyTelemetryUpdate(device: DeviceInfo): void {
+    for (const listener of this.telemetryListeners) {
+      try {
+        listener(device);
+      } catch (err) {
+        console.error('[DeviceState] Error in telemetry listener:', err);
+      }
+    }
+  }
+
+  private notifyUnexpectedDisconnect(device: DeviceInfo): void {
+    for (const listener of this.unexpectedDisconnectListeners) {
+      try {
+        listener(device);
+      } catch (err) {
+        console.error('[DeviceState] Error in unexpected-disconnect listener:', err);
+      }
     }
   }
 }

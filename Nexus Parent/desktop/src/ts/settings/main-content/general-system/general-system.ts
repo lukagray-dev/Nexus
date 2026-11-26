@@ -53,6 +53,10 @@ import {
   initAutoUpdateRuntime,
   renderAutoUpdateSetting,
 } from './auto-update.js';
+import {
+  initDesktopAlertsRuntime,
+  renderDesktopAlertSettings,
+} from './desktop-alerts.js';
 
 export const EVENT_TRAY_OPEN_SETTINGS = 'tray://open-settings';
 
@@ -91,6 +95,10 @@ export function renderGeneralSystemContent(): HTMLElement {
       renderKeepScreenAwakeSetting(),
       renderSystemTraySetting(),
     ])
+  );
+
+  container.appendChild(
+    createSettingsGroup('DESKTOP ALERT NOTIFICATIONS', renderDesktopAlertSettings())
   );
 
   container.appendChild(
@@ -153,6 +161,7 @@ export function initGeneralSystemRuntime(onOpenSettings?: () => void): () => voi
 
   const disposeKeepAwake = initKeepScreenAwakeRuntime();
   const disposeAutoUpdate = initAutoUpdateRuntime();
+  const disposeDesktopAlerts = initDesktopAlertsRuntime();
 
   // Listen for "Settings" clicks from the OS system tray menu
   let unlistenTraySettings: (() => void) | null = null;
@@ -174,6 +183,7 @@ export function initGeneralSystemRuntime(onOpenSettings?: () => void): () => voi
     unsubscribeValues();
     disposeKeepAwake();
     disposeAutoUpdate();
+    disposeDesktopAlerts();
     if (unlistenTraySettings) {
       unlistenTraySettings();
       unlistenTraySettings = null;

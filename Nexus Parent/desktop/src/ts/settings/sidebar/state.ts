@@ -3,7 +3,7 @@
  * @description State machine and LocalStorage persistence for the Settings Panel.
  *
  * Hey friend! This singleton:
- * 1. Tracks the currently active navigation tab (General, Audio, Surveillance, Security, Devices, About).
+ * 1. Tracks the currently active navigation tab (General, Audio, Surveillance, Devices, About).
  * 2. Implements the Instant Auto-Save model: whenever the user toggles a switch,
  *    selects a dropdown, or types in an input, values are instantly saved to localStorage.
  * 3. Provides clean subscription handles so the view re-renders smoothly.
@@ -19,7 +19,7 @@ import {
 export const SETTINGS_STORAGE_KEY = 'nexus_parent_settings_v1';
 
 /**
- * Legacy settings keys removed from the schema (Connection & WebRTC, Device Alias, Diagnostics).
+ * Legacy settings keys removed from the schema (Connection & WebRTC, Security & App Lock, Device Alias, Diagnostics).
  * Stripped on load so stale dummy entries do not remain in localStorage.
  */
 const REMOVED_LEGACY_SETTING_KEYS = [
@@ -29,6 +29,11 @@ const REMOVED_LEGACY_SETTING_KEYS = [
   'iceTransportPolicy',
   'iceGatherTimeout',
   'signalingHeartbeat',
+  'remotePin',
+  'intruderSelfie',
+  'lockoutStrikes',
+  'maskPasswords',
+  'stealthConfirmation',
   'deviceAlias',
   'diagnosticLogging',
 ] as const;

@@ -38,6 +38,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(downloads::PendingDownloadState::default())
         .manage(power::KeepAwakeState::default())
         .manage(updater::UpdaterState::default())
@@ -57,6 +58,7 @@ pub fn run() {
             commands::open_external_url,
             commands::get_parent_system_info,
             commands::open_local_folder,
+            commands::show_desktop_notification,
             downloads::get_default_downloads_directory,
             downloads::pick_downloads_directory,
             downloads::pick_save_file_path,

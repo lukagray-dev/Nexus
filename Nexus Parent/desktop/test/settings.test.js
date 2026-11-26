@@ -3,9 +3,9 @@
  * @description Comprehensive unit tests for Nexus Parent Settings Panel (Master-Detail Dialog).
  *
  * Hey friend! These tests verify:
- * 1. Category Registry: All 6 required categories are registered with proper labels, descriptions, and vector icons.
- * 2. Default Configuration: Baseline factory defaults across General, Audio, Surveillance, Security,
- *    Devices, and About are complete and valid (with Connection & WebRTC and Diagnostics removed).
+ * 1. Category Registry: All 5 required categories are registered with proper labels, descriptions, and vector icons.
+ * 2. Default Configuration: Baseline factory defaults across General, Audio, Surveillance,
+ *    Devices, and About are complete and valid (with Connection & WebRTC, Security & App Lock, and Diagnostics removed).
  * 3. State & Auto-Save: Tab switching, property mutations, instant localStorage persistence,
  *    legacy key cleanup, and resetToDefaults recovery.
  * 4. Navigation Sidebar: DOM structure, aria accessibility attributes, and reactive active item updates.
@@ -25,14 +25,13 @@ import {
 import { SettingsSidebar } from '../src/js/settings/sidebar/sidebar.js';
 
 describe('Settings Category Registry & Default Values Tests', () => {
-  it('Must register exactly 6 settings categories in the requested sidebar order without Connection & WebRTC', () => {
-    assert.strictEqual(SETTINGS_TABS.length, 6);
+  it('Must register exactly 5 settings categories in the requested sidebar order without removed tabs', () => {
+    assert.strictEqual(SETTINGS_TABS.length, 5);
 
     const expectedIds = [
       'general',
       'audio',
       'surveillance',
-      'security',
       'devices',
       'about',
     ];
@@ -41,7 +40,6 @@ describe('Settings Category Registry & Default Values Tests', () => {
       'General & System',
       'Audio & Intercom',
       'Surveillance & DVR',
-      'Security & App Lock',
       'Paired Devices',
       'About Nexus Parent',
     ];
@@ -49,9 +47,10 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.id), expectedIds);
     assert.deepStrictEqual(SETTINGS_TABS.map((t) => t.label), expectedLabels);
     assert.strictEqual(SETTINGS_TABS.some((t) => t.id === 'connection'), false);
+    assert.strictEqual(SETTINGS_TABS.some((t) => t.id === 'security'), false);
     assert.strictEqual(SETTINGS_TABS.some((t) => t.id === 'diagnostics'), false);
 
-    const aboutTab = SETTINGS_TABS[5];
+    const aboutTab = SETTINGS_TABS[4];
     assert.strictEqual(aboutTab.iconPath, 'assets/logo/nexus-parent.svg');
     assert.strictEqual(aboutTab.preserveIconColors, true);
   });
@@ -69,7 +68,7 @@ describe('Settings Category Registry & Default Values Tests', () => {
     });
   });
 
-  it('getDefaultSettingsValues returns valid baseline configurations across all 6 domains', () => {
+  it('getDefaultSettingsValues returns valid baseline configurations across all 5 domains', () => {
     const defaults = getDefaultSettingsValues();
 
     // 1. Audio
@@ -86,26 +85,20 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.dvrClipFormat, 'mp4');
     assert.strictEqual(defaults.hardwareAcceleration, true);
 
-    // Removed Connection & WebRTC keys must not exist
+    // Removed Connection & WebRTC and Security & App Lock keys must not exist
     assert.strictEqual('autoReconnect' in defaults, false);
     assert.strictEqual('primaryStunServer' in defaults, false);
     assert.strictEqual('secondaryTurnServer' in defaults, false);
     assert.strictEqual('iceTransportPolicy' in defaults, false);
     assert.strictEqual('iceGatherTimeout' in defaults, false);
     assert.strictEqual('signalingHeartbeat' in defaults, false);
+    assert.strictEqual('remotePin' in defaults, false);
+    assert.strictEqual('intruderSelfie' in defaults, false);
+    assert.strictEqual('lockoutStrikes' in defaults, false);
+    assert.strictEqual('maskPasswords' in defaults, false);
+    assert.strictEqual('stealthConfirmation' in defaults, false);
 
-    // 3. Security
-    assert.strictEqual(defaults.remotePin, '123456');
-    assert.strictEqual(defaults.intruderSelfie, true);
-    assert.strictEqual(defaults.lockoutStrikes, '3');
-    assert.strictEqual(defaults.maskPasswords, true);
-    assert.strictEqual(defaults.stealthConfirmation, true);
-    assert.strictEqual(defaults.alertIntruderSelfie, true);
-    assert.strictEqual(defaults.alertLowBattery, true);
-    assert.strictEqual(defaults.alertChildDisconnected, true);
-    assert.strictEqual('alertSos' in defaults, false);
-
-    // 5. General
+    // 3. General & System (including moved Desktop Alert Notifications)
     assert.strictEqual(defaults.downloadsDirectory, '');
     assert.strictEqual(defaults.askBeforeDownload, false);
     assert.strictEqual(defaults.autoConnectLastDevice, false);
@@ -115,6 +108,10 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.keepScreenAwake, true);
     assert.strictEqual(defaults.closeAction, 'tray');
     assert.strictEqual(defaults.autoCheckUpdates, true);
+    assert.strictEqual(defaults.alertIntruderSelfie, true);
+    assert.strictEqual(defaults.alertLowBattery, true);
+    assert.strictEqual(defaults.alertChildDisconnected, true);
+    assert.strictEqual('alertSos' in defaults, false);
 
     // Removed legacy deviceAlias & diagnosticLogging keys must not exist
     assert.strictEqual('deviceAlias' in defaults, false);
@@ -162,8 +159,8 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual(reportedTab, null);
 
     unsubscribe();
-    state.setActiveTab('security');
-    assert.strictEqual(state.getActiveTab(), 'security');
+    state.setActiveTab('devices');
+    assert.strictEqual(state.getActiveTab(), 'devices');
     assert.strictEqual(reportedTab, null, 'Unsubscribed listener must not be called');
   });
 
@@ -190,17 +187,17 @@ describe('Settings State Machine & Auto-Save Tests', () => {
 
   it('resetToDefaults restores all factory defaults and persists the change', () => {
     const state = new SettingsState();
-    state.setValue('remotePin', '999999');
+    state.setValue('alertIntruderSelfie', false);
     state.setValue('dvrBufferDuration', '60m');
-    assert.strictEqual(state.getValue('remotePin'), '999999');
+    assert.strictEqual(state.getValue('alertIntruderSelfie'), false);
     assert.strictEqual(state.getValue('dvrBufferDuration'), '60m');
 
     state.resetToDefaults();
-    assert.strictEqual(state.getValue('remotePin'), '123456');
+    assert.strictEqual(state.getValue('alertIntruderSelfie'), true);
     assert.strictEqual(state.getValue('dvrBufferDuration'), '30m');
 
     const parsed = JSON.parse(mockStorage[SETTINGS_STORAGE_KEY]);
-    assert.strictEqual(parsed.remotePin, '123456');
+    assert.strictEqual(parsed.alertIntruderSelfie, true);
     assert.strictEqual(parsed.dvrBufferDuration, '30m');
   });
 
@@ -223,7 +220,7 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual(state.getValue('startMinimized'), true);
   });
 
-  it('Strips removed legacy Connection & WebRTC, deviceAlias, and diagnosticLogging keys when loading persisted settings', () => {
+  it('Strips removed legacy Connection & WebRTC, Security & App Lock, deviceAlias, and diagnosticLogging keys when loading persisted settings', () => {
     mockStorage[SETTINGS_STORAGE_KEY] = JSON.stringify({
       defaultVoicePreset: 'echo',
       autoReconnect: false,
@@ -232,6 +229,11 @@ describe('Settings State Machine & Auto-Save Tests', () => {
       iceTransportPolicy: 'relay',
       iceGatherTimeout: 900,
       signalingHeartbeat: 45,
+      remotePin: '999999',
+      intruderSelfie: false,
+      lockoutStrikes: '5',
+      maskPasswords: false,
+      stealthConfirmation: false,
       deviceAlias: 'Old Nickname',
       diagnosticLogging: false,
     });
@@ -245,6 +247,11 @@ describe('Settings State Machine & Auto-Save Tests', () => {
     assert.strictEqual('iceTransportPolicy' in values, false);
     assert.strictEqual('iceGatherTimeout' in values, false);
     assert.strictEqual('signalingHeartbeat' in values, false);
+    assert.strictEqual('remotePin' in values, false);
+    assert.strictEqual('intruderSelfie' in values, false);
+    assert.strictEqual('lockoutStrikes' in values, false);
+    assert.strictEqual('maskPasswords' in values, false);
+    assert.strictEqual('stealthConfirmation' in values, false);
     assert.strictEqual('deviceAlias' in values, false);
     assert.strictEqual('diagnosticLogging' in values, false);
   });
@@ -318,13 +325,13 @@ describe('Settings Navigation Sidebar Component Tests', () => {
     global.document = mockDoc;
   });
 
-  it('SettingsSidebar renders 6 navigation tabs with accessibility attributes', () => {
+  it('SettingsSidebar renders 5 navigation tabs with accessibility attributes', () => {
     const sidebar = new SettingsSidebar();
     const nav = sidebar.render();
 
     assert.strictEqual(nav.tagName, 'NAV');
     assert.strictEqual(nav.attributes['role'], 'tablist');
-    assert.strictEqual(nav.children.length, 6);
+    assert.strictEqual(nav.children.length, 5);
 
     // Initial tab 'general' should be selected
     const firstTab = nav.children[0];
@@ -333,7 +340,7 @@ describe('Settings Navigation Sidebar Component Tests', () => {
     assert.strictEqual(firstTab.attributes['aria-selected'], 'true');
 
     // Final tab 'about' must use app logo without invert filter class
-    const aboutNavItem = nav.children[5];
+    const aboutNavItem = nav.children[4];
     assert.strictEqual(aboutNavItem.dataset.tabId, 'about');
     assert.ok(aboutNavItem.innerHTML.includes('assets/logo/nexus-parent.svg'));
     assert.ok(aboutNavItem.innerHTML.includes('is-brand-logo'));
@@ -342,7 +349,7 @@ describe('Settings Navigation Sidebar Component Tests', () => {
   });
 });
 
-describe('Security & App Lock Desktop Alert Toggles Tests', () => {
+describe('General & System Desktop Alert Toggles Tests', () => {
   let mockStorage = {};
 
   function createAlertMockElement(tag) {
@@ -449,17 +456,16 @@ describe('Security & App Lock Desktop Alert Toggles Tests', () => {
       },
     };
     global.document = {
+      body: createAlertMockElement('body'),
       createElement: (tag) => createAlertMockElement(tag),
+      getElementById: () => null,
     };
   });
 
-  it('renderDesktopAlertSettings renders 3 toggle rows (no checkboxes, no Emergency SOS Alert) and persists changes', async () => {
+  it('renderDesktopAlertSettings renders 3 toggle rows (no checkboxes, no Emergency SOS Alert) inside General & System', async () => {
     const { settingsState } = await import('../src/js/settings/sidebar/state.js');
     const { renderDesktopAlertSettings } = await import(
-      '../src/js/settings/main-content/security-forensics/desktop-alerts.js'
-    );
-    const { renderSecurityForensicsContent } = await import(
-      '../src/js/settings/main-content/security-forensics/security-forensics.js'
+      '../src/js/settings/main-content/general-system/desktop-alerts.js'
     );
     const { renderGeneralSystemContent } = await import(
       '../src/js/settings/main-content/general-system/general-system.js'
@@ -497,11 +503,10 @@ describe('Security & App Lock Desktop Alert Toggles Tests', () => {
     await disconnectToggle.dispatchEvent('change');
     assert.strictEqual(settingsState.getValue('alertChildDisconnected'), false);
 
-    // Verify alerts group is mounted in Security & App Lock and removed from General & System
-    const securityView = renderSecurityForensicsContent();
+    // Verify alerts group is mounted inside General & System
     const generalView = renderGeneralSystemContent();
-
-    assert.ok(securityView.querySelector('#setting-alert-intruder'));
-    assert.strictEqual(generalView.querySelector('#setting-alert-intruder'), null);
+    assert.ok(generalView.querySelector('#setting-alert-intruder'));
+    assert.ok(generalView.querySelector('#setting-alert-low-battery'));
+    assert.ok(generalView.querySelector('#setting-alert-disconnect'));
   });
 });

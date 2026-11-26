@@ -1,6 +1,6 @@
 /**
  * @file main-content.ts
- * @description Central router and runtime wiring for all 6 Settings main-content categories.
+ * @description Central router and runtime wiring for all 5 Settings main-content categories.
  *
  * Hey friend! Every settings category now lives in its own folder under `main-content/`,
  * with one `.ts` file per individual setting. This module wires them together so `settings.ts`
@@ -16,7 +16,6 @@ import {
   initSurveillanceDvrRuntime,
   renderSurveillanceDvrContent,
 } from './surveillance-dvr/surveillance-dvr.js';
-import { renderSecurityForensicsContent } from './security-forensics/security-forensics.js';
 import {
   initGeneralSystemRuntime,
   renderGeneralSystemContent,
@@ -33,8 +32,6 @@ export function renderSettingsMainContent(tabId: SettingsTabId): HTMLElement {
       return renderAudioVoiceIntercomContent();
     case 'surveillance':
       return renderSurveillanceDvrContent();
-    case 'security':
-      return renderSecurityForensicsContent();
     case 'general':
       return renderGeneralSystemContent();
     case 'devices':

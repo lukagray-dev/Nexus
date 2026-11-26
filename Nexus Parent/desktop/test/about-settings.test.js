@@ -367,7 +367,7 @@ describe('About Nexus Parent Settings Page Tests', () => {
     );
 
     deviceState.connect('482194021104');
-    settingsState.setValue('remotePin', '987654');
+    settingsState.setValue('alertIntruderSelfie', false);
     saveVoicePresetId('alien');
 
     const group = renderWorkspaceResetGroup();
@@ -378,14 +378,14 @@ describe('About Nexus Parent Settings Page Tests', () => {
     await resetBtn.dispatchEvent('click');
     assert.strictEqual(resetLabel.textContent, 'Confirm Full Reset?');
     assert.strictEqual(deviceState.isConnected(), true);
-    assert.strictEqual(settingsState.getValue('remotePin'), '987654');
+    assert.strictEqual(settingsState.getValue('alertIntruderSelfie'), false);
 
     // Second click executes real full workspace reset
     await resetBtn.dispatchEvent('click');
     assert.strictEqual(resetLabel.textContent, 'Reset Workspace');
     assert.strictEqual(deviceState.isConnected(), false);
     assert.strictEqual(deviceState.getLastConnectedDevice(), null);
-    assert.strictEqual(settingsState.getValue('remotePin'), '123456');
+    assert.strictEqual(settingsState.getValue('alertIntruderSelfie'), true);
     assert.strictEqual(mockStorage[VOICE_STORAGE_KEY], 'original');
   });
 

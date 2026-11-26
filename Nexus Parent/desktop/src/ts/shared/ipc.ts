@@ -367,6 +367,42 @@ export async function openLocalFolder(path: string): Promise<boolean> {
 }
 
 /**
+ * Displays a native OS desktop notification via Rust `show_desktop_notification` (when in Tauri)
+ * or falls back to the browser Notification API when permission is granted.
+ */
+export async function showDesktopNotification(title: string, body: string): Promise<boolean> {
+  const cleanTitle = title.trim();
+  const cleanBody = body.trim();
+  if (!cleanTitle && !cleanBody) return false;
+
+  const invoke = typeof window !== 'undefined' ? window.__TAURI__?.core?.invoke : undefined;
+  if (invoke) {
+    try {
+      await invoke('show_desktop_notification', {
+        title: cleanTitle,
+        body: cleanBody,
+      });
+      return true;
+    } catch (err) {
+      console.warn('[IPC] Native desktop notification failed, trying Web Notification fallback:', err);
+    }
+  }
+
+  if (typeof Notification !== 'undefined') {
+    try {
+      if (Notification.permission === 'granted') {
+        new Notification(cleanTitle, { body: cleanBody });
+        return true;
+      }
+    } catch (err) {
+      console.warn('[IPC] Browser Notification fallback failed:', err);
+    }
+  }
+
+  return false;
+}
+
+/**
  * Queries the current GitHub auto-updater status snapshot from Rust.
  */
 export async function getUpdateStatus(): Promise<UpdateStatusPayload | null> {
