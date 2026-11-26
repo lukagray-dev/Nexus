@@ -33,17 +33,12 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
       </div>
       <h1 class="connect-card-title">Connect Child Device</h1>
       <p class="connect-card-subtitle">
-        Enter the 12-digit Child ID provided by the Nexus Child app on your child's phone to establish an encrypted monitoring connection.
+        Enter the 12-digit Child ID from Nexus Child to establish an encrypted P2P connection.
       </p>
     </div>
 
     <!-- 12-Digit Child ID Form -->
     <div class="connect-form">
-      <div class="connect-input-header">
-        <label class="connect-input-label" for="child-id-input">CHILD DEVICE ID</label>
-        <span class="mono-badge">12 DIGITS</span>
-      </div>
-
       <div class="connect-input-wrapper">
         <span class="input-prefix-icon">
           <img src="assets/icons/main-content/empty-state/key-round.svg" alt="" />
@@ -52,6 +47,7 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
           type="text"
           id="child-id-input"
           class="child-id-input"
+          aria-label="Child Device ID"
           placeholder="Enter 12-digit Child ID"
           maxlength="12"
           autocomplete="off"
@@ -106,8 +102,8 @@ export function renderPairingScreen(onConnected: () => void): HTMLElement {
 
       <!-- Footer Help Hint -->
       <div class="connect-footer-hint">
-        <img src="assets/icons/main-content/empty-state/info.svg" alt="" style="filter: invert(1); width: 13px; height: 13px; opacity: 0.6;" />
-        <span>Hint: Open Nexus Child on your child's phone to view the <strong>12-digit Child ID</strong>.</span>
+        <img src="assets/icons/main-content/empty-state/info.svg" alt="" style="filter: invert(1); width: 12px; height: 12px; opacity: 0.6; flex-shrink: 0; margin-top: 1px;" />
+        <span>Open Nexus Child on the phone to view its <strong>12-digit Child ID</strong>.</span>
       </div>
     </div>
   `;

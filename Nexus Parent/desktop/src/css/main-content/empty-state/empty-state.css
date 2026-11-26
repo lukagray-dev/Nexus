@@ -23,8 +23,8 @@
   background-color: #000000;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 32px 24px;
-  background-image: 
+  padding: 20px 16px;
+  background-image:
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 32px 32px;
@@ -44,12 +44,12 @@
 
 .empty-connect-card {
   width: 100%;
-  max-width: 460px;
+  max-width: 390px;
   background-color: #121212;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 16px;
-  padding: 36px 32px;
-  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  border: none;
+  border-radius: 0;
+  padding: 24px 24px 20px 24px;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -62,42 +62,42 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .connect-brand-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
   background-color: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 18px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  margin-bottom: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
 }
 
 .connect-brand-icon img {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
 .connect-card-title {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
   color: #ffffff;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.3px;
+  margin: 0 0 5px 0;
+  letter-spacing: -0.25px;
 }
 
 .connect-card-subtitle {
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--text-muted);
   margin: 0;
-  max-width: 380px;
+  max-width: 330px;
 }
 
 /* Form Section */
@@ -105,30 +105,6 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.connect-input-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.connect-input-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  color: var(--text-secondary);
-}
-
-.mono-badge {
-  font-size: 9.5px;
-  font-family: var(--mono-font-family);
-  color: rgba(255, 255, 255, 0.6);
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  padding: 1px 6px;
-  border-radius: 3px;
 }
 
 .connect-input-wrapper {
@@ -140,9 +116,9 @@
 
 .input-prefix-icon {
   position: absolute;
-  left: 14px;
-  width: 18px;
-  height: 18px;
+  left: 12px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,20 +127,20 @@
 }
 
 .input-prefix-icon img {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   filter: invert(1);
 }
 
 .child-id-input {
   width: 100%;
-  height: 48px;
+  height: 40px;
   background-color: #0c0c0c;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 0 40px 0 42px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+  padding: 0 36px 0 38px;
   font-family: var(--mono-font-family);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 1px;
   color: #ffffff;
@@ -175,27 +151,27 @@
 
 .child-id-input:focus {
   border-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
   background-color: #101010;
 }
 
 .child-id-input::placeholder {
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: normal;
-  font-size: 13px;
+  font-size: 12.5px;
   font-family: var(--font-family);
 }
 
 .btn-clear-id {
   position: absolute;
-  right: 12px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
   background-color: #222222;
   border: none;
   color: #888888;
-  font-size: 11px;
+  font-size: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -210,8 +186,8 @@
 
 /* Feedback Row */
 .connect-feedback {
-  min-height: 22px;
-  margin: 8px 0 16px 0;
+  min-height: 18px;
+  margin: 6px 0 12px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -219,7 +195,7 @@
 }
 
 .feedback-text {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
@@ -242,18 +218,18 @@
 .connect-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
 .btn-connect-primary {
   width: 100%;
-  height: 42px;
+  height: 38px;
   background-color: #ffffff;
   color: #000000;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 0;
+  font-size: 12.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -280,12 +256,12 @@
 
 .btn-connect-secondary {
   width: 100%;
-  height: 38px;
+  height: 36px;
   background-color: #181818;
   color: var(--text-secondary);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 0;
+  font-size: 11.5px;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -305,7 +281,7 @@
 /* Quick Reconnect Shortcut Section for Previously Connected Child Device */
 .connect-recent-section {
   width: 100%;
-  margin-top: 14px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
 }
@@ -314,9 +290,9 @@
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   font-weight: 500;
@@ -330,16 +306,16 @@
 }
 
 .connect-recent-divider span {
-  padding: 0 12px;
+  padding: 0 10px;
 }
 
 .btn-recent-device {
   width: 100%;
-  min-height: 48px;
-  padding: 8px 14px;
+  min-height: 42px;
+  padding: 6px 12px;
   background-color: #171717;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -351,7 +327,7 @@
 
 .btn-recent-device:hover {
   background-color: #1f1f1f;
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.24);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px);
 }
@@ -363,15 +339,15 @@
 .recent-device-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .recent-device-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
   background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -379,19 +355,19 @@
 }
 
 .recent-device-icon img {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
 .recent-device-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .recent-device-label {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #ffffff;
   line-height: 1.2;
@@ -399,7 +375,7 @@
 
 .recent-device-id {
   font-family: var(--mono-font-family);
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-secondary);
   letter-spacing: 0.5px;
   line-height: 1.2;
@@ -412,7 +388,7 @@
 }
 
 .recent-device-action {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
   transition: color 0.15s ease;
@@ -437,15 +413,15 @@
 
 /* Footer Hint */
 .connect-footer-hint {
-  margin-top: 22px;
-  padding-top: 18px;
+  margin-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  font-size: 11.5px;
+  gap: 7px;
+  font-size: 11px;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .connect-footer-hint strong {
