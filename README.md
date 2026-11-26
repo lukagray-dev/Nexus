@@ -55,7 +55,7 @@ Unlike traditional commercial monitoring tools that upload camera feeds, audio r
 
 Nexus is partitioned into two specialized subsystems:
 
-1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and the **Android Parent Client** (`Nexus Parent/android`, built with **Kotlin**, **Jetpack Compose**, zero-blocker `TextureView` + `EglRenderer` video surface, `io.github.webrtc-sdk:android` WebRTC engine with real-time 10-preset PCM Voice Changer DSP + 36-bar FFT Mic Monitor + Broadcast Intercom, native `MediaCodec`/`MediaMuxer` segmented Rolling DVR + Clip Export, `MediaCodec` + `AudioTrack` 48kHz Opus internal system audio playback, `osmdroid` Esri Satellite / CartoDB Dark Streets live GPS tracking + Nominatim geocoding, persistent `dataSync|microphone` background Foreground Service for screen-off resilience, 1:1 5-tab settings console, and live DataChannel monitoring/control panels for SMS, Call Log, Notifications, Keyboard Audit, Digital Wellbeing, App Lock, Vibrate & Flash, Call Alerts, and Wallpaper).
+1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and the **Android Parent Client** (`Nexus Parent/android`, built with **Kotlin**, **Jetpack Compose**, zero-blocker `TextureView` + `EglRenderer` video surface, `io.github.webrtc-sdk:android` WebRTC engine with real-time 10-preset PCM Voice Changer DSP + 36-bar FFT Mic Monitor + Broadcast Intercom, native `MediaCodec`/`MediaMuxer` segmented Rolling DVR + Clip Export, `MediaCodec` + `AudioTrack` 48kHz Opus internal system audio playback, `osmdroid` Esri Satellite / CartoDB Dark Streets live GPS tracking + Nominatim geocoding, cached Remote Storage Explorer with 40-item pagination, preview caching & O(1)-RAM 64KB `.nexuspart` downloads, persistent `dataSync|microphone` background Foreground Service for screen-off resilience, 1:1 5-tab settings console, and live DataChannel monitoring/control panels for SMS, Call Log, Notifications, Keyboard Audit, Digital Wellbeing, App Lock, Vibrate & Flash, Call Alerts, and Wallpaper).
 2. **Nexus Child (Mobile Client)**: An autonomous Android client written in **Kotlin** integrating device-level telemetry, background accessibility hooks, hardware media capture, Digital Wellbeing usage tracking, active call alerting, and a 5-tier process survival engine.
 
 ## **Why Nexus?**
@@ -268,12 +268,12 @@ D:\Nexus\
 │   ├── android/               # Native Android Parent client (Kotlin + Jetpack Compose)
 │   │   ├── app/
 │   │   │   ├── src/main/java/com/nexus/parent/
-│   │   │   │   ├── data/      # DeviceStateCoordinator, DeviceStorage, ReconnectManager, TelemetryParser, Surveillance*/Monitor*/Mic* Coordinators
+│   │   │   │   ├── data/      # DeviceStateCoordinator, DeviceStorage, ReconnectManager, TelemetryParser, Surveillance*/Storage*/Monitor*/Mic* Coordinators
 │   │   │   │   ├── media/     # RollingDvrEngine, ClipExportManager, OpusAudioPlayer, media/mic (VoiceChangerDspEngine, AudioSpectrumAnalyzer)
 │   │   │   │   ├── service/   # ParentConnectionService (dataSync|microphone), ParentNotificationManager
 │   │   │   │   ├── state/     # ParentUiModels, FeatureRegistry, ParentStateHolder
 │   │   │   │   ├── webrtc/    # AppConfig, AuthManager, SignalingClient, WebRtcManager, WebRtcExtensions
-│   │   │   │   └── ui/        # Monochrome theme, PushDrawer, Home, Surveillance (Camera, Screen+DVR, osmdroid Location), Monitor, 1:1 Settings
+│   │   │   │   └── ui/        # Monochrome theme, PushDrawer, Home, Surveillance (Camera, Screen+DVR, Storage, Location), Monitor, 1:1 Settings
 │   │   │   ├── src/main/res/  # Lucide & loading SVG-derived Vector Drawables, dark #000000 theme
 │   │   │   ├── src/test/      # JVM unit tests (telemetry, storage, reconnect, WebRTC, DVR/Opus, Location, state, monitor)
 │   │   │   └── build.gradle.kts
