@@ -102,6 +102,7 @@ export class DesktopWebRtcManager {
   private connectionStateListeners: Set<ConnectionStateListener> = new Set();
   private messageListeners: Set<MessageListener> = new Set();
   private trackListeners: Set<TrackListener> = new Set();
+  private dataChannelOpenListeners: Set<() => void> = new Set();
 
   /**
    * Registers a deactivation handler for a specific video feed ('camera' | 'screen').
@@ -436,6 +437,7 @@ export class DesktopWebRtcManager {
 
     dc.onopen = () => {
       console.log('[WebRTCManager] DataChannel is now OPEN and ready for telemetry.');
+      this.notifyDataChannelOpened();
     };
 
     dc.onclose = () => {
@@ -538,6 +540,28 @@ export class DesktopWebRtcManager {
   public onTrack(listener: TrackListener): () => void {
     this.trackListeners.add(listener);
     return () => this.trackListeners.delete(listener);
+  }
+
+  public onDataChannelOpen(listener: () => void): () => void {
+    this.dataChannelOpenListeners.add(listener);
+    if (this.dataChannel && this.dataChannel.readyState === 'open') {
+      try {
+        listener();
+      } catch (err) {
+        console.error('[WebRTCManager] Error in immediate dataChannelOpen listener:', err);
+      }
+    }
+    return () => this.dataChannelOpenListeners.delete(listener);
+  }
+
+  private notifyDataChannelOpened(): void {
+    this.dataChannelOpenListeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (err) {
+        console.error('[WebRTCManager] Error in dataChannelOpen listener:', err);
+      }
+    });
   }
 
   private notifyConnectionStateChange(state: RTCPeerConnectionState): void {

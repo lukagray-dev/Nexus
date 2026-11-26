@@ -50,9 +50,43 @@ let audioSourceNode: MediaStreamAudioSourceNode | null = null;
 // Module-level tracking of active mic streaming state so overlay synchronization
 // knows whether to preserve the live indicator when minimized
 let globalMicState: MicButtonState = 'IDLE';
+let activeMicStartTrigger: (() => boolean) | null = null;
+let pendingAutoStartMic = false;
 
 export type MicButtonState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
 export type SpeakButtonState = 'IDLE' | 'STARTING' | 'STREAMING' | 'STOPPING';
+
+/**
+ * Returns whether child microphone monitoring is currently starting or streaming.
+ */
+export function isChildMicListeningOrConnecting(): boolean {
+  return (
+    globalMicState === 'STARTING' ||
+    globalMicState === 'STREAMING' ||
+    sidebarState.isFeatureLive('mic')
+  );
+}
+
+/**
+ * Opens the floating Mic monitor panel (if minimized/unmounted) and immediately starts
+ * live child microphone streaming (`MIC_ON`) in one click.
+ */
+export function startChildMicMonitoring(): boolean {
+  getOrCreateMicPanel();
+  sidebarState.setMicOpen(true);
+
+  if (globalMicState === 'STARTING' || globalMicState === 'STREAMING') {
+    return true;
+  }
+
+  if (activeMicStartTrigger) {
+    return activeMicStartTrigger();
+  }
+
+  // Panel was just created and `bindMicPanelEvents` runs asynchronously; auto-start once bound
+  pendingAutoStartMic = true;
+  return true;
+}
 
 /**
  * Synchronizes the floating Mic overlay with the current content container.
@@ -664,29 +698,44 @@ function bindMicPanelEvents(panel: HTMLElement): void {
     }
   });
 
+  const startMicStream = (): boolean => {
+    if (micState !== 'IDLE') {
+      return micState === 'STARTING' || micState === 'STREAMING';
+    }
+
+    console.log('[Mic] Starting child microphone stream (MIC_ON)...');
+    setButtonState('STARTING');
+
+    const sent = webrtcManager.sendCommand('MIC_ON');
+    if (!sent) {
+      console.warn('[Mic] Cannot send MIC_ON: DataChannel is not open.');
+      setButtonState('IDLE');
+      return false;
+    }
+
+    // Safety fallback timer: if Child app doesn't confirm within 20s, revert state
+    if (confirmationTimeout) clearTimeout(confirmationTimeout);
+    confirmationTimeout = setTimeout(() => {
+      if (micState === 'STARTING') {
+        console.warn('[Mic] Timeout waiting for MIC_STARTED from Child. Reverting to IDLE.');
+        setButtonState('IDLE');
+      }
+    }, 20000);
+    return true;
+  };
+
+  activeMicStartTrigger = startMicStream;
+  if (pendingAutoStartMic) {
+    pendingAutoStartMic = false;
+    startMicStream();
+  }
+
   // 1. Play / Pause / Loading Control with Confirmation-based flow
   btnPlay?.addEventListener('click', () => {
     closeVoiceDropdown();
 
     if (micState === 'IDLE') {
-      console.log('[Mic] Play clicked: Sending MIC_ON command...');
-      setButtonState('STARTING');
-
-      const sent = webrtcManager.sendCommand('MIC_ON');
-      if (!sent) {
-        console.warn('[Mic] Cannot send MIC_ON: DataChannel is not open.');
-        setButtonState('IDLE');
-        return;
-      }
-
-      // Safety fallback timer: if Child app doesn't confirm within 20s, revert state
-      if (confirmationTimeout) clearTimeout(confirmationTimeout);
-      confirmationTimeout = setTimeout(() => {
-        if (micState === 'STARTING') {
-          console.warn('[Mic] Timeout waiting for MIC_STARTED from Child. Reverting to IDLE.');
-          setButtonState('IDLE');
-        }
-      }, 20000);
+      startMicStream();
     } else if (micState === 'STREAMING') {
       console.log('[Mic] Pause clicked: Sending MIC_OFF command...');
       setButtonState('STOPPING');
@@ -949,6 +998,8 @@ function bindMicPanelEvents(panel: HTMLElement): void {
       window.removeEventListener(EVENT_AUDIO_OUTPUT_CHANGED, onAudioOutputChanged);
       stopAudioPlayback();
       globalMicState = 'IDLE';
+      activeMicStartTrigger = null;
+      pendingAutoStartMic = false;
       sidebarState.setFeatureLive('mic', false);
       observer.disconnect();
     }

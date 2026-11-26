@@ -111,6 +111,7 @@ describe('Settings Category Registry & Default Values Tests', () => {
     assert.strictEqual(defaults.alertIntruderSelfie, true);
     assert.strictEqual(defaults.alertLowBattery, true);
     assert.strictEqual(defaults.alertChildDisconnected, true);
+    assert.strictEqual(defaults.alertChildActiveCall, true);
     assert.strictEqual('alertSos' in defaults, false);
 
     // Removed legacy deviceAlias & diagnosticLogging keys must not exist
@@ -462,7 +463,7 @@ describe('General & System Desktop Alert Toggles Tests', () => {
     };
   });
 
-  it('renderDesktopAlertSettings renders 3 toggle rows (no checkboxes, no Emergency SOS Alert) inside General & System', async () => {
+  it('renderDesktopAlertSettings renders 4 toggle rows (no checkboxes, no Emergency SOS Alert) inside General & System', async () => {
     const { settingsState } = await import('../src/js/settings/sidebar/state.js');
     const { renderDesktopAlertSettings } = await import(
       '../src/js/settings/main-content/general-system/desktop-alerts.js'
@@ -474,7 +475,7 @@ describe('General & System Desktop Alert Toggles Tests', () => {
     settingsState.resetToDefaults();
 
     const rows = renderDesktopAlertSettings();
-    assert.strictEqual(rows.length, 3);
+    assert.strictEqual(rows.length, 4);
 
     const combinedHtml = rows.map((r) => r.innerHTML).join('\n');
     assert.ok(combinedHtml.includes('settings-toggle'));
@@ -485,11 +486,13 @@ describe('General & System Desktop Alert Toggles Tests', () => {
     const intruderToggle = rows[0].querySelector('#setting-alert-intruder');
     const batteryToggle = rows[1].querySelector('#setting-alert-low-battery');
     const disconnectToggle = rows[2].querySelector('#setting-alert-disconnect');
+    const activeCallToggle = rows[3].querySelector('#setting-alert-active-call');
 
-    assert.ok(intruderToggle && batteryToggle && disconnectToggle);
+    assert.ok(intruderToggle && batteryToggle && disconnectToggle && activeCallToggle);
     assert.strictEqual(intruderToggle.checked, true);
     assert.strictEqual(batteryToggle.checked, true);
     assert.strictEqual(disconnectToggle.checked, true);
+    assert.strictEqual(activeCallToggle.checked, true);
 
     intruderToggle.checked = false;
     await intruderToggle.dispatchEvent('change');
@@ -503,10 +506,15 @@ describe('General & System Desktop Alert Toggles Tests', () => {
     await disconnectToggle.dispatchEvent('change');
     assert.strictEqual(settingsState.getValue('alertChildDisconnected'), false);
 
+    activeCallToggle.checked = false;
+    await activeCallToggle.dispatchEvent('change');
+    assert.strictEqual(settingsState.getValue('alertChildActiveCall'), false);
+
     // Verify alerts group is mounted inside General & System
     const generalView = renderGeneralSystemContent();
     assert.ok(generalView.querySelector('#setting-alert-intruder'));
     assert.ok(generalView.querySelector('#setting-alert-low-battery'));
     assert.ok(generalView.querySelector('#setting-alert-disconnect'));
+    assert.ok(generalView.querySelector('#setting-alert-active-call'));
   });
 });

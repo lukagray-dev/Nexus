@@ -64,6 +64,7 @@ export interface SettingsValues {
   alertIntruderSelfie: boolean;
   alertLowBattery: boolean;
   alertChildDisconnected: boolean;
+  alertChildActiveCall: boolean;
 }
 
 /**
@@ -135,5 +136,6 @@ export function getDefaultSettingsValues(): SettingsValues {
     alertIntruderSelfie: true,
     alertLowBattery: true,
     alertChildDisconnected: true,
+    alertChildActiveCall: true,
   };
 }

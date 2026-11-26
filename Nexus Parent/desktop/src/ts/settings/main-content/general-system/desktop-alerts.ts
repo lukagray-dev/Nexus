@@ -2,28 +2,55 @@
  * @file desktop-alerts.ts
  * @description Desktop Alert Notification settings & real-time event runtime for General & System.
  *
- * Hey friend! Configures and dispatches native OS desktop notifications + in-app toasts
+ * Hey friend! Configures and dispatches native OS desktop notifications + in-app alerts
  * for urgent child-device events:
  * 1. Intruder Selfie Triggered (`alertIntruderSelfie`): Fires on `APPLOCK_NEW` with wrong PIN (`pinCorrect === false`).
  * 2. Child Device Low Battery (`alertLowBattery`): Fires once when live telemetry drops below 15% while not charging
  *    (with 20% hysteresis reset to avoid spamming).
  * 3. Child Device Disconnection (`alertChildDisconnected`): Fires on unexpected WebRTC peer disconnection.
+ * 4. Active Call Alert (`alertChildActiveCall`): Fires immediately and repeats every 30s while the child
+ *    receives or makes a phone call (until Mic monitoring is turned on or the call ends), presenting a
+ *    1-click "Turn On Mic" button inside the in-app alert banner + native OS desktop notification.
  */
 
 import { settingsState } from '../../sidebar/state.js';
 import { SettingsValues } from '../../sidebar/types.js';
 import { deviceState, DeviceInfo } from '../../../shared/device-state.js';
+import { sidebarState } from '../../../left-sidebar/state.js';
 import { webrtcManager } from '../../../webrtc/webrtc-manager.js';
 import { TYPE_APPLOCK_NEW, AppLockRecord } from '../../../right-sidebar/types.js';
+import {
+  isChildMicListeningOrConnecting,
+  startChildMicMonitoring,
+} from '../../../main-content/mic/mic.js';
+import { escapeHtml } from '../helpers.js';
 import { showToast } from '../../../shared/toast.js';
 import { showDesktopNotification } from '../../../shared/ipc.js';
 
 export const LOW_BATTERY_THRESHOLD_PERCENT = 15;
 export const LOW_BATTERY_RECOVERY_PERCENT = 20;
 
+export const TYPE_CALL_STATE = 'CALL_STATE';
+export const CMD_CALL_ALERT_ON = 'CALL_ALERT_ON';
+export const CMD_CALL_ALERT_OFF = 'CALL_ALERT_OFF';
+
+export interface CallStateAlertPayload {
+  type?: string;
+  state: 'ringing' | 'active' | 'idle';
+  direction?: 'incoming' | 'outgoing' | 'unknown';
+  number?: string;
+  contactName?: string;
+  timestamp?: number;
+  isRepeat?: boolean;
+}
+
 interface DesktopAlertDefinition {
   id: string;
-  key: 'alertIntruderSelfie' | 'alertLowBattery' | 'alertChildDisconnected';
+  key:
+    | 'alertIntruderSelfie'
+    | 'alertLowBattery'
+    | 'alertChildDisconnected'
+    | 'alertChildActiveCall';
   title: string;
   description: string;
 }
@@ -47,6 +74,12 @@ const DESKTOP_ALERT_DEFINITIONS: DesktopAlertDefinition[] = [
     title: 'Child Device Disconnection',
     description: 'Alert when active P2P link drops unexpectedly or child enters offline zone',
   },
+  {
+    id: 'setting-alert-active-call',
+    key: 'alertChildActiveCall',
+    title: 'Active Call Alert',
+    description: 'Notify with a quick Mic listen button while child receives or makes a phone call',
+  },
 ];
 
 let unsubscribeAlertsSync: (() => void) | null = null;
@@ -61,10 +94,148 @@ function dispatchDesktopAlert(title: string, body: string): void {
 }
 
 /**
- * Resets internal low-battery deduplication latch (for tests or full session teardown).
+ * Hides and removes the floating Active Call Alert Banner if currently displayed.
+ */
+export function hideActiveCallAlertBanner(): void {
+  if (typeof document === 'undefined' || typeof document.getElementById !== 'function') {
+    return;
+  }
+  const existing = document.getElementById('nexus-active-call-alert');
+  if (existing) {
+    existing.classList?.remove('visible');
+    if (existing.parentElement && typeof existing.parentElement.removeChild === 'function') {
+      existing.parentElement.removeChild(existing);
+    } else if (typeof existing.remove === 'function') {
+      existing.remove();
+    }
+  }
+}
+
+/**
+ * Displays or updates the actionable Active Call Alert Banner containing a 1-click "Turn On Mic" button.
+ */
+export function showActiveCallAlertBanner(title: string, body: string): void {
+  if (
+    typeof document === 'undefined' ||
+    !document.body ||
+    typeof document.createElement !== 'function'
+  ) {
+    return;
+  }
+
+  let banner =
+    typeof document.getElementById === 'function'
+      ? document.getElementById('nexus-active-call-alert')
+      : null;
+
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'nexus-active-call-alert';
+    banner.className = 'nexus-call-alert-banner';
+    banner.setAttribute?.('role', 'alert');
+    banner.innerHTML = `
+      <div class="nexus-call-alert-content">
+        <div class="nexus-call-alert-icon-wrap">
+          <img src="assets/icons/left-sidebar/phone-call.svg" alt="" class="nexus-call-alert-icon" />
+        </div>
+        <div class="nexus-call-alert-text">
+          <div id="nexus-call-alert-title" class="nexus-call-alert-title"></div>
+          <div id="nexus-call-alert-body" class="nexus-call-alert-body"></div>
+        </div>
+      </div>
+      <div class="nexus-call-alert-actions">
+        <button type="button" id="btn-call-alert-mic-on" class="nexus-call-alert-mic-btn" title="Open Microphone and listen live">
+          <img src="assets/icons/left-sidebar/mic.svg" alt="" class="nexus-call-alert-mic-icon" />
+          <span>Turn On Mic</span>
+        </button>
+        <button type="button" id="btn-call-alert-dismiss" class="nexus-call-alert-dismiss-btn" title="Dismiss alert">
+          <img src="assets/icons/main-content/x.svg" alt="" class="nexus-call-alert-dismiss-icon" />
+        </button>
+      </div>
+    `;
+
+    const micBtn = banner.querySelector<HTMLButtonElement>('#btn-call-alert-mic-on');
+    micBtn?.addEventListener('click', () => {
+      const started = startChildMicMonitoring();
+      if (started) {
+        hideActiveCallAlertBanner();
+        showToast('Turning on child microphone to listen live...');
+      } else {
+        showToast('Unable to turn on Mic: child device is not connected');
+      }
+    });
+
+    const dismissBtn = banner.querySelector<HTMLButtonElement>('#btn-call-alert-dismiss');
+    dismissBtn?.addEventListener('click', () => {
+      hideActiveCallAlertBanner();
+    });
+
+    document.body.appendChild(banner);
+  }
+
+  const titleEl = banner.querySelector<HTMLElement>('#nexus-call-alert-title');
+  const bodyEl = banner.querySelector<HTMLElement>('#nexus-call-alert-body');
+  if (titleEl) {
+    titleEl.textContent = title;
+  }
+  if (bodyEl) {
+    bodyEl.textContent = body;
+  }
+
+  banner.classList?.add('visible');
+}
+
+/**
+ * Formats the title and body text for an incoming or outgoing active call alert.
+ */
+export function formatCallAlertCopy(payload: CallStateAlertPayload): {
+  title: string;
+  body: string;
+} {
+  const deviceName = deviceState.getConnectedDevice()?.name || 'Child device';
+  const contact = (payload.contactName || '').trim();
+  const number = (payload.number || '').trim();
+
+  let partyLabel = '';
+  if (contact && number) {
+    partyLabel = `${contact} (${number})`;
+  } else if (contact) {
+    partyLabel = contact;
+  } else if (number) {
+    partyLabel = number;
+  }
+
+  const direction = payload.direction || 'unknown';
+  let title: string;
+  if (payload.state === 'ringing') {
+    title = partyLabel ? `Incoming Call: ${partyLabel}` : `Incoming Call on ${deviceName}`;
+  } else if (direction === 'outgoing') {
+    title = partyLabel ? `Outgoing Call Active: ${partyLabel}` : `Outgoing Call on ${deviceName}`;
+  } else if (direction === 'incoming') {
+    title = partyLabel ? `Incoming Call Active: ${partyLabel}` : `Incoming Call Active on ${deviceName}`;
+  } else {
+    title = partyLabel ? `Active Call: ${partyLabel}` : `${deviceName} On a Call`;
+  }
+
+  const actionNote =
+    'Turn on Mic to listen live (child audio direct; other party audible if speaker is on).';
+  const prefix =
+    payload.state === 'ringing'
+      ? `${deviceName} is receiving a call.`
+      : `${deviceName} is currently on a call.`;
+
+  return {
+    title: escapeHtml(title) === title ? title : title,
+    body: `${prefix} ${actionNote}`,
+  };
+}
+
+/**
+ * Resets internal deduplication latches and hides transient banners (for tests or teardown).
  */
 export function resetDesktopAlertsRuntimeForTesting(): void {
   lowBatteryAlertedDeviceKey = null;
+  hideActiveCallAlertBanner();
 }
 
 /**
@@ -138,6 +309,7 @@ export function evaluateLowBatteryAlert(device: DeviceInfo | null | undefined): 
  */
 export function evaluateUnexpectedDisconnectAlert(device: DeviceInfo | null | undefined): boolean {
   lowBatteryAlertedDeviceKey = null;
+  hideActiveCallAlertBanner();
   if (!device || !settingsState.getValue('alertChildDisconnected')) {
     return false;
   }
@@ -148,6 +320,49 @@ export function evaluateUnexpectedDisconnectAlert(device: DeviceInfo | null | un
     `Lost P2P connection to ${label}`
   );
   return true;
+}
+
+/**
+ * Evaluates an incoming `CALL_STATE` packet from the child device.
+ * Shows the actionable 1-click "Turn On Mic" banner + OS notification while the child is on a call,
+ * suppresses repeat alerts once Mic listening starts, and clears the banner when the call ends.
+ */
+export function evaluateCallStateAlert(payload: CallStateAlertPayload | null | undefined): boolean {
+  if (!payload || !payload.state) {
+    return false;
+  }
+
+  if (payload.state === 'idle') {
+    hideActiveCallAlertBanner();
+    return false;
+  }
+
+  if (!settingsState.getValue('alertChildActiveCall')) {
+    hideActiveCallAlertBanner();
+    return false;
+  }
+
+  // Parent already turned Mic on (connecting or streaming): suppress repeating call alerts
+  if (isChildMicListeningOrConnecting()) {
+    hideActiveCallAlertBanner();
+    return false;
+  }
+
+  const { title, body } = formatCallAlertCopy(payload);
+  showActiveCallAlertBanner(title, body);
+  void showDesktopNotification(title, body);
+  return true;
+}
+
+/**
+ * Syncs the `alertChildActiveCall` preference to the connected child device over DataChannel.
+ */
+export function syncCallAlertSettingToChild(enabled: boolean): boolean {
+  const dc = webrtcManager.getDataChannel();
+  if (!dc || dc.readyState !== 'open') {
+    return false;
+  }
+  return webrtcManager.sendCommand(enabled ? CMD_CALL_ALERT_ON : CMD_CALL_ALERT_OFF);
 }
 
 /**
@@ -216,25 +431,58 @@ export function renderDesktopAlertSettings(): HTMLElement[] {
 }
 
 /**
- * Initializes live listeners for Intruder Selfie, Low Battery (<15%), and Unexpected Disconnect alerts.
+ * Initializes live listeners for Intruder Selfie, Low Battery (<15%), Unexpected Disconnect,
+ * and Child Active Call alerts.
  */
 export function initDesktopAlertsRuntime(): () => void {
   lowBatteryAlertedDeviceKey = null;
+  let lastCallAlertEnabled = settingsState.getValue('alertChildActiveCall');
 
   const unsubscribeMessages = webrtcManager.onMessage((rawMessage: string) => {
     if (typeof rawMessage !== 'string') return;
     const trimmed = rawMessage.trim();
-    if (!trimmed.startsWith(`{"type":"${TYPE_APPLOCK_NEW}"`)) {
+
+    if (trimmed.startsWith(`{"type":"${TYPE_APPLOCK_NEW}"`)) {
+      try {
+        const payload = JSON.parse(trimmed) as { type?: string; record?: AppLockRecord };
+        if (payload.type === TYPE_APPLOCK_NEW && payload.record) {
+          evaluateAppLockAlertRecord(payload.record);
+        }
+      } catch (err) {
+        console.warn('[DesktopAlerts] Failed to parse APPLOCK_NEW payload:', err);
+      }
       return;
     }
 
-    try {
-      const payload = JSON.parse(trimmed) as { type?: string; record?: AppLockRecord };
-      if (payload.type === TYPE_APPLOCK_NEW && payload.record) {
-        evaluateAppLockAlertRecord(payload.record);
+    if (trimmed.startsWith(`{"type":"${TYPE_CALL_STATE}"`)) {
+      try {
+        const payload = JSON.parse(trimmed) as CallStateAlertPayload;
+        if (payload.type === TYPE_CALL_STATE) {
+          evaluateCallStateAlert(payload);
+        }
+      } catch (err) {
+        console.warn('[DesktopAlerts] Failed to parse CALL_STATE payload:', err);
       }
-    } catch (err) {
-      console.warn('[DesktopAlerts] Failed to parse APPLOCK_NEW payload:', err);
+    }
+  });
+
+  const unsubscribeDataChannelOpen = webrtcManager.onDataChannelOpen(() => {
+    syncCallAlertSettingToChild(settingsState.getValue('alertChildActiveCall'));
+  });
+
+  const unsubscribeSettings = settingsState.onValuesChange((values) => {
+    if (values.alertChildActiveCall !== lastCallAlertEnabled) {
+      lastCallAlertEnabled = values.alertChildActiveCall;
+      syncCallAlertSettingToChild(values.alertChildActiveCall);
+      if (!values.alertChildActiveCall) {
+        hideActiveCallAlertBanner();
+      }
+    }
+  });
+
+  const unsubscribeSidebar = sidebarState.subscribe(() => {
+    if (isChildMicListeningOrConnecting()) {
+      hideActiveCallAlertBanner();
     }
   });
 
@@ -249,14 +497,19 @@ export function initDesktopAlertsRuntime(): () => void {
   const unsubscribeDevice = deviceState.subscribe(() => {
     if (!deviceState.isConnected() && !deviceState.isReconnecting()) {
       lowBatteryAlertedDeviceKey = null;
+      hideActiveCallAlertBanner();
     }
   });
 
   return () => {
     unsubscribeMessages();
+    unsubscribeDataChannelOpen();
+    unsubscribeSettings();
+    unsubscribeSidebar();
     unsubscribeTelemetry();
     unsubscribeUnexpectedDisconnect();
     unsubscribeDevice();
     lowBatteryAlertedDeviceKey = null;
+    hideActiveCallAlertBanner();
   };
 }

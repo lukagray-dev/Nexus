@@ -8,7 +8,7 @@ The **General & System** page is the primary tab of the Settings dialog (`Prefer
 1. **File Storage & Export** (`Downloads & Media Save Directory`, `Ask Every Time Before Downloading`)
 2. **Startup & Connection** (`Auto-Connect Last Paired Device on Launch`, `Launch on System Startup`, `Start Minimized to Tray`)
 3. **Window & Display Behavior** (`Always on Top`, `Keep Screen On When Connected`, `Close Button [X] Behavior`)
-4. **Desktop Alert Notifications** (`Intruder Selfie Triggered`, `Child Device Low Battery`, `Child Device Disconnection`)
+4. **Desktop Alert Notifications** (`Intruder Selfie Triggered`, `Child Device Low Battery`, `Child Device Disconnection`, `Active Call Alert`)
 5. **Application Updates** (`Check for Updates Automatically`, `Release Channel & Status`, and Titlebar `Restart to update`)
 
 ---
@@ -25,7 +25,7 @@ Defined in `Nexus Parent/desktop/src/ts/settings/sidebar/types.ts` (`SETTINGS_TA
 | 4 | `devices` | **Paired Devices** | - |
 | 5 | `about` | **About Nexus Parent** | - |
 
-> Note: The former **Security & App Lock** settings tab was removed because remote PIN changing (`CMD_APPLOCK_SET_PIN`) already lives in the Right Sidebar App Lock panel, while password masking and lockout thresholds are enforced on the Android child. Its three **Desktop Alert Notifications** toggles now live directly inside **General & System** (`general-system/desktop-alerts.ts`).
+> Note: The former **Security & App Lock** settings tab was removed because remote PIN changing (`CMD_APPLOCK_SET_PIN`) already lives in the Right Sidebar App Lock panel, while password masking and lockout thresholds are enforced on the Android child. Its **Desktop Alert Notifications** toggles—alongside **Active Call Alert** (`alertChildActiveCall`, detailed in `docs/CALL-ALERT-IMPLEMENTATION.md`)—live directly inside **General & System** (`general-system/desktop-alerts.ts`).
 
 ---
 
