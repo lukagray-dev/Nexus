@@ -176,8 +176,12 @@ jobs:
       - name: Build Nexus Child Debug APK
         working-directory: "Nexus Child"
         run: |
+          TAG="${{ needs.version.outputs.release_tag }}"
+          VER_CLEAN="${TAG#v}"
+          IFS='.' read -r MAJ MIN PAT <<< "$VER_CLEAN"
+          VER_CODE=$(( (${MAJ:-0} * 10000) + (${MIN:-0} * 100) + ${PAT:-0} + 1 ))
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon -PnexusVersionName="$VER_CLEAN" -PnexusVersionCode="$VER_CODE"
 
       - name: Build Nexus Parent Debug APK
         working-directory: "Nexus Parent/android"

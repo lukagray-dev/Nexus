@@ -736,6 +736,27 @@ class DeviceStateCoordinator(
             return
         }
 
+        val childUpdatePacket = TelemetryParser.parseChildUpdatePacket(trimmed)
+        if (childUpdatePacket != null) {
+            val baseRecord = activeSessionDevice ?: holder.uiState.value.connectedDevice ?: return
+            val wasAvailable = baseRecord.telemetry.updateAvailable
+            val previousLatest = baseRecord.telemetry.latestAvailableVersion
+            val updatedRecord = TelemetryParser.applyChildUpdateStatus(baseRecord, childUpdatePacket)
+            activeSessionDevice = updatedRecord
+            val updatedHistory = storage.savePairedDevice(updatedRecord)
+            holder.onTelemetryUpdated(
+                record = updatedRecord,
+                history = updatedHistory
+            )
+            if (childUpdatePacket.updateAvailable &&
+                (!wasAvailable || previousLatest != childUpdatePacket.latestVersion)
+            ) {
+                val verSuffix = childUpdatePacket.latestVersion?.let { " v$it" } ?: ""
+                holder.showToast("Update$verSuffix available for ${updatedRecord.name}")
+            }
+            return
+        }
+
         monitorCoordinator.handleIncomingMessage(trimmed)
     }
 

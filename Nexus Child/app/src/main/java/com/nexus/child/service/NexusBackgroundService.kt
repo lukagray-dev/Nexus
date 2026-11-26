@@ -48,6 +48,7 @@ import com.nexus.child.components.wellbeing.WellbeingController
 import com.nexus.child.service.receiver.ServiceRestartReceiver
 import com.nexus.child.service.receiver.UnlockReceiver
 import com.nexus.child.service.watchdog.WatchdogService
+import com.nexus.child.update.ChildUpdateChecker
 import com.nexus.child.webrtc.AuthManager
 import com.nexus.child.webrtc.DeviceIdManager
 import com.nexus.child.webrtc.DeviceStatusManager
@@ -147,6 +148,7 @@ class NexusBackgroundService : Service() {
     private var statusManager: DeviceStatusManager? = null
     private var signalingClient: SignalingClient? = null
     private var webRtcManager: WebRtcManager? = null
+    private var childUpdateChecker: ChildUpdateChecker? = null
 
     // Dual-process watchdog connection
     private var isBoundToWatchdog = false
@@ -478,11 +480,19 @@ class NexusBackgroundService : Service() {
             // Step 6: Initialize all domain controllers
             initializeHardwareControllers(rtcManager, speakerMgr)
 
-            // Step 7: Push initial stealth mode state & start live call alerts when DataChannel opens
+            // Step 7: Push initial stealth mode state, live call alerts, & child update check status when DataChannel opens
+            val checker = ChildUpdateChecker(
+                scope = serviceScope,
+                sendToParent = { packet -> rtcManager.sendData(packet) }
+            )
+            childUpdateChecker = checker
+            checker.start()
+
             rtcManager.onDataChannelOpened = {
-                Log.d(TAG, "WebRTC DataChannel opened. Dispatched initial stealth state & call alert monitor...")
+                Log.d(TAG, "WebRTC DataChannel opened. Dispatched initial stealth state, call alerts & update check...")
                 stealthCommandHandler?.sendStatusUpdate()
                 callAlertCommandHandler?.onDataChannelOpened()
+                checker.onDataChannelOpened()
             }
 
         } catch (e: Exception) {
@@ -769,6 +779,8 @@ class NexusBackgroundService : Service() {
         parentAudioSpeakerManager?.cleanup()
         microphoneController?.cleanup()
 
+        childUpdateChecker?.stop()
+        childUpdateChecker = null
         webRtcManager?.close()
         signalingClient?.stop()
         statusManager?.stop()

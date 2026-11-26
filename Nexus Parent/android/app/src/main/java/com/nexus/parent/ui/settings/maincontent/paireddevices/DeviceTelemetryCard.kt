@@ -115,7 +115,11 @@ fun DeviceTelemetryCard(
             leftLabel = "DISPLAY",
             leftValue = "${if (t.isScreenOn) "Awake" else "Screen Off"} (${t.screenResolution})",
             rightLabel = "CHILD APP VERSION",
-            rightValue = t.appVersion
+            rightValue = if (t.updateAvailable && !t.latestAvailableVersion.isNullOrBlank()) {
+                "v${t.appVersion} • Update v${t.latestAvailableVersion} available"
+            } else {
+                t.appVersion
+            }
         )
         TelemetryTileRow(
             leftLabel = "BATTERY & CHARGING",

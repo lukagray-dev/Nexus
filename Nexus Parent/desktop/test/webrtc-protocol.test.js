@@ -172,4 +172,37 @@ describe('WebRTC Configuration & Protocol Tests', () => {
     deviceState.disconnect();
     deviceState.clearLastConnectedDevice();
   });
+
+  it('deviceState.updateTelemetry should store and persist child update availability flags', () => {
+    deviceState.connect('987654321098');
+    deviceState.updateTelemetry({
+      appVersion: '0.1.0-alpha',
+      updateAvailable: true,
+      latestAvailableVersion: '0.2.0',
+      updateReleaseUrl: 'https://github.com/lukagray-dev/Nexus/releases/tag/v0.2.0'
+    });
+
+    const active = deviceState.getConnectedDevice();
+    assert.ok(active);
+    assert.strictEqual(active.updateAvailable, true);
+    assert.strictEqual(active.latestAvailableVersion, '0.2.0');
+    assert.strictEqual(active.updateReleaseUrl, 'https://github.com/lukagray-dev/Nexus/releases/tag/v0.2.0');
+
+    const last = deviceState.getLastConnectedDevice();
+    assert.ok(last?.lastTelemetry);
+    assert.strictEqual(last.lastTelemetry.updateAvailable, true);
+    assert.strictEqual(last.lastTelemetry.latestAvailableVersion, '0.2.0');
+
+    // Clearing updateAvailable resets cached flag cleanly
+    deviceState.updateTelemetry({
+      updateAvailable: false,
+      latestAvailableVersion: null,
+      updateReleaseUrl: null
+    });
+    assert.strictEqual(deviceState.getConnectedDevice()?.updateAvailable, false);
+    assert.strictEqual(deviceState.getLastConnectedDevice()?.lastTelemetry?.updateAvailable, false);
+
+    deviceState.disconnect();
+    deviceState.clearLastConnectedDevice();
+  });
 });

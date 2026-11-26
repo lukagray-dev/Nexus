@@ -42,6 +42,9 @@ export interface DeviceTelemetryUpdate {
   isAppLockEnabled?: boolean;
   grantedPermissionsCount?: number;
   totalPermissionsCount?: number;
+  updateAvailable?: boolean;
+  latestAvailableVersion?: string | null;
+  updateReleaseUrl?: string | null;
 }
 
 /**
@@ -74,6 +77,9 @@ export interface LastDeviceTelemetrySnapshot {
   isAppLockEnabled?: boolean;
   grantedPermissionsCount?: number;
   totalPermissionsCount?: number;
+  updateAvailable?: boolean;
+  latestAvailableVersion?: string | null;
+  updateReleaseUrl?: string | null;
 }
 
 /**
@@ -160,6 +166,10 @@ export interface DeviceInfo {
   /** Number of granted permissions out of total managed permissions */
   grantedPermissionsCount?: number;
   totalPermissionsCount?: number;
+  /** Whether a newer stable Nexus Child APK exists on GitHub */
+  updateAvailable?: boolean;
+  latestAvailableVersion?: string | null;
+  updateReleaseUrl?: string | null;
 }
 
 export type DeviceChangeListener = () => void;
@@ -263,6 +273,22 @@ class DeviceStateManager {
             grantedPermissionsCount: packet.grantedPermissionsCount,
             totalPermissionsCount: packet.totalPermissionsCount,
           });
+        } else if (
+          packet &&
+          (packet.type === 'CHILD_UPDATE_STATUS' || packet.type === 'CHILD_UPDATE_AVAILABLE')
+        ) {
+          const available =
+            packet.type === 'CHILD_UPDATE_AVAILABLE'
+              ? packet.updateAvailable !== false
+              : Boolean(packet.updateAvailable);
+          this.updateTelemetry({
+            appVersion: typeof packet.currentVersion === 'string' && packet.currentVersion
+              ? packet.currentVersion
+              : undefined,
+            updateAvailable: available,
+            latestAvailableVersion: available ? (packet.latestVersion ?? null) : null,
+            updateReleaseUrl: available ? (packet.releaseUrl ?? null) : null,
+          });
         }
       } catch {
         // Plain text or unformatted command
@@ -334,6 +360,9 @@ class DeviceStateManager {
       isAppLockEnabled: info.isAppLockEnabled,
       grantedPermissionsCount: info.grantedPermissionsCount,
       totalPermissionsCount: info.totalPermissionsCount,
+      updateAvailable: info.updateAvailable,
+      latestAvailableVersion: info.latestAvailableVersion,
+      updateReleaseUrl: info.updateReleaseUrl,
     };
   }
 
@@ -598,6 +627,15 @@ class DeviceStateManager {
     }
     if (telemetry.totalPermissionsCount !== undefined) {
       this.currentDevice.totalPermissionsCount = telemetry.totalPermissionsCount;
+    }
+    if (telemetry.updateAvailable !== undefined) {
+      this.currentDevice.updateAvailable = telemetry.updateAvailable;
+    }
+    if (telemetry.latestAvailableVersion !== undefined) {
+      this.currentDevice.latestAvailableVersion = telemetry.latestAvailableVersion;
+    }
+    if (telemetry.updateReleaseUrl !== undefined) {
+      this.currentDevice.updateReleaseUrl = telemetry.updateReleaseUrl;
     }
 
     this.currentDevice.lastSeen = 'Just now';

@@ -43,8 +43,24 @@ class NexusUiFlowsTest {
         // 2. Phase 2 Connected Dashboard appears
         composeRule.onNodeWithText("Device Connected & Monitoring Ready").assertIsDisplayed()
 
-        // 3. Open Push Drawer and select Camera Feed
+        // 3. Verify Child Needs Update sign appears inside left-drawer telemetry dropdown
+        stateHolder.onTelemetryUpdated(
+            record = stateHolder.uiState.value.connectedDevice!!.copy(
+                telemetry = stateHolder.uiState.value.connectedDevice!!.telemetry.copy(
+                    appVersion = "0.1.0-alpha",
+                    updateAvailable = true,
+                    latestAvailableVersion = "0.1.0"
+                )
+            ),
+            history = stateHolder.uiState.value.pairedDevicesHistory
+        )
         composeRule.onNodeWithTag("capsule_menu_btn").performClick()
+        composeRule.onNodeWithTag("drawer_pair_btn_update_badge").assertIsDisplayed()
+        composeRule.onNodeWithText("4821 9402 1104").performClick()
+        composeRule.onNodeWithTag("device_popover_update_banner").assertIsDisplayed()
+        composeRule.onNodeWithText("Child Needs Update").assertIsDisplayed()
+
+        // 4. Select Camera Feed from open Drawer
         composeRule.onNodeWithTag("drawer_item_camera").performClick()
         composeRule.onNodeWithText("LENS: REAR").assertIsDisplayed()
 

@@ -192,7 +192,10 @@ data class DeviceTelemetry(
     val securityGuardsText: String = "App Lock Off • Visible",
     val grantedPermissionsCount: Int = 0,
     val totalPermissionsCount: Int = 0,
-    val survivalPermissionsText: String = "Unknown"
+    val survivalPermissionsText: String = "Unknown",
+    val updateAvailable: Boolean = false,
+    val latestAvailableVersion: String? = null,
+    val updateReleaseUrl: String? = null
 )
 
 data class DeviceRecord(

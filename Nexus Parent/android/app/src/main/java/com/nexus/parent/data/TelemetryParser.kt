@@ -39,6 +39,13 @@ data class DeviceTelemetryUpdate(
     val totalPermissionsCount: Int? = null
 )
 
+data class ChildUpdateStatusPacket(
+    val updateAvailable: Boolean,
+    val currentVersion: String? = null,
+    val latestVersion: String? = null,
+    val releaseUrl: String? = null
+)
+
 /**
  * TelemetryParser.kt - Parses and formats the 27-field telemetry packet matching Desktop `device-state.ts`.
  */
@@ -172,6 +179,41 @@ object TelemetryParser {
             model = nextModel,
             lastSyncedLabel = "Just now",
             telemetry = nextTelemetry
+        )
+    }
+
+    fun parseChildUpdatePacket(rawMessage: String): ChildUpdateStatusPacket? {
+        val trimmed = rawMessage.trim()
+        if (!trimmed.startsWith("{")) return null
+
+        return runCatching {
+            val json = JSONObject(trimmed)
+            val type = json.optString("type")
+            if (type != "CHILD_UPDATE_STATUS" && type != "CHILD_UPDATE_AVAILABLE") return null
+
+            val available = if (type == "CHILD_UPDATE_AVAILABLE") {
+                json.optNullableBoolean("updateAvailable") ?: true
+            } else {
+                json.optBoolean("updateAvailable", false)
+            }
+            ChildUpdateStatusPacket(
+                updateAvailable = available,
+                currentVersion = json.optNullableString("currentVersion")?.takeIf { it.isNotBlank() },
+                latestVersion = json.optNullableString("latestVersion")?.takeIf { it.isNotBlank() },
+                releaseUrl = json.optNullableString("releaseUrl")?.takeIf { it.isNotBlank() }
+            )
+        }.getOrNull()
+    }
+
+    fun applyChildUpdateStatus(current: DeviceRecord, packet: ChildUpdateStatusPacket): DeviceRecord {
+        val nextAppVer = packet.currentVersion ?: current.telemetry.appVersion
+        return current.copy(
+            telemetry = current.telemetry.copy(
+                appVersion = nextAppVer,
+                updateAvailable = packet.updateAvailable,
+                latestAvailableVersion = if (packet.updateAvailable) packet.latestVersion else null,
+                updateReleaseUrl = if (packet.updateAvailable) packet.releaseUrl else null
+            )
         )
     }
 

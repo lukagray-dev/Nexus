@@ -314,7 +314,8 @@ private fun PairStatusButton(
             isConnected -> {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_nexus_child),
@@ -328,6 +329,15 @@ private fun PairStatusButton(
                         maxLines = 1
                     )
                     StatusPulseDot(color = NexusColors.LiveGreen, size = 7.dp)
+                    if (state.connectedDevice.telemetry.updateAvailable) {
+                        TacticalBadgePill(
+                            text = "Update",
+                            textColor = NexusColors.WarningAmber,
+                            backgroundColor = NexusColors.WarningAmberSubtle,
+                            borderColor = NexusColors.WarningAmberBorder,
+                            modifier = Modifier.testTag("drawer_pair_btn_update_badge")
+                        )
+                    }
                 }
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chevron_down),

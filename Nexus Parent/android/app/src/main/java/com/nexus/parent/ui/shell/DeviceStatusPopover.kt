@@ -2,6 +2,7 @@ package com.nexus.parent.ui.shell
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nexus.parent.R
@@ -144,6 +146,45 @@ fun DeviceStatusPopover(
                 TelemetryRow("Network", device.telemetry.networkState)
                 TelemetryRow("Storage", device.telemetry.storageUsageText)
                 TelemetryRow("Status", "Online", valueColor = NexusColors.LiveGreen)
+
+                if (device.telemetry.updateAvailable) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val targetVer = device.telemetry.latestAvailableVersion?.let { "v$it" } ?: "New release"
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(NexusDimens.RadiusSm))
+                            .background(NexusColors.WarningAmberSubtle)
+                            .border(
+                                NexusDimens.BorderHairline,
+                                NexusColors.WarningAmberBorder,
+                                RoundedCornerShape(NexusDimens.RadiusSm)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                            .testTag("device_popover_update_banner"),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_info),
+                            contentDescription = "Update Available",
+                            tint = NexusColors.WarningAmber,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Child Needs Update",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = NexusColors.WarningAmber
+                            )
+                            Text(
+                                text = "$targetVer available (running v${device.telemetry.appVersion})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = NexusColors.TextSecondary
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider(color = NexusColors.BorderSubtle)

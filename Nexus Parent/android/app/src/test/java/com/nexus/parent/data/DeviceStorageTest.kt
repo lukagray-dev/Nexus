@@ -31,7 +31,13 @@ class DeviceStorageTest {
             model = "Pixel 7",
             lastSyncedLabel = "Online",
             lastConnectedAt = 1000L,
-            telemetry = DeviceTelemetry(batteryPercent = 55, isStealthMode = true)
+            telemetry = DeviceTelemetry(
+                batteryPercent = 55,
+                isStealthMode = true,
+                updateAvailable = true,
+                latestAvailableVersion = "0.2.0",
+                updateReleaseUrl = "https://github.com/lukagray-dev/Nexus/releases/tag/v0.2.0"
+            )
         )
         val dev2 = DeviceRecord(
             rawId = "444455556666",
@@ -56,6 +62,8 @@ class DeviceStorageTest {
         assertEquals("111122223333", history[0].rawId)
         assertEquals(49, history[0].telemetry.batteryPercent)
         assertTrue(history[0].telemetry.isStealthMode)
+        assertTrue(history[0].telemetry.updateAvailable)
+        assertEquals("0.2.0", history[0].telemetry.latestAvailableVersion)
         assertEquals("444455556666", history[1].rawId)
         assertEquals("111122223333", storage.loadLastConnectedDevice()?.rawId)
 

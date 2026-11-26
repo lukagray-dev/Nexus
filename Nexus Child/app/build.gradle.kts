@@ -32,8 +32,13 @@ android {
         applicationId = "com.nexus.child"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-alpha"
+        val releaseVersionCode = (findProperty("nexusVersionCode") as? String)?.toIntOrNull() ?: 1
+        val releaseVersionName = (findProperty("nexusVersionName") as? String)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "0.1.0-alpha"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

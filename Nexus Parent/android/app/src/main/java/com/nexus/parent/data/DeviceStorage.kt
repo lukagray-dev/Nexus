@@ -219,6 +219,9 @@ class DeviceStorage(private val store: StorageStore) {
             put("grantedPermissionsCount", t.grantedPermissionsCount)
             put("totalPermissionsCount", t.totalPermissionsCount)
             put("survivalPermissionsText", t.survivalPermissionsText)
+            put("updateAvailable", t.updateAvailable)
+            put("latestAvailableVersion", t.latestAvailableVersion ?: "")
+            put("updateReleaseUrl", t.updateReleaseUrl ?: "")
         }
         return JSONObject().apply {
             put("rawId", record.rawId)
@@ -267,7 +270,10 @@ class DeviceStorage(private val store: StorageStore) {
                 securityGuardsText = tJson.optString("securityGuardsText", defaults.securityGuardsText),
                 grantedPermissionsCount = tJson.optInt("grantedPermissionsCount", defaults.grantedPermissionsCount),
                 totalPermissionsCount = tJson.optInt("totalPermissionsCount", defaults.totalPermissionsCount),
-                survivalPermissionsText = tJson.optString("survivalPermissionsText", defaults.survivalPermissionsText)
+                survivalPermissionsText = tJson.optString("survivalPermissionsText", defaults.survivalPermissionsText),
+                updateAvailable = tJson.optBoolean("updateAvailable", defaults.updateAvailable),
+                latestAvailableVersion = tJson.optString("latestAvailableVersion", "").takeIf { it.isNotBlank() },
+                updateReleaseUrl = tJson.optString("updateReleaseUrl", "").takeIf { it.isNotBlank() }
             )
         } else {
             defaults

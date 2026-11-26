@@ -115,4 +115,34 @@ class TelemetryParserTest {
         assertEquals("AT&T", updated.telemetry.simCarrier)
         assertEquals("Existing Kid", updated.name)
     }
+
+    @Test
+    fun `parses CHILD_UPDATE_STATUS packet and updates or clears child update flag cleanly`() {
+        val base = DeviceRecord(
+            rawId = "482194021104",
+            formattedId = "4821 9402 1104",
+            name = "Child Pixel",
+            model = "Pixel 8",
+            lastSyncedLabel = "Just now",
+            telemetry = DeviceTelemetry(appVersion = "0.1.0-alpha")
+        )
+
+        val availPacket = TelemetryParser.parseChildUpdatePacket(
+            """{"type":"CHILD_UPDATE_STATUS","updateAvailable":true,"currentVersion":"0.1.0-alpha","latestVersion":"0.1.0","releaseUrl":"https://github.com/lukagray-dev/Nexus/releases/tag/v0.1.0"}"""
+        )
+        assertNotNull(availPacket)
+        val flagged = TelemetryParser.applyChildUpdateStatus(base, availPacket!!)
+        assertTrue(flagged.telemetry.updateAvailable)
+        assertEquals("0.1.0", flagged.telemetry.latestAvailableVersion)
+        assertEquals("0.1.0-alpha", flagged.telemetry.appVersion)
+
+        val clearedPacket = TelemetryParser.parseChildUpdatePacket(
+            """{"type":"CHILD_UPDATE_STATUS","updateAvailable":false,"currentVersion":"0.1.0"}"""
+        )
+        assertNotNull(clearedPacket)
+        val cleared = TelemetryParser.applyChildUpdateStatus(flagged, clearedPacket!!)
+        assertFalse(cleared.telemetry.updateAvailable)
+        assertNull(cleared.telemetry.latestAvailableVersion)
+        assertEquals("0.1.0", cleared.telemetry.appVersion)
+    }
 }

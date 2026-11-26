@@ -257,6 +257,20 @@ function setupPairDeviceButton(): void {
   };
 
   /**
+   * Builds the HTML for the left-sidebar telemetry dropdown's child-update indicator banner.
+   */
+  const buildChildUpdateBannerHtml = (device: NonNullable<ReturnType<typeof deviceState.getConnectedDevice>>): string => {
+    if (!device.updateAvailable) return '';
+    const desc = device.latestAvailableVersion
+      ? `v${device.latestAvailableVersion} available (running v${device.appVersion || '?'})`
+      : 'Newer stable release available';
+    return `<div class="dropdown-update-banner" id="dropdown-child-update-banner">
+           <span class="dropdown-update-title">Child Needs Update</span>
+           <span class="dropdown-update-desc">${desc}</span>
+         </div>`;
+  };
+
+  /**
    * Renders the Connected Device Information popover with telemetry and disconnect button.
    */
   const renderDropdown = () => {
@@ -274,6 +288,7 @@ function setupPairDeviceButton(): void {
 
     const osText = device.androidVersion ? `Android ${device.androidVersion}` : 'Android';
     const storageText = device.storageUsageText || 'Calculating...';
+    const updateNoticeHtml = buildChildUpdateBannerHtml(device);
 
     dropdownEl.innerHTML = `
       <div class="dropdown-telemetry-header">
@@ -298,6 +313,7 @@ function setupPairDeviceButton(): void {
           <span class="dropdown-stat-value" style="color: #22c55e;">Online</span>
         </div>
       </div>
+      ${updateNoticeHtml}
       <div class="dropdown-separator"></div>
       <button id="btn-dropdown-disconnect" class="dropdown-disconnect-btn" title="Disconnect Child Device">
         <img src="assets/icons/main-content/connection-state/unlink.svg" alt="" style="width: 12px; height: 12px;" />
@@ -360,12 +376,18 @@ function setupPairDeviceButton(): void {
     } else if (isConnected && device) {
       // Normal connected state
       pairBtn.className = 'btn-sidebar-primary btn-sidebar-connected';
-      pairBtn.title = `Connected to ${device.name} (${device.id})`;
+      pairBtn.title = device.updateAvailable
+        ? `Connected to ${device.name} (${device.id}) — Child update available`
+        : `Connected to ${device.name} (${device.id})`;
+      const btnUpdateBadge = device.updateAvailable
+        ? `<span class="sidebar-child-update-pill" title="Child needs update">Update</span>`
+        : '';
       pairBtn.innerHTML = `
         <div class="btn-sidebar-primary-left">
           <img src="assets/logo/nexus-child.svg" alt="Nexus Child Logo" style="width: 14px; height: 14px; object-fit: contain;" />
           <span class="device-btn-id">${device.id}</span>
           <span class="status-pulse-dot active" title="Device is online"></span>
+          ${btnUpdateBadge}
         </div>
         <span class="sidebar-caret">▼</span>
       `;
@@ -406,6 +428,20 @@ function setupPairDeviceButton(): void {
               <span class="dropdown-stat-value" style="color: #22c55e;">Online</span>
             </div>
           `;
+        }
+
+        // Sync live Child Update Banner inside an already-open telemetry dropdown.
+        const existingBanner = dropdownEl.querySelector('#dropdown-child-update-banner');
+        const nextBannerHtml = buildChildUpdateBannerHtml(device);
+        if (nextBannerHtml) {
+          if (existingBanner) {
+            existingBanner.outerHTML = nextBannerHtml;
+          } else {
+            const sep = dropdownEl.querySelector('.dropdown-separator');
+            sep?.insertAdjacentHTML('beforebegin', nextBannerHtml);
+          }
+        } else {
+          existingBanner?.remove();
         }
       }
     } else {
