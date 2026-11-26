@@ -32,30 +32,43 @@ private class FakeMicMediaBridge : MicMediaBridge {
     var voiceRouteEngaged = false
     var speechFgsActive = false
     var lastNoiseSuppression = true
+    var lastInputDeviceId = "default"
+    var lastOutputDeviceId = "default"
+    var simulateInputFallback = false
+    var simulateOutputFallback = false
     var failNextStartOutbound = false
 
     override fun setRemoteAudioEnabled(enabled: Boolean) {
         remoteAudioPlaying = enabled
     }
 
-    override fun startOutboundAudioTrack(noiseSuppression: Boolean): Boolean {
-        if (failNextStartOutbound) return false
+    override fun startOutboundAudioTrack(noiseSuppression: Boolean, inputDeviceId: String): AudioCaptureApplyResult {
+        if (failNextStartOutbound) return AudioCaptureApplyResult(success = false)
         outboundActive = true
         lastNoiseSuppression = noiseSuppression
-        return true
+        lastInputDeviceId = inputDeviceId
+        return AudioCaptureApplyResult(success = true, fellBackToDefault = simulateInputFallback)
     }
 
     override fun stopOutboundAudioTrack() {
         outboundActive = false
     }
 
-    override fun reconfigureOutboundAudio(noiseSuppression: Boolean): Boolean {
+    override fun reconfigureOutboundAudio(noiseSuppression: Boolean, inputDeviceId: String): AudioCaptureApplyResult {
         lastNoiseSuppression = noiseSuppression
-        return true
+        lastInputDeviceId = inputDeviceId
+        return AudioCaptureApplyResult(success = true, fellBackToDefault = simulateInputFallback)
     }
 
-    override fun engageVoiceRoute() {
+    override fun engageVoiceRoute(outputDeviceId: String): AudioRouteApplyResult {
         voiceRouteEngaged = true
+        lastOutputDeviceId = outputDeviceId
+        return AudioRouteApplyResult(fellBackToDefault = simulateOutputFallback)
+    }
+
+    override fun applyOutputRoute(outputDeviceId: String): AudioRouteApplyResult {
+        lastOutputDeviceId = outputDeviceId
+        return AudioRouteApplyResult(fellBackToDefault = simulateOutputFallback)
     }
 
     override fun releaseVoiceRoute() {
@@ -256,5 +269,48 @@ class MicCoordinatorTest {
         assertEquals(MonitoringState.IDLE, holder.uiState.value.mic.speakState)
         assertFalse(bridge.outboundActive)
         assertFalse(bridge.remoteAudioPlaying)
+    }
+
+    @Test
+    fun `input and output device changes apply live during STARTING and LIVE and notify fallback`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val scope = TestScope(dispatcher)
+        val bridge = FakeMicMediaBridge()
+        val sentCommands = mutableListOf<String>()
+
+        val coordinator = MicCoordinator(
+            scope = scope,
+            mediaBridge = bridge,
+            sendCommand = { cmd -> sentCommands.add(cmd); true },
+            onPersistSettings = {}
+        )
+        val holder = ParentStateHolder()
+        coordinator.attachStateHolder(holder)
+        scope.runCurrent()
+
+        // Start listening and switch output device to Phone Earpiece while STARTING
+        coordinator.toggleListen()
+        assertEquals(MonitoringState.STARTING, holder.uiState.value.mic.listenState)
+
+        val earpieceSettings = holder.uiState.value.settings.copy(outputDeviceId = "builtin_earpiece")
+        holder.applyPersistedSettingsSnapshot(earpieceSettings)
+        coordinator.onSettingsUpdated(earpieceSettings)
+        assertEquals("builtin_earpiece", bridge.lastOutputDeviceId)
+
+        // Start speaking while STARTING -> change loudspeaker volume and input mic
+        coordinator.toggleSpeak(hasRecordAudioPermission = true)
+        assertEquals(MonitoringState.STARTING, holder.uiState.value.mic.speakState)
+
+        bridge.simulateInputFallback = true
+        val customMicSettings = earpieceSettings.copy(
+            inputDeviceId = "usb_mic:missing_usb",
+            loudspeakerVolume = LoudspeakerVolume.NORMAL
+        )
+        holder.applyPersistedSettingsSnapshot(customMicSettings)
+        coordinator.onSettingsUpdated(customMicSettings)
+
+        assertEquals("usb_mic:missing_usb", bridge.lastInputDeviceId)
+        assertTrue(sentCommands.contains("PARENT_AUDIO_VOLUME:normal"))
+        assertEquals("Saved microphone disconnected — using System Default", holder.uiState.value.toastMessage)
     }
 }

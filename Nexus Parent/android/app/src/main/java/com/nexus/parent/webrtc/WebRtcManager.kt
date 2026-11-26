@@ -1,6 +1,7 @@
 package com.nexus.parent.webrtc
 
 import android.content.Context
+import android.media.AudioDeviceInfo
 import android.util.Log
 import com.nexus.parent.media.mic.AudioSpectrumAnalyzer
 import com.nexus.parent.media.mic.VoiceChangerDspEngine
@@ -178,11 +179,15 @@ class WebRtcManager(context: Context) {
      * audio transceiver sender without triggering SDP renegotiation.
      */
     @Synchronized
-    fun startOutboundAudioTrack(noiseSuppression: Boolean): Boolean {
+    fun startOutboundAudioTrack(
+        noiseSuppression: Boolean,
+        preferredInput: AudioDeviceInfo? = null
+    ): Boolean {
         val transceiver = audioTransceiver ?: return false
         stopOutboundAudioTrack()
 
         return runCatching {
+            runCatching { audioDeviceModule.setPreferredInputDevice(preferredInput) }
             runCatching { audioDeviceModule.setNoiseSuppressorEnabled(noiseSuppression) }
             val constraints = buildAudioConstraints(noiseSuppression)
             val source = peerConnectionFactory.createAudioSource(constraints)
@@ -213,6 +218,7 @@ class WebRtcManager(context: Context) {
 
     @Synchronized
     fun stopOutboundAudioTrack() {
+        runCatching { audioDeviceModule.setPreferredInputDevice(null) }
         runCatching {
             audioTransceiver?.sender?.setTrack(null, false)
         }
@@ -229,9 +235,15 @@ class WebRtcManager(context: Context) {
     }
 
     @Synchronized
-    fun reconfigureOutboundAudio(noiseSuppression: Boolean): Boolean {
-        if (localAudioTrack == null) return true
-        return startOutboundAudioTrack(noiseSuppression)
+    fun reconfigureOutboundAudio(
+        noiseSuppression: Boolean,
+        preferredInput: AudioDeviceInfo? = null
+    ): Boolean {
+        if (localAudioTrack == null) {
+            runCatching { audioDeviceModule.setPreferredInputDevice(preferredInput) }
+            return true
+        }
+        return startOutboundAudioTrack(noiseSuppression, preferredInput)
     }
 
     private fun buildAudioConstraints(noiseSuppression: Boolean): MediaConstraints {

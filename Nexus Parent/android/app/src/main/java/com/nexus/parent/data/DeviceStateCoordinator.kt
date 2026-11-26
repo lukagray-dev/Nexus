@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.nexus.parent.data.alerts.GeneralAlertsController
 import com.nexus.parent.data.alerts.SafetyAlertDispatcher
+import com.nexus.parent.data.mic.AudioDeviceCatalog
 import com.nexus.parent.data.mic.MicCoordinator
 import com.nexus.parent.data.mic.ParentAudioRouteManager
 import com.nexus.parent.data.mic.WebRtcMicMediaBridge
@@ -56,7 +57,8 @@ class DeviceStateCoordinator(
 
     private val appContext = context.applicationContext
     private val reconnectManager = ReconnectManager(scope)
-    private val audioRouteManager = ParentAudioRouteManager(appContext)
+    val audioDeviceCatalog = AudioDeviceCatalog(appContext)
+    private val audioRouteManager = ParentAudioRouteManager(appContext, audioDeviceCatalog)
     private val startupAttempted = AtomicBoolean(false)
 
     val alertsController: GeneralAlertsController = GeneralAlertsController(
@@ -101,7 +103,10 @@ class DeviceStateCoordinator(
     val surveillanceCoordinator: SurveillanceCoordinator = SurveillanceCoordinator(
         appContext = appContext,
         scope = scope,
-        webRtcManager = webRtcManager
+        webRtcManager = webRtcManager,
+        resolvePreferredMediaOutput = { deviceId ->
+            audioDeviceCatalog.resolveOutputDevice(deviceId, preferVoiceProfile = false)
+        }
     )
 
     val micCoordinator: MicCoordinator = MicCoordinator(
@@ -109,6 +114,7 @@ class DeviceStateCoordinator(
         mediaBridge = WebRtcMicMediaBridge(
             webRtcManager = webRtcManager,
             routeManager = audioRouteManager,
+            catalog = audioDeviceCatalog,
             onSpeechFgsChanged = { active ->
                 includeMicFgsType = active
                 val activeDev = activeSessionDevice
@@ -142,6 +148,7 @@ class DeviceStateCoordinator(
         configureReconnectManager()
         observeWebRtcStreams()
         observeReconnectState()
+        observeAudioDevices()
     }
 
     fun attachStateHolder(holder: ParentStateHolder) {
@@ -152,18 +159,38 @@ class DeviceStateCoordinator(
         micCoordinator.attachStateHolder(holder)
     }
 
+    fun refreshAudioDevices() {
+        val snap = audioDeviceCatalog.refresh()
+        stateHolder?.updateAudioDevices(snap.inputs, snap.outputs)
+        audioRouteManager.refreshActiveRouteIfNeeded()
+        surveillanceCoordinator.refreshAudioOutputDevice()
+    }
+
     fun buildInitialUiState(): ParentUiState {
         val settings = storage.loadSettings()
         val last = storage.loadLastConnectedDevice()
         val history = storage.loadPairedDevicesHistory()
+        val audioSnap = audioDeviceCatalog.snapshot.value
         return ParentUiState(
             settings = settings,
+            availableAudioInputs = audioSnap.inputs,
+            availableAudioOutputs = audioSnap.outputs,
             lastPairedDevice = last,
             pairedDevicesHistory = history,
             camera = com.nexus.parent.state.CameraFeedUiState(lens = settings.preferredCameraLens),
             screen = com.nexus.parent.state.ScreenFeedUiState(quality = settings.screenQuality),
             mic = com.nexus.parent.state.MicUiState(selectedVoice = settings.defaultVoicePreset)
         )
+    }
+
+    private fun observeAudioDevices() {
+        scope.launch {
+            audioDeviceCatalog.snapshot.collect { snap ->
+                stateHolder?.updateAudioDevices(snap.inputs, snap.outputs)
+                audioRouteManager.refreshActiveRouteIfNeeded()
+                surveillanceCoordinator.refreshAudioOutputDevice()
+            }
+        }
     }
 
     fun getEglBaseContext(): EglBase.Context = webRtcManager.getEglBaseContext()

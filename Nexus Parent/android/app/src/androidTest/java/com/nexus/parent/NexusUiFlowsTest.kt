@@ -53,8 +53,11 @@ class NexusUiFlowsTest {
         composeRule.onNodeWithTag("floating_mic_hud").assertIsDisplayed()
         composeRule.onNodeWithTag("mic_hud_close_btn").performClick()
 
-        // 5. Open Settings, switch tabs, inspect paired device detail & back button, and close
+        // 5. Open Settings, switch tabs (Audio & Intercom + Surveillance + Devices), inspect paired device detail & back button, and close
         composeRule.onNodeWithTag("capsule_settings_btn").performClick()
+        composeRule.onNodeWithTag("settings_tab_audio").performClick()
+        composeRule.onNodeWithText("Microphone Input Device").assertIsDisplayed()
+        composeRule.onNodeWithText("Monitoring Output Speaker").assertIsDisplayed()
         composeRule.onNodeWithTag("settings_tab_surveillance").performClick()
         composeRule.onNodeWithText("Rolling DVR Buffer Duration").assertIsDisplayed()
         composeRule.onNodeWithTag("settings_tab_devices").performClick()

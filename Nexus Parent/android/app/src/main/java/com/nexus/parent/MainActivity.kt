@@ -413,6 +413,29 @@ fun NexusParentRoot(
                 stateHolder.showToast("Folder picker requires active Android runtime")
             }
         },
+        hasRecordAudioPermission = !hasLiveCoordinator ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED,
+        onDetectOrRefreshInputs = {
+            val hasPerm = !hasLiveCoordinator ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECORD_AUDIO
+                ) == PackageManager.PERMISSION_GRANTED
+            stateHolder.refreshAudioDevices()
+            if (!hasPerm && hasLiveCoordinator) {
+                recordAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            } else {
+                stateHolder.showToast("Microphone devices refreshed")
+            }
+        },
+        onRefreshOutputs = {
+            stateHolder.refreshAudioDevices()
+            stateHolder.showToast("Output devices refreshed")
+        },
+        onShowToast = stateHolder::showToast,
         onSelectPairedDevice = stateHolder::selectPairedDevice,
         onClearSelectedPairedDevice = stateHolder::clearSelectedPairedDevice,
         onConnectPairedDevice = { targetId ->

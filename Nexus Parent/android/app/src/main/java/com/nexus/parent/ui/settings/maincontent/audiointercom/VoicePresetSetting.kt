@@ -33,7 +33,8 @@ import com.nexus.parent.ui.theme.NexusDimens
 @Composable
 fun VoicePresetSetting(
     selectedPreset: VoicePresetId,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -72,6 +73,7 @@ fun VoicePresetSetting(
                         )
                         .clickable {
                             onUpdateSettings { it.copy(defaultVoicePreset = preset) }
+                            onShowToast("Intercom voice set to ${preset.displayName}")
                         }
                         .padding(horizontal = 10.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,

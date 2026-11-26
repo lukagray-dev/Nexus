@@ -112,6 +112,8 @@ class DeviceStorage(private val store: StorageStore) {
                 defaultVoicePreset = enumOrDefault(j.optString("defaultVoicePreset"), defaults.defaultVoicePreset),
                 noiseSuppression = j.optBoolean("noiseSuppression", defaults.noiseSuppression),
                 loudspeakerVolume = enumOrDefault(j.optString("loudspeakerVolume"), defaults.loudspeakerVolume),
+                inputDeviceId = j.optString("inputDeviceId", defaults.inputDeviceId).ifBlank { defaults.inputDeviceId },
+                outputDeviceId = j.optString("outputDeviceId", defaults.outputDeviceId).ifBlank { defaults.outputDeviceId },
                 screenQuality = enumOrDefault(j.optString("screenQuality"), defaults.screenQuality),
                 preferredCameraLens = enumOrDefault(j.optString("preferredCameraLens"), defaults.preferredCameraLens),
                 dvrBufferDuration = enumOrDefault(j.optString("dvrBufferDuration"), defaults.dvrBufferDuration),
@@ -134,6 +136,8 @@ class DeviceStorage(private val store: StorageStore) {
             put("defaultVoicePreset", settings.defaultVoicePreset.name)
             put("noiseSuppression", settings.noiseSuppression)
             put("loudspeakerVolume", settings.loudspeakerVolume.name)
+            put("inputDeviceId", settings.inputDeviceId)
+            put("outputDeviceId", settings.outputDeviceId)
             put("screenQuality", settings.screenQuality.name)
             put("preferredCameraLens", settings.preferredCameraLens.name)
             put("dvrBufferDuration", settings.dvrBufferDuration.name)

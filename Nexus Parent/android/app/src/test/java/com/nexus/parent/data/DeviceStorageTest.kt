@@ -71,6 +71,8 @@ class DeviceStorageTest {
             defaultVoicePreset = VoicePresetId.ROBOT_FEMALE,
             noiseSuppression = false,
             loudspeakerVolume = LoudspeakerVolume.NORMAL,
+            inputDeviceId = "usb_mic:rode_nt_usb",
+            outputDeviceId = "builtin_earpiece",
             screenQuality = ScreenQuality.P540,
             preferredCameraLens = CameraLens.FRONT,
             dvrBufferDuration = DvrDuration.M60,

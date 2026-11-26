@@ -1,6 +1,7 @@
 package com.nexus.parent.media
 
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.MediaCodec
@@ -70,6 +71,19 @@ class OpusAudioPlayer {
     private var audioTrack: AudioTrack? = null
     private var presentationUs: Long = 0L
 
+    @Volatile
+    private var preferredOutputDevice: AudioDeviceInfo? = null
+
+    fun setPreferredOutputDevice(device: AudioDeviceInfo?) {
+        preferredOutputDevice = device
+        if (executor.isShutdown) return
+        executor.execute {
+            runCatching {
+                audioTrack?.setPreferredDevice(device)
+            }
+        }
+    }
+
     fun start() {
         if (isActive.get()) return
         executor.execute {
@@ -136,6 +150,7 @@ class OpusAudioPlayer {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
             track.setVolume(if (isMuted.get()) 0f else 1f)
+            track.setPreferredDevice(preferredOutputDevice)
             track.play()
 
             val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, SAMPLE_RATE, CHANNELS).apply {

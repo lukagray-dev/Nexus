@@ -11,16 +11,18 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSegmentedRow
 @Composable
 fun LoudspeakerVolumeSetting(
     selectedVolume: LoudspeakerVolume,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     SettingsSegmentedRow(
         title = "Child Loudspeaker Target Volume",
-        subtitle = "Volume level enforced on child device speaker during Push-to-Talk.",
+        subtitle = "Hardware volume level enforced on child device speaker during Push-to-Talk.",
         options = LoudspeakerVolume.entries,
         selected = selectedVolume,
         labelProvider = { it.label },
         onSelect = { volume ->
             onUpdateSettings { it.copy(loudspeakerVolume = volume) }
+            onShowToast("Child loudspeaker target set to ${volume.label}")
         }
     )
 }

@@ -19,6 +19,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+data class AudioCaptureApplyResult(
+    val success: Boolean,
+    val fellBackToDefault: Boolean = false
+)
+
 /**
  * MicMediaBridge - Abstraction decoupling [MicCoordinator] from WebRTC/AudioManager hardware
  * so full protocol & DSP workflows can be tested deterministically on the JVM.
@@ -27,10 +32,11 @@ interface MicMediaBridge {
     val dspEngine: VoiceChangerDspEngine
     val spectrumAnalyzer: AudioSpectrumAnalyzer
     fun setRemoteAudioEnabled(enabled: Boolean)
-    fun startOutboundAudioTrack(noiseSuppression: Boolean): Boolean
+    fun startOutboundAudioTrack(noiseSuppression: Boolean, inputDeviceId: String): AudioCaptureApplyResult
     fun stopOutboundAudioTrack()
-    fun reconfigureOutboundAudio(noiseSuppression: Boolean): Boolean
-    fun engageVoiceRoute()
+    fun reconfigureOutboundAudio(noiseSuppression: Boolean, inputDeviceId: String): AudioCaptureApplyResult
+    fun engageVoiceRoute(outputDeviceId: String): AudioRouteApplyResult
+    fun applyOutputRoute(outputDeviceId: String): AudioRouteApplyResult
     fun releaseVoiceRoute()
     fun onSpeechServiceActive(active: Boolean)
 }
@@ -38,20 +44,44 @@ interface MicMediaBridge {
 class WebRtcMicMediaBridge(
     private val webRtcManager: WebRtcManager,
     private val routeManager: ParentAudioRouteManager,
+    private val catalog: AudioDeviceCatalog,
     private val onSpeechFgsChanged: (Boolean) -> Unit
 ) : MicMediaBridge {
     override val dspEngine: VoiceChangerDspEngine get() = webRtcManager.voiceChangerDsp
     override val spectrumAnalyzer: AudioSpectrumAnalyzer get() = webRtcManager.audioSpectrumAnalyzer
 
     override fun setRemoteAudioEnabled(enabled: Boolean) = webRtcManager.setRemoteAudioEnabled(enabled)
-    override fun startOutboundAudioTrack(noiseSuppression: Boolean): Boolean =
-        webRtcManager.startOutboundAudioTrack(noiseSuppression)
+
+    override fun startOutboundAudioTrack(
+        noiseSuppression: Boolean,
+        inputDeviceId: String
+    ): AudioCaptureApplyResult {
+        val normalized = inputDeviceId.trim().ifEmpty { AudioDeviceMapper.DEFAULT_DEVICE_ID }
+        val resolved = catalog.resolveInputDevice(normalized)
+        val fellBack = normalized != AudioDeviceMapper.DEFAULT_DEVICE_ID && resolved == null
+        val ok = webRtcManager.startOutboundAudioTrack(noiseSuppression, resolved)
+        return AudioCaptureApplyResult(success = ok, fellBackToDefault = fellBack)
+    }
 
     override fun stopOutboundAudioTrack() = webRtcManager.stopOutboundAudioTrack()
-    override fun reconfigureOutboundAudio(noiseSuppression: Boolean): Boolean =
-        webRtcManager.reconfigureOutboundAudio(noiseSuppression)
 
-    override fun engageVoiceRoute() = routeManager.engageVoiceRoute()
+    override fun reconfigureOutboundAudio(
+        noiseSuppression: Boolean,
+        inputDeviceId: String
+    ): AudioCaptureApplyResult {
+        val normalized = inputDeviceId.trim().ifEmpty { AudioDeviceMapper.DEFAULT_DEVICE_ID }
+        val resolved = catalog.resolveInputDevice(normalized)
+        val fellBack = normalized != AudioDeviceMapper.DEFAULT_DEVICE_ID && resolved == null
+        val ok = webRtcManager.reconfigureOutboundAudio(noiseSuppression, resolved)
+        return AudioCaptureApplyResult(success = ok, fellBackToDefault = fellBack)
+    }
+
+    override fun engageVoiceRoute(outputDeviceId: String): AudioRouteApplyResult =
+        routeManager.engageVoiceRoute(outputDeviceId)
+
+    override fun applyOutputRoute(outputDeviceId: String): AudioRouteApplyResult =
+        routeManager.applyOutputRoute(outputDeviceId)
+
     override fun releaseVoiceRoute() = routeManager.releaseVoiceRoute()
     override fun onSpeechServiceActive(active: Boolean) = onSpeechFgsChanged(active)
 }
@@ -217,15 +247,24 @@ class MicCoordinator(
 
         mediaBridge.dspEngine.setPreset(holder.uiState.value.mic.selectedVoice)
         mediaBridge.dspEngine.setBypass(false)
-        mediaBridge.engageVoiceRoute()
+        val routeResult = mediaBridge.engageVoiceRoute(settings.outputDeviceId)
         mediaBridge.onSpeechServiceActive(true)
 
-        val audioReady = mediaBridge.startOutboundAudioTrack(settings.noiseSuppression)
-        if (!audioReady) {
+        val captureResult = mediaBridge.startOutboundAudioTrack(
+            noiseSuppression = settings.noiseSuppression,
+            inputDeviceId = settings.inputDeviceId
+        )
+        if (!captureResult.success) {
             cleanupOutboundSpeakHardware(holder)
             holder.updateMicState { it.copy(speakState = MonitoringState.IDLE) }
             holder.showToast("Unable to capture microphone for broadcast")
             return
+        }
+
+        if (captureResult.fellBackToDefault) {
+            holder.showToast("Saved microphone disconnected — using System Default")
+        } else if (routeResult.fellBackToDefault) {
+            holder.showToast("Saved speaker disconnected — using System Default")
         }
 
         val cmd = MicProtocol.buildParentAudioUnmuteCommand(settings.loudspeakerVolume)
@@ -293,15 +332,30 @@ class MicCoordinator(
             holder.updateMicState { it.copy(selectedVoice = next.defaultVoicePreset) }
         }
 
-        val isSpeaking = holder.uiState.value.mic.speakState == MonitoringState.LIVE
+        val speakState = holder.uiState.value.mic.speakState
+        val listenState = holder.uiState.value.mic.listenState
+        val isSpeaking = speakState == MonitoringState.LIVE || speakState == MonitoringState.STARTING
+        val isListening = listenState == MonitoringState.LIVE || listenState == MonitoringState.STARTING
+
         if (isSpeaking && prev?.loudspeakerVolume != next.loudspeakerVolume) {
             sendCommand(MicProtocol.buildParentAudioVolumeCommand(next.loudspeakerVolume))
         }
 
-        if (isSpeaking && prev?.noiseSuppression != next.noiseSuppression) {
-            val ok = mediaBridge.reconfigureOutboundAudio(next.noiseSuppression)
-            if (!ok) {
-                holder.showToast("Unable to update noise suppression mid-speech")
+        if (isSpeaking &&
+            (prev?.noiseSuppression != next.noiseSuppression || prev?.inputDeviceId != next.inputDeviceId)
+        ) {
+            val captureResult = mediaBridge.reconfigureOutboundAudio(next.noiseSuppression, next.inputDeviceId)
+            if (!captureResult.success) {
+                holder.showToast("Unable to update microphone input settings mid-speech")
+            } else if (captureResult.fellBackToDefault) {
+                holder.showToast("Saved microphone disconnected — using System Default")
+            }
+        }
+
+        if ((isSpeaking || isListening) && prev?.outputDeviceId != next.outputDeviceId) {
+            val routeResult = mediaBridge.applyOutputRoute(next.outputDeviceId)
+            if (routeResult.fellBackToDefault) {
+                holder.showToast("Saved speaker disconnected — using System Default")
             }
         }
     }
@@ -323,7 +377,10 @@ class MicCoordinator(
         when {
             trimmed == MicProtocol.RESP_MIC_STARTED -> {
                 listenTimeoutJob?.cancel()
-                mediaBridge.engageVoiceRoute()
+                val routeResult = mediaBridge.engageVoiceRoute(holder.uiState.value.settings.outputDeviceId)
+                if (routeResult.fellBackToDefault) {
+                    holder.showToast("Saved speaker disconnected — using System Default")
+                }
                 mediaBridge.setRemoteAudioEnabled(true)
                 mediaBridge.spectrumAnalyzer.setListeningActive(true)
                 alertsController?.onMicListeningActivated()

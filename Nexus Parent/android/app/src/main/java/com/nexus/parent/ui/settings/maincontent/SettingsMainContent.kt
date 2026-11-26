@@ -18,6 +18,10 @@ fun SettingsMainContent(
     state: ParentUiState,
     onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
     onBrowseDownloadsFolder: () -> Unit = {},
+    hasRecordAudioPermission: Boolean = true,
+    onDetectOrRefreshInputs: () -> Unit = {},
+    onRefreshOutputs: () -> Unit = {},
+    onShowToast: (String) -> Unit = {},
     onSelectPairedDevice: (String) -> Unit,
     onClearSelectedPairedDevice: () -> Unit,
     onConnectPairedDevice: (String) -> Unit,
@@ -33,7 +37,13 @@ fun SettingsMainContent(
         )
         SettingsTabId.AUDIO -> AudioIntercomSection(
             settings = state.settings,
-            onUpdateSettings = onUpdateSettings
+            availableInputs = state.availableAudioInputs,
+            availableOutputs = state.availableAudioOutputs,
+            hasRecordAudioPermission = hasRecordAudioPermission,
+            onUpdateSettings = onUpdateSettings,
+            onDetectOrRefreshInputs = onDetectOrRefreshInputs,
+            onRefreshOutputs = onRefreshOutputs,
+            onShowToast = onShowToast
         )
         SettingsTabId.SURVEILLANCE -> SurveillanceDvrSection(
             settings = state.settings,

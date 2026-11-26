@@ -1,6 +1,7 @@
 package com.nexus.parent.data
 
 import android.content.Context
+import android.media.AudioDeviceInfo
 import android.net.Uri
 import android.util.Log
 import com.nexus.parent.media.ClipExportManager
@@ -45,7 +46,8 @@ data class PendingDocumentExportRequest(
 class SurveillanceCoordinator(
     private val appContext: Context,
     private val scope: CoroutineScope,
-    private val webRtcManager: WebRtcManager
+    private val webRtcManager: WebRtcManager,
+    private val resolvePreferredMediaOutput: ((String) -> AudioDeviceInfo?)? = null
 ) {
 
     companion object {
@@ -106,6 +108,19 @@ class SurveillanceCoordinator(
         if (prev?.screenQuality != next.screenQuality && holder.uiState.value.screen.state == MonitoringState.LIVE) {
             webRtcManager.sendCommand(SurveillanceProtocols.buildScreenQualityCommand(next.screenQuality))
         }
+
+        if (prev?.outputDeviceId != next.outputDeviceId) {
+            opusAudioPlayer.setPreferredOutputDevice(
+                resolvePreferredMediaOutput?.invoke(next.outputDeviceId)
+            )
+        }
+    }
+
+    fun refreshAudioOutputDevice() {
+        val outputId = stateHolder?.uiState?.value?.settings?.outputDeviceId ?: return
+        opusAudioPlayer.setPreferredOutputDevice(
+            resolvePreferredMediaOutput?.invoke(outputId)
+        )
     }
 
     // -------------------------------------------------------------------------
@@ -690,6 +705,9 @@ class SurveillanceCoordinator(
             if (holder.uiState.value.camera.state != MonitoringState.IDLE) {
                 resetCameraFeedToIdle(holder)
             }
+            opusAudioPlayer.setPreferredOutputDevice(
+                resolvePreferredMediaOutput?.invoke(holder.uiState.value.settings.outputDeviceId)
+            )
             opusAudioPlayer.start()
             opusAudioPlayer.setMuted(!holder.uiState.value.screen.isSystemAudioEnabled)
             webRtcManager.activeVideoTrack.value?.let { track ->

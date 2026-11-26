@@ -97,10 +97,16 @@ enum class ClipFormat(val label: String) {
 }
 
 enum class LoudspeakerVolume(val label: String) {
-    MAX("Max"),
-    HIGH("High"),
+    MAX("Max (100%)"),
+    HIGH("High (85%)"),
     NORMAL("Preserve")
 }
+
+data class AudioDeviceOption(
+    val id: String,
+    val label: String,
+    val kindLabel: String = ""
+)
 
 enum class VoicePresetId(val displayName: String, @param:DrawableRes val iconRes: Int) {
     ORIGINAL("Original", R.drawable.ic_voice_human_male),
@@ -540,6 +546,8 @@ data class SettingsValues(
     val defaultVoicePreset: VoicePresetId = VoicePresetId.ORIGINAL,
     val noiseSuppression: Boolean = true,
     val loudspeakerVolume: LoudspeakerVolume = LoudspeakerVolume.MAX,
+    val inputDeviceId: String = "default",
+    val outputDeviceId: String = "default",
     val screenQuality: ScreenQuality = ScreenQuality.P1080,
     val preferredCameraLens: CameraLens = CameraLens.REAR,
     val dvrBufferDuration: DvrDuration = DvrDuration.M30,
@@ -591,6 +599,8 @@ data class ParentUiState(
     val isSettingsOpen: Boolean = false,
     val activeSettingsTab: SettingsTabId = SettingsTabId.GENERAL,
     val settings: SettingsValues = SettingsValues(),
+    val availableAudioInputs: List<AudioDeviceOption> = emptyList(),
+    val availableAudioOutputs: List<AudioDeviceOption> = emptyList(),
 
     val activeCallAlert: ActiveCallAlert? = null,
     val toastMessage: String? = null

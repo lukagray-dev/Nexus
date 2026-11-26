@@ -10,14 +10,22 @@ import com.nexus.parent.ui.settings.maincontent.SettingsToggleRow
 @Composable
 fun NoiseSuppressionSetting(
     checked: Boolean,
-    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit
+    onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
+    onShowToast: (String) -> Unit = {}
 ) {
     SettingsToggleRow(
-        title = "Noise Suppression & Echo Cancellation",
-        subtitle = "Filters ambient feedback during two-way voice intercom sessions.",
+        title = "Hardware Noise Suppression & AEC",
+        subtitle = "Acoustic echo cancellation, background noise reduction, and auto-gain on parent microphone.",
         checked = checked,
         onCheckedChange = { value ->
             onUpdateSettings { it.copy(noiseSuppression = value) }
+            onShowToast(
+                if (value) {
+                    "Hardware noise suppression and AEC enabled"
+                } else {
+                    "Hardware noise suppression and AEC disabled"
+                }
+            )
         }
     )
 }

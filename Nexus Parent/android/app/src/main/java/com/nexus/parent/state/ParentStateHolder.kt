@@ -756,7 +756,21 @@ class ParentStateHolder(
     }
 
     fun onRecordAudioPermissionResult(granted: Boolean) {
+        coordinator?.refreshAudioDevices()
         coordinator?.micCoordinator?.onRecordAudioPermissionResult(granted)
+    }
+
+    fun updateAudioDevices(inputs: List<AudioDeviceOption>, outputs: List<AudioDeviceOption>) {
+        _uiState.update {
+            it.copy(
+                availableAudioInputs = inputs,
+                availableAudioOutputs = outputs
+            )
+        }
+    }
+
+    fun refreshAudioDevices() {
+        coordinator?.refreshAudioDevices()
     }
 
     fun toggleVoiceMenu() {
@@ -1343,6 +1357,7 @@ class ParentStateHolder(
     // -------------------------------------------------------------------------
 
     fun openSettings(tab: SettingsTabId = SettingsTabId.GENERAL) {
+        coordinator?.refreshAudioDevices()
         _uiState.update {
             it.copy(
                 isSettingsOpen = true,

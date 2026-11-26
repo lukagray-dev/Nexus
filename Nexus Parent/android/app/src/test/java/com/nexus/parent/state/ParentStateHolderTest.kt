@@ -130,10 +130,14 @@ class ParentStateHolderTest {
                 preferredCameraLens = CameraLens.FRONT,
                 keepScreenAwake = false,
                 downloadsDirectoryLabel = "Internal/Custom",
-                downloadsTreeUri = "content://tree/1"
+                downloadsTreeUri = "content://tree/1",
+                inputDeviceId = "usb_mic:rode",
+                outputDeviceId = "builtin_earpiece"
             )
         }
         assertEquals(ScreenQuality.P540, holder.uiState.value.settings.screenQuality)
+        assertEquals("usb_mic:rode", holder.uiState.value.settings.inputDeviceId)
+        assertEquals("builtin_earpiece", holder.uiState.value.settings.outputDeviceId)
 
         holder.resetSettingsToDefaults()
         assertEquals(ScreenQuality.P1080, holder.uiState.value.settings.screenQuality)
@@ -141,6 +145,8 @@ class ParentStateHolderTest {
         assertTrue(holder.uiState.value.settings.keepScreenAwake)
         assertEquals("Downloads/NexusParent", holder.uiState.value.settings.downloadsDirectoryLabel)
         assertNull(holder.uiState.value.settings.downloadsTreeUri)
+        assertEquals("default", holder.uiState.value.settings.inputDeviceId)
+        assertEquals("default", holder.uiState.value.settings.outputDeviceId)
 
         holder.disconnectDevice()
         assertEquals(ConnectionPhase.DISCONNECTED, holder.uiState.value.connectionPhase)
