@@ -9,12 +9,14 @@ import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.state.DeviceTelemetry
 import com.nexus.parent.state.DvrDuration
 import com.nexus.parent.state.FeatureRegistry
+import com.nexus.parent.state.LocalStorageMetrics
 import com.nexus.parent.state.LoudspeakerVolume
 import com.nexus.parent.state.ScreenQuality
 import com.nexus.parent.state.SettingsValues
 import com.nexus.parent.state.VoicePresetId
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
 /**
  * StorageStore - Key-value persistence abstraction so `DeviceStorage` can run both on
@@ -124,6 +126,8 @@ class DeviceStorage(private val store: StorageStore) {
                 askBeforeDownload = j.optBoolean("askBeforeDownload", defaults.askBeforeDownload),
                 autoConnectLastDevice = j.optBoolean("autoConnectLastDevice", defaults.autoConnectLastDevice),
                 keepScreenAwake = j.optBoolean("keepScreenAwake", defaults.keepScreenAwake),
+                autoCheckUpdates = j.optBoolean("autoCheckUpdates", defaults.autoCheckUpdates),
+                alertIntruderSelfie = j.optBoolean("alertIntruderSelfie", defaults.alertIntruderSelfie),
                 alertLowBattery = j.optBoolean("alertLowBattery", defaults.alertLowBattery),
                 alertChildDisconnected = j.optBoolean("alertChildDisconnected", defaults.alertChildDisconnected),
                 alertChildActiveCall = j.optBoolean("alertChildActiveCall", defaults.alertChildActiveCall)
@@ -148,11 +152,38 @@ class DeviceStorage(private val store: StorageStore) {
             put("askBeforeDownload", settings.askBeforeDownload)
             put("autoConnectLastDevice", settings.autoConnectLastDevice)
             put("keepScreenAwake", settings.keepScreenAwake)
+            put("autoCheckUpdates", settings.autoCheckUpdates)
+            put("alertIntruderSelfie", settings.alertIntruderSelfie)
             put("alertLowBattery", settings.alertLowBattery)
             put("alertChildDisconnected", settings.alertChildDisconnected)
             put("alertChildActiveCall", settings.alertChildActiveCall)
         }
         store.putString(KEY_SETTINGS, j.toString())
+    }
+
+    fun measureStorageFootprint(extraCacheBytes: Long = 0L): LocalStorageMetrics {
+        val keys = listOf(KEY_LAST_DEVICE, KEY_DEVICE_HISTORY, KEY_SETTINGS)
+        var entryCount = 0
+        var totalBytes = extraCacheBytes.coerceAtLeast(0L)
+        for (k in keys) {
+            val v = store.getString(k) ?: continue
+            entryCount += 1
+            totalBytes += (k.toByteArray(Charsets.UTF_8).size + v.toByteArray(Charsets.UTF_8).size).toLong()
+        }
+        return LocalStorageMetrics(
+            totalBytes = totalBytes,
+            entryCount = entryCount,
+            formattedSize = formatByteSize(totalBytes)
+        )
+    }
+
+    fun formatByteSize(bytes: Long): String {
+        val safe = bytes.coerceAtLeast(0L)
+        return when {
+            safe < 1024L -> "$safe B"
+            safe < 1024L * 1024L -> String.format(Locale.US, "%.1f KB", safe / 1024.0)
+            else -> String.format(Locale.US, "%.2f MB", safe / (1024.0 * 1024.0))
+        }
     }
 
     private fun encodeDeviceRecord(record: DeviceRecord): JSONObject {

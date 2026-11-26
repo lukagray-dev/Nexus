@@ -3,6 +3,7 @@ package com.nexus.parent.data.alerts
 import com.nexus.parent.data.mic.CallStatePacket
 import com.nexus.parent.data.mic.MicProtocol
 import com.nexus.parent.state.ActiveCallAlert
+import com.nexus.parent.state.AppLockAttemptItem
 import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.state.SettingsValues
 
@@ -44,6 +45,7 @@ class GeneralAlertsController(
         const val ALERT_ID_LOW_BATTERY = 4201
         const val ALERT_ID_DISCONNECTED = 4202
         const val ALERT_ID_ACTIVE_CALL = 4203
+        const val ALERT_ID_INTRUDER_SELFIE = 4204
     }
 
     private var lowBatteryAlertedDeviceId: String? = null
@@ -161,5 +163,30 @@ class GeneralAlertsController(
 
     fun onMicListeningActivated() {
         dispatcher.cancelNotification(ALERT_ID_ACTIVE_CALL)
+    }
+
+    fun evaluateIntruderSelfie(
+        attempt: AppLockAttemptItem,
+        settings: SettingsValues,
+        deviceName: String?
+    ): Boolean {
+        if (attempt.pinCorrect || !settings.alertIntruderSelfie) {
+            return false
+        }
+        val targetLabel = deviceName?.takeIf { it.isNotBlank() } ?: "Child device"
+        val title = if (attempt.isLockedOut) {
+            "Intruder Alert: Device Locked Out"
+        } else {
+            "Intruder Selfie Triggered"
+        }
+        val body = "$targetLabel detected wrong App Lock PIN (${attempt.failedAttempts} failed) at ${attempt.timestampLabel}"
+        dispatcher.showToast("$title: $targetLabel")
+        dispatcher.postNotification(
+            notificationId = ALERT_ID_INTRUDER_SELFIE,
+            title = title,
+            body = body,
+            onlyAlertOnce = false
+        )
+        return true
     }
 }

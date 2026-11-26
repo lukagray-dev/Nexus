@@ -69,8 +69,10 @@ cargo test
 ## 5. Parent Android Parity (`Nexus Parent/android`)
 
 - **1:1 Modular Package (`ui/settings/maincontent/about/`)**:
-  - `AboutSection.kt`
-  - `ParentIdentityCard.kt` (`Nexus Parent (Android)` identity + brand icon)
-  - `RuntimeEnvironmentCard.kt` (`Jetpack Compose + Material 3`, `TextureView + EglRenderer`, Android OS/API level, host model)
-  - `TransportStorageCard.kt` (`End-to-End Encrypted WebRTC (SRTP)`, `SCTP DataChannel (nexus-control)`, `Non-Trickle GATHER_ONCE`, zero cloud storage)
-  - `WorkspaceResetCard.kt` (clears paired device history & cached state via `DeviceStorage.clearPairedDevicesHistory()`)
+  - `AboutSection.kt`: Renders all 5 About groups matching Desktop `about.ts`.
+  - `ParentIdentityCard.kt`: Displays `Nexus Parent`, `BuildConfig.APPLICATION_ID`, live `v${currentVersion}` and `AppUpdateProtocol.formatUpdateStatusBadge()` pills, **Copy System Info** (`ClipboardManager` plain-text diagnostics summary via `buildParentDiagnosticsSummary()`), and live **Check Updates** / **Restart to update** button.
+  - `RuntimeEnvironmentCard.kt`: Displays live Host OS/API/`Build.SUPPORTED_ABIS`, Compose/Version (`BuildConfig.VERSION_NAME`/`VERSION_CODE`), `WebRTC 123.0.0 • TextureView + EglRenderer`, CPU cores + live GPU hardware acceleration status, plus **App Preferences Store**, **Local Staged Updates**, and **Downloads Directory** rows with **Copy** and SAF **Open** folder actions.
+  - `TransportStorageCard.kt`: Displays live `DTLS-SRTP / SCTP`, `Non-Trickle (${STUN_SERVERS.size} STUN)`, Firebase project ID + live `AuthManager.isSignedIn()` state, measured `DeviceStorage.measureStorageFootprint()` bytes (prefs + updates cache), and active/remembered peer session status row.
+  - `CreditsLinksCard.kt`: Displays creator attribution (`Luka Gray (aka Soumo Mukherjee)`), copyright, `AGPL-3.0` badge, and clickable links (GitHub Repository, Documentation, Report Issue, Follow Creator, Contact Email).
+  - `WorkspaceResetCard.kt`: Two-step armed confirmation (`Reset Workspace` -> `Confirm Full Reset?` with 4-second disarm timer) calling `DeviceStateCoordinator.executeWorkspaceReset()` (disconnects WebRTC, clears `DeviceStorage` history, resets voice preset, restores factory `SettingsValues`, and refreshes storage telemetry).
+- **Verification**: `ParentStateHolderTest.kt` and `NexusUiFlowsTest.kt` via `.\gradlew.bat testDebugUnitTest compileDebugAndroidTestKotlin`.

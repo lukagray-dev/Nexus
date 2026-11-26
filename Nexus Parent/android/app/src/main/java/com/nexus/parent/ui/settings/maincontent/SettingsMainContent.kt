@@ -23,6 +23,12 @@ fun SettingsMainContent(
     onRefreshOutputs: () -> Unit = {},
     onShowToast: (String) -> Unit = {},
     onReconnectForHardwareAccel: () -> Unit = {},
+    onCheckUpdatesNow: () -> Unit = {},
+    onRestartToUpdate: () -> Unit = {},
+    onCopySystemInfo: (String) -> Unit = {},
+    onCopyAboutValue: (label: String, value: String) -> Unit = { _, _ -> },
+    onOpenDownloadsFolder: () -> Unit = {},
+    onOpenExternalUrl: (String) -> Unit = {},
     onSelectPairedDevice: (String) -> Unit,
     onClearSelectedPairedDevice: () -> Unit,
     onConnectPairedDevice: (String) -> Unit,
@@ -33,8 +39,12 @@ fun SettingsMainContent(
     when (state.activeSettingsTab) {
         SettingsTabId.GENERAL -> GeneralSystemSection(
             settings = state.settings,
+            appUpdate = state.appUpdate,
             onUpdateSettings = onUpdateSettings,
-            onBrowseDownloadsFolder = onBrowseDownloadsFolder
+            onBrowseDownloadsFolder = onBrowseDownloadsFolder,
+            onCheckUpdatesNow = onCheckUpdatesNow,
+            onRestartToUpdate = onRestartToUpdate,
+            onShowToast = onShowToast
         )
         SettingsTabId.AUDIO -> AudioIntercomSection(
             settings = state.settings,
@@ -69,6 +79,13 @@ fun SettingsMainContent(
             onCancelReconnect = onCancelReconnect
         )
         SettingsTabId.ABOUT -> AboutSection(
+            state = state,
+            onCopySystemInfo = onCopySystemInfo,
+            onCopyValue = onCopyAboutValue,
+            onOpenDownloadsFolder = onOpenDownloadsFolder,
+            onCheckUpdatesNow = onCheckUpdatesNow,
+            onRestartToUpdate = onRestartToUpdate,
+            onOpenUrl = onOpenExternalUrl,
             onClearWorkspaceHistory = onClearWorkspaceHistory
         )
     }

@@ -299,4 +299,41 @@ class ParentStateHolderTest {
         assertNull(holder.uiState.value.storage.deleteConfirmTarget)
         assertFalse(holder.uiState.value.storage.items.any { it.path == file.path })
     }
+
+    @Test
+    fun `app update state, about telemetry, and full workspace reset clear connection, history, and defaults`() {
+        val holder = ParentStateHolder()
+        holder.submitPairingPreview("482194021104")
+        holder.updateSettings {
+            it.copy(
+                defaultVoicePreset = VoicePresetId.ALIEN,
+                autoCheckUpdates = false,
+                alertIntruderSelfie = false
+            )
+        }
+        holder.onAppUpdateStateChanged(
+            AppUpdateUiState(
+                status = AppUpdateStatusKind.READY,
+                currentVersion = "0.1.0-alpha",
+                availableVersion = "0.2.0"
+            )
+        )
+        holder.updateAboutTelemetry(
+            metrics = LocalStorageMetrics(totalBytes = 2048L, entryCount = 3, formattedSize = "2.0 KB"),
+            isFirebaseSignedIn = true
+        )
+
+        assertEquals(AppUpdateStatusKind.READY, holder.uiState.value.appUpdate.status)
+        assertTrue(holder.uiState.value.isFirebaseSignedIn)
+        assertEquals("2.0 KB", holder.uiState.value.localStorageMetrics.formattedSize)
+
+        holder.clearWorkspaceHistory()
+        assertEquals(ConnectionPhase.DISCONNECTED, holder.uiState.value.connectionPhase)
+        assertNull(holder.uiState.value.connectedDevice)
+        assertNull(holder.uiState.value.lastPairedDevice)
+        assertTrue(holder.uiState.value.pairedDevicesHistory.isEmpty())
+        assertEquals(VoicePresetId.ORIGINAL, holder.uiState.value.settings.defaultVoicePreset)
+        assertTrue(holder.uiState.value.settings.autoCheckUpdates)
+        assertTrue(holder.uiState.value.settings.alertIntruderSelfie)
+    }
 }

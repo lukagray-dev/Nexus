@@ -147,7 +147,7 @@ jobs:
           if-no-files-found: error
 
   build-android:
-    name: Build Nexus Child Mobile Client (Android)
+    name: Build Nexus Mobile Clients (Android Child & Parent)
     needs: version
     runs-on: ubuntu-latest
     steps:
@@ -169,18 +169,33 @@ jobs:
           echo 'apiKey="stable-release-build"' >> .env
           echo 'projectId="nexus-stable"' >> .env
           echo 'databaseURL="https://nexus-stable.firebaseio.com"' >> .env
+          echo 'appId="1:000000000000:android:0000000000000000"' >> .env
+          echo 'authDomain="nexus-stable.firebaseapp.com"' >> .env
+          echo 'storageBucket="nexus-stable.appspot.com"' >> .env
 
-      - name: Build Android Debug APK
+      - name: Build Nexus Child Debug APK
         working-directory: "Nexus Child"
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Package Android Artifact
+      - name: Build Nexus Parent Debug APK
+        working-directory: "Nexus Parent/android"
+        run: |
+          TAG="${{ needs.version.outputs.release_tag }}"
+          VER_CLEAN="${TAG#v}"
+          IFS='.' read -r MAJ MIN PAT <<< "$VER_CLEAN"
+          VER_CODE=$(( (${MAJ:-0} * 10000) + (${MIN:-0} * 100) + ${PAT:-0} + 1 ))
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -PnexusVersionName="$VER_CLEAN" -PnexusVersionCode="$VER_CODE"
+
+      - name: Package Android Artifacts
         run: |
           TAG="${{ needs.version.outputs.release_tag }}"
           mkdir -p android_artifacts
           cp "Nexus Child/app/build/outputs/apk/debug/app-debug.apk" "android_artifacts/nexus-child-${TAG}.apk"
+          cp "Nexus Parent/android/app/build/outputs/apk/debug/app-debug.apk" "android_artifacts/nexus-parent-${TAG}.apk"
+          (cd android_artifacts && sha256sum "nexus-parent-${TAG}.apk" > "nexus-parent-${TAG}.apk.sha256")
 
       - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4

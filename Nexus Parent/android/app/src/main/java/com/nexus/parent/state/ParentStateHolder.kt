@@ -1361,6 +1361,7 @@ class ParentStateHolder(
 
     fun openSettings(tab: SettingsTabId = SettingsTabId.GENERAL) {
         coordinator?.refreshAudioDevices()
+        coordinator?.refreshAboutTelemetry()
         _uiState.update {
             it.copy(
                 isSettingsOpen = true,
@@ -1388,11 +1389,68 @@ class ParentStateHolder(
         _uiState.update { it.copy(selectedPairedDeviceId = null) }
     }
 
+    fun onAppUpdateStateChanged(update: AppUpdateUiState) {
+        _uiState.update { it.copy(appUpdate = update) }
+    }
+
+    fun updateAboutTelemetry(metrics: LocalStorageMetrics, isFirebaseSignedIn: Boolean) {
+        _uiState.update {
+            it.copy(
+                localStorageMetrics = metrics,
+                isFirebaseSignedIn = isFirebaseSignedIn
+            )
+        }
+    }
+
+    fun checkForUpdatesNow() {
+        if (coordinator != null) {
+            coordinator.checkForUpdatesManual()
+        } else {
+            showToast("Update checks require live Android runtime")
+        }
+    }
+
+    fun restartToUpdate() {
+        if (coordinator != null) {
+            coordinator.restartToUpdate()
+        } else {
+            showToast("Install staged APK requires live Android runtime")
+        }
+    }
+
+    fun applyFullWorkspaceReset(
+        defaults: SettingsValues = SettingsValues(),
+        metrics: LocalStorageMetrics = LocalStorageMetrics(),
+        isFirebaseSignedIn: Boolean = false
+    ) {
+        _uiState.update {
+            it.copy(
+                connectionPhase = ConnectionPhase.DISCONNECTED,
+                connectedDevice = null,
+                lastPairedDevice = null,
+                pairedDevicesHistory = emptyList(),
+                selectedPairedDeviceId = null,
+                activeFeature = null,
+                liveFeatures = emptySet(),
+                camera = CameraFeedUiState(lens = defaults.preferredCameraLens),
+                screen = ScreenFeedUiState(quality = defaults.screenQuality),
+                mic = MicUiState(selectedVoice = defaults.defaultVoicePreset),
+                location = LocationUiState(),
+                activeCallAlert = null,
+                stealthStatus = StealthStatus.ARMED,
+                settings = defaults,
+                localStorageMetrics = metrics,
+                isFirebaseSignedIn = isFirebaseSignedIn,
+                toastMessage = "Parent workspace cleared and restored to factory defaults"
+            )
+        }
+    }
+
     fun clearWorkspaceHistory() {
         if (coordinator != null) {
-            coordinator.clearLocalWorkspaceHistory()
+            coordinator.executeWorkspaceReset()
         } else {
-            onHistoryCleared()
+            applyFullWorkspaceReset()
         }
     }
 

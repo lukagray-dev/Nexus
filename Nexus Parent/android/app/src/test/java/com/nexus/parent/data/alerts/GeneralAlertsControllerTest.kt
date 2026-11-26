@@ -2,6 +2,7 @@ package com.nexus.parent.data.alerts
 
 import com.nexus.parent.data.mic.CallStatePacket
 import com.nexus.parent.data.mic.MicProtocol
+import com.nexus.parent.state.AppLockAttemptItem
 import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.state.DeviceTelemetry
 import com.nexus.parent.state.SettingsValues
@@ -139,5 +140,32 @@ class GeneralAlertsControllerTest {
 
         // Latch was reset on disconnect, so reconnecting at 10% can alert again
         assertTrue(controller.evaluateLowBattery(device, SettingsValues(alertLowBattery = true)))
+    }
+
+    @Test
+    fun `intruder selfie alert fires only on wrong PIN attempts when enabled`() {
+        val dispatcher = FakeDispatcher()
+        val controller = GeneralAlertsController(dispatcher)
+
+        val validAttempt = AppLockAttemptItem(
+            id = "a1",
+            timestampLabel = "10:15 AM",
+            pinCorrect = true,
+            isLockedOut = false,
+            failedAttempts = 0,
+            hasSelfiePreview = false
+        )
+        assertFalse(controller.evaluateIntruderSelfie(validAttempt, SettingsValues(alertIntruderSelfie = true), "Child Pixel"))
+
+        val wrongPinAttempt = validAttempt.copy(
+            id = "a2",
+            pinCorrect = false,
+            failedAttempts = 1,
+            hasSelfiePreview = true
+        )
+        assertFalse(controller.evaluateIntruderSelfie(wrongPinAttempt, SettingsValues(alertIntruderSelfie = false), "Child Pixel"))
+        assertTrue(controller.evaluateIntruderSelfie(wrongPinAttempt, SettingsValues(alertIntruderSelfie = true), "Child Pixel"))
+        assertEquals(1, dispatcher.notifications.size)
+        assertEquals(GeneralAlertsController.ALERT_ID_INTRUDER_SELFIE, dispatcher.notifications.first().first)
     }
 }

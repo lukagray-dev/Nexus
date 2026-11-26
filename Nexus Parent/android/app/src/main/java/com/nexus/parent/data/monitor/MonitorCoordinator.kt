@@ -40,7 +40,8 @@ class MonitorCoordinator(
     private val sendCommand: (String) -> Boolean,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val base64Decoder: (String) -> ByteArray = { Base64.decode(it, Base64.DEFAULT) },
-    private val base64Encoder: (ByteArray) -> String = { Base64.encodeToString(it, Base64.NO_WRAP) }
+    private val base64Encoder: (ByteArray) -> String = { Base64.encodeToString(it, Base64.NO_WRAP) },
+    private val onIntruderAttempt: ((AppLockAttemptItem) -> Boolean)? = null
 ) {
 
     private var stateHolder: ParentStateHolder? = null
@@ -553,12 +554,15 @@ class MonitorCoordinator(
             is MonitorDataEvent.AppLockSnapshotChunk -> applyAppLockSnapshotChunk(event.chunkIndex, event.records)
             is MonitorDataEvent.AppLockNew -> {
                 prependAppLockAttempt(event.record)
-                val outcome = when {
-                    event.record.pinCorrect -> "Successful unlock"
-                    event.record.isLockedOut -> "Device locked out (60s)"
-                    else -> "Wrong PIN attempt"
+                val alertDispatched = onIntruderAttempt?.invoke(event.record) == true
+                if (!alertDispatched) {
+                    val outcome = when {
+                        event.record.pinCorrect -> "Successful unlock"
+                        event.record.isLockedOut -> "Device locked out (60s)"
+                        else -> "Wrong PIN attempt"
+                    }
+                    holder.showToast("App Lock: $outcome")
                 }
-                holder.showToast("App Lock: $outcome")
             }
 
             // Vibrate & Flash

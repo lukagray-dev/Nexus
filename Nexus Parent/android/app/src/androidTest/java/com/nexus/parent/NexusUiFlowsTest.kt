@@ -53,7 +53,7 @@ class NexusUiFlowsTest {
         composeRule.onNodeWithTag("floating_mic_hud").assertIsDisplayed()
         composeRule.onNodeWithTag("mic_hud_close_btn").performClick()
 
-        // 5. Open Settings, switch tabs (Audio & Intercom + Surveillance + Devices), inspect paired device detail & back button, and close
+        // 5. Open Settings, inspect Audio, Surveillance, Devices, General Updates & About tabs
         composeRule.onNodeWithTag("capsule_settings_btn").performClick()
         composeRule.onNodeWithTag("settings_tab_audio").performClick()
         composeRule.onNodeWithText("Microphone Input Device").assertIsDisplayed()
@@ -65,7 +65,23 @@ class NexusUiFlowsTest {
         composeRule.onNodeWithTag("settings_tab_devices").performClick()
         composeRule.onNodeWithTag("paired_device_row_482194021104").performClick()
         composeRule.onNodeWithTag("paired_devices_back_btn").performClick()
+        composeRule.onNodeWithTag("settings_tab_about").performClick()
+        composeRule.onNodeWithTag("about_copy_info_btn").assertIsDisplayed()
+        composeRule.onNodeWithTag("about_check_updates_btn").assertIsDisplayed()
+        composeRule.onNodeWithTag("about_reset_workspace_btn").performClick()
+        composeRule.onNodeWithText("Confirm Full Reset?").assertIsDisplayed()
         composeRule.onNodeWithTag("settings_done_btn").performClick()
+
+        // 6. Verify shell Restart to update pill appears only when update status is READY
+        composeRule.onNodeWithTag("shell_restart_to_update_btn").assertDoesNotExist()
+        stateHolder.onAppUpdateStateChanged(
+            com.nexus.parent.state.AppUpdateUiState(
+                status = com.nexus.parent.state.AppUpdateStatusKind.READY,
+                currentVersion = "0.1.0-alpha",
+                availableVersion = "0.2.0"
+            )
+        )
+        composeRule.onNodeWithTag("shell_restart_to_update_btn").assertIsDisplayed()
     }
 
     @Test

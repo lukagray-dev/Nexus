@@ -83,6 +83,8 @@ class DeviceStorageTest {
             askBeforeDownload = true,
             autoConnectLastDevice = true,
             keepScreenAwake = false,
+            autoCheckUpdates = false,
+            alertIntruderSelfie = false,
             alertLowBattery = false,
             alertChildDisconnected = false,
             alertChildActiveCall = false
@@ -92,5 +94,10 @@ class DeviceStorageTest {
         val loaded = storage.loadSettings()
 
         assertEquals(custom, loaded)
+
+        val footprint = storage.measureStorageFootprint(extraCacheBytes = 2048L)
+        assertEquals(1, footprint.entryCount)
+        assertTrue(footprint.totalBytes > 2048L)
+        assertTrue(footprint.formattedSize.endsWith("KB") || footprint.formattedSize.endsWith("MB"))
     }
 }

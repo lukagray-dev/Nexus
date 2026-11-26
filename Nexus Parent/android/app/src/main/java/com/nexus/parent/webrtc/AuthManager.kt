@@ -45,6 +45,12 @@ object AuthManager {
         }
     }
 
+    fun isSignedIn(context: Context): Boolean {
+        return runCatching {
+            FirebaseApp.getApps(context).isNotEmpty() && FirebaseAuth.getInstance().currentUser != null
+        }.getOrDefault(false)
+    }
+
     /**
      * Ensures an active Firebase anonymous session exists, joining any in-flight sign-in.
      */

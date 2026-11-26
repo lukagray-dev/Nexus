@@ -1,6 +1,7 @@
 package com.nexus.parent.data
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import com.nexus.parent.data.alerts.GeneralAlertsController
 import com.nexus.parent.data.alerts.SafetyAlertDispatcher
@@ -10,16 +11,20 @@ import com.nexus.parent.data.mic.ParentAudioRouteManager
 import com.nexus.parent.data.mic.WebRtcMicMediaBridge
 import com.nexus.parent.data.monitor.MonitorCoordinator
 import com.nexus.parent.data.storage.StorageCoordinator
+import com.nexus.parent.data.update.AppUpdateManager
 import com.nexus.parent.service.ParentConnectionService
 import com.nexus.parent.service.ParentNotificationManager
+import com.nexus.parent.state.AppUpdateStatusKind
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.DeviceRecord
 import com.nexus.parent.state.DeviceTelemetry
 import com.nexus.parent.state.FeatureRegistry
+import com.nexus.parent.state.LocalStorageMetrics
 import com.nexus.parent.state.ParentStateHolder
 import com.nexus.parent.state.ParentUiState
 import com.nexus.parent.state.SettingsValues
 import com.nexus.parent.state.StealthStatus
+import com.nexus.parent.webrtc.AuthManager
 import com.nexus.parent.webrtc.VideoFeedType
 import com.nexus.parent.webrtc.WebRtcManager
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +32,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.webrtc.EglBase
 import org.webrtc.PeerConnection
@@ -91,8 +99,29 @@ class DeviceStateCoordinator(
     val monitorCoordinator: MonitorCoordinator = MonitorCoordinator(
         context = appContext,
         scope = scope,
-        sendCommand = webRtcManager::sendCommand
+        sendCommand = webRtcManager::sendCommand,
+        onIntruderAttempt = { attempt ->
+            val holder = stateHolder
+            if (holder != null) {
+                val devName = activeSessionDevice?.name ?: holder.uiState.value.connectedDevice?.name
+                alertsController.evaluateIntruderSelfie(
+                    attempt = attempt,
+                    settings = holder.uiState.value.settings,
+                    deviceName = devName
+                )
+            } else {
+                false
+            }
+        }
     )
+
+    val appUpdateManager: AppUpdateManager = AppUpdateManager(
+        context = appContext,
+        scope = scope
+    )
+
+    private val _pendingInstallIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 2)
+    val pendingInstallIntents: SharedFlow<Intent> = _pendingInstallIntents.asSharedFlow()
 
     val storageCoordinator: StorageCoordinator = StorageCoordinator(
         context = appContext,
@@ -149,6 +178,7 @@ class DeviceStateCoordinator(
         observeWebRtcStreams()
         observeReconnectState()
         observeAudioDevices()
+        observeAppUpdates()
     }
 
     fun attachStateHolder(holder: ParentStateHolder) {
@@ -177,9 +207,32 @@ class DeviceStateCoordinator(
             availableAudioOutputs = audioSnap.outputs,
             lastPairedDevice = last,
             pairedDevicesHistory = history,
+            appUpdate = appUpdateManager.state.value,
+            localStorageMetrics = computeStorageFootprint(),
+            isFirebaseSignedIn = AuthManager.isSignedIn(appContext),
             camera = com.nexus.parent.state.CameraFeedUiState(lens = settings.preferredCameraLens),
             screen = com.nexus.parent.state.ScreenFeedUiState(quality = settings.screenQuality),
             mic = com.nexus.parent.state.MicUiState(selectedVoice = settings.defaultVoicePreset)
+        )
+    }
+
+    private fun observeAppUpdates() {
+        scope.launch {
+            appUpdateManager.state.collect { updateState ->
+                stateHolder?.onAppUpdateStateChanged(updateState)
+                refreshAboutTelemetry()
+            }
+        }
+    }
+
+    private fun computeStorageFootprint(): LocalStorageMetrics {
+        return storage.measureStorageFootprint(appUpdateManager.computeUpdatesCacheBytes())
+    }
+
+    fun refreshAboutTelemetry() {
+        stateHolder?.updateAboutTelemetry(
+            metrics = computeStorageFootprint(),
+            isFirebaseSignedIn = AuthManager.isSignedIn(appContext)
         )
     }
 
@@ -199,6 +252,10 @@ class DeviceStateCoordinator(
         if (!startupAttempted.compareAndSet(false, true)) return
         val holder = stateHolder ?: return
         val current = holder.uiState.value
+        appUpdateManager.syncAutoCheckPreference(
+            enabled = current.settings.autoCheckUpdates,
+            triggerImmediateIfStartup = true
+        )
         val target = current.lastPairedDevice ?: return
         if (!current.settings.autoConnectLastDevice) return
         if (current.connectionPhase != ConnectionPhase.DISCONNECTED) return
@@ -406,6 +463,7 @@ class DeviceStateCoordinator(
         storage.saveSettings(settings)
         surveillanceCoordinator.onSettingsUpdated(settings)
         micCoordinator.onSettingsUpdated(settings)
+        appUpdateManager.syncAutoCheckPreference(settings.autoCheckUpdates, triggerImmediateIfStartup = false)
         if (!settings.alertChildActiveCall) {
             stateHolder?.dismissCallAlert()
         }
@@ -416,11 +474,64 @@ class DeviceStateCoordinator(
                 force = false
             )
         }
+        refreshAboutTelemetry()
+    }
+
+    fun checkForUpdatesManual() {
+        val holder = stateHolder ?: return
+        holder.showToast("Checking GitHub for stable Nexus releases...")
+        appUpdateManager.launchCheckForUpdates(manual = true) { result ->
+            when (result.status) {
+                AppUpdateStatusKind.READY -> {
+                    val v = result.availableVersion ?: "latest"
+                    holder.showToast("Update v$v downloaded — tap \"Restart to update\"")
+                }
+                AppUpdateStatusKind.UP_TO_DATE -> {
+                    holder.showToast("You are running the latest stable version (v${result.currentVersion})")
+                }
+                AppUpdateStatusKind.ERROR -> {
+                    holder.showToast("Update check failed: ${result.errorMessage ?: "Network error"}")
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    fun restartToUpdate() {
+        val holder = stateHolder ?: return
+        if (!appUpdateManager.canRequestPackageInstalls()) {
+            holder.showToast("Allow \"Install unknown apps\" for Nexus Parent to install update")
+            _pendingInstallIntents.tryEmit(appUpdateManager.createUnknownSourcesPermissionIntent())
+            return
+        }
+        val installIntent = appUpdateManager.createInstallApkIntent()
+        if (installIntent == null) {
+            holder.showToast("No downloaded update APK is staged")
+            return
+        }
+        if (activeSessionDevice != null || holder.uiState.value.connectionPhase != ConnectionPhase.DISCONNECTED) {
+            disconnectManual()
+        }
+        _pendingInstallIntents.tryEmit(installIntent)
+    }
+
+    fun executeWorkspaceReset() {
+        disconnectManual()
+        storage.clearPairedDevicesHistory()
+        val defaults = SettingsValues()
+        storage.saveSettings(defaults)
+        surveillanceCoordinator.onSettingsUpdated(defaults)
+        micCoordinator.onSettingsUpdated(defaults)
+        appUpdateManager.syncAutoCheckPreference(defaults.autoCheckUpdates, triggerImmediateIfStartup = false)
+        stateHolder?.applyFullWorkspaceReset(
+            defaults = defaults,
+            metrics = computeStorageFootprint(),
+            isFirebaseSignedIn = AuthManager.isSignedIn(appContext)
+        )
     }
 
     fun clearLocalWorkspaceHistory() {
-        storage.clearPairedDevicesHistory()
-        stateHolder?.onHistoryCleared()
+        executeWorkspaceReset()
     }
 
     private fun configureReconnectManager() {

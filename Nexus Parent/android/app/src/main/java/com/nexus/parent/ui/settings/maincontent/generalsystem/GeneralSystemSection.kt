@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.nexus.parent.state.AppUpdateUiState
 import com.nexus.parent.state.SettingsValues
 import com.nexus.parent.ui.settings.maincontent.SettingsSectionGroup
 
@@ -18,8 +19,12 @@ import com.nexus.parent.ui.settings.maincontent.SettingsSectionGroup
 @Composable
 fun GeneralSystemSection(
     settings: SettingsValues,
+    appUpdate: AppUpdateUiState = AppUpdateUiState(),
     onUpdateSettings: ((SettingsValues) -> SettingsValues) -> Unit,
-    onBrowseDownloadsFolder: () -> Unit = {}
+    onBrowseDownloadsFolder: () -> Unit = {},
+    onCheckUpdatesNow: () -> Unit = {},
+    onRestartToUpdate: () -> Unit = {},
+    onShowToast: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -65,5 +70,16 @@ fun GeneralSystemSection(
             settings = settings,
             onUpdateSettings = onUpdateSettings
         )
+
+        SettingsSectionGroup(title = "Application Updates") {
+            AutoUpdateSetting(
+                autoCheckUpdates = settings.autoCheckUpdates,
+                appUpdate = appUpdate,
+                onUpdateSettings = onUpdateSettings,
+                onCheckUpdatesNow = onCheckUpdatesNow,
+                onRestartToUpdate = onRestartToUpdate,
+                onShowToast = onShowToast
+            )
+        }
     }
 }

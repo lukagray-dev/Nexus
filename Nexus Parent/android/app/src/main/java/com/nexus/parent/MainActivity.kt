@@ -2,6 +2,8 @@ package com.nexus.parent
 
 import android.Manifest
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -18,12 +20,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,18 +45,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nexus.parent.data.PendingDocumentExportRequest
 import com.nexus.parent.data.storage.PendingStorageDownloadRequest
+import com.nexus.parent.state.AppUpdateStatusKind
 import com.nexus.parent.state.ConnectionPhase
 import com.nexus.parent.state.FeatureId
 import com.nexus.parent.state.FeatureTarget
 import com.nexus.parent.state.MonitoringState
 import com.nexus.parent.state.ParentStateHolder
 import com.nexus.parent.state.ParentUiState
+import com.nexus.parent.ui.theme.NexusDimens
 import com.nexus.parent.webrtc.VideoFeedType
 import com.nexus.parent.ui.components.ActiveCallBanner
 import com.nexus.parent.ui.components.TacticalToastHost
@@ -114,6 +134,9 @@ class MainActivity : ComponentActivity() {
                 app?.coordinator?.micCoordinator?.recordAudioPermissionRequests
                     ?: MutableSharedFlow<Unit>()
             }
+            val pendingInstallFlow = remember(app) {
+                app?.coordinator?.pendingInstallIntents ?: MutableSharedFlow<Intent>()
+            }
             val eglContext = remember(app) { app?.coordinator?.getEglBaseContext() }
 
             LaunchedEffect(app) {
@@ -127,6 +150,7 @@ class MainActivity : ComponentActivity() {
                     pendingExportFlow = pendingExportFlow,
                     pendingStorageDownloadFlow = pendingStorageDownloadFlow,
                     recordAudioPermissionFlow = recordAudioPermissionFlow,
+                    pendingInstallFlow = pendingInstallFlow,
                     eglContext = eglContext,
                     hasLiveCoordinator = app != null
                 )
@@ -142,6 +166,7 @@ fun NexusParentRoot(
     pendingExportFlow: SharedFlow<PendingDocumentExportRequest> = remember { MutableSharedFlow() },
     pendingStorageDownloadFlow: SharedFlow<PendingStorageDownloadRequest> = remember { MutableSharedFlow() },
     recordAudioPermissionFlow: SharedFlow<Unit> = remember { MutableSharedFlow() },
+    pendingInstallFlow: SharedFlow<Intent> = remember { MutableSharedFlow() },
     eglContext: EglBase.Context? = null,
     hasLiveCoordinator: Boolean = false
 ) {
@@ -231,6 +256,16 @@ fun NexusParentRoot(
                 putExtra(Intent.EXTRA_TITLE, req.fileName)
             }
             saveStorageDocumentLauncher.launch(createIntent)
+        }
+    }
+
+    LaunchedEffect(pendingInstallFlow) {
+        pendingInstallFlow.collect { installIntent ->
+            runCatching {
+                context.startActivity(installIntent)
+            }.onFailure {
+                stateHolder.showToast("Unable to launch Android installer; download APK from GitHub Releases")
+            }
         }
     }
 
@@ -335,21 +370,63 @@ fun NexusParentRoot(
                     }
                 )
 
-                // 2. Floating Three-Capsule Top Toolbar (hidden in fullscreen video mode)
-                if (!isVideoFullscreen) {
-                    TopCapsuleBar(
-                        activeFeature = state.activeFeature,
-                        connectionPhase = state.connectionPhase,
-                        isMicLive = state.mic.listenState == MonitoringState.LIVE,
-                        isMicOverlayOpen = state.mic.isOverlayOpen,
-                        isActiveFeatureLive = state.activeFeature != null && state.activeFeature in state.liveFeatures,
-                        onMenuClick = stateHolder::toggleDrawer,
-                        onCloseFeature = stateHolder::closeActiveFeature,
-                        onMicClick = { stateHolder.selectFeature(FeatureId.MIC) },
-                        onSettingsClick = { stateHolder.openSettings() },
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .statusBarsPadding()
+                // 2. Top Floating Stack: Three-Capsule Toolbar, Ready Update Pill, & Active Call Alert
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (!isVideoFullscreen) {
+                        TopCapsuleBar(
+                            activeFeature = state.activeFeature,
+                            connectionPhase = state.connectionPhase,
+                            isMicLive = state.mic.listenState == MonitoringState.LIVE,
+                            isMicOverlayOpen = state.mic.isOverlayOpen,
+                            isActiveFeatureLive = state.activeFeature != null && state.activeFeature in state.liveFeatures,
+                            onMenuClick = stateHolder::toggleDrawer,
+                            onCloseFeature = stateHolder::closeActiveFeature,
+                            onMicClick = { stateHolder.selectFeature(FeatureId.MIC) },
+                            onSettingsClick = { stateHolder.openSettings() }
+                        )
+                    }
+
+                    AnimatedVisibility(visible = !isVideoFullscreen && state.appUpdate.status == AppUpdateStatusKind.READY) {
+                        val nextVer = state.appUpdate.availableVersion?.let { " v$it" } ?: ""
+                        Surface(
+                            shape = RoundedCornerShape(NexusDimens.RadiusCapsule),
+                            color = NexusColors.AccentWhite,
+                            border = BorderStroke(NexusDimens.BorderHairline, NexusColors.BorderMedium),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(NexusDimens.RadiusCapsule))
+                                .clickable(onClick = stateHolder::restartToUpdate)
+                                .testTag("shell_restart_to_update_btn")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_refresh_cw),
+                                    contentDescription = null,
+                                    tint = NexusColors.TextInverse,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = "Restart to update$nextVer",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = NexusColors.TextInverse
+                                )
+                            }
+                        }
+                    }
+
+                    ActiveCallBanner(
+                        alert = state.activeCallAlert,
+                        onTurnOnMic = stateHolder::acceptCallAlertAndListenMic,
+                        onDismiss = stateHolder::dismissCallAlert
                     )
                 }
 
@@ -368,17 +445,6 @@ fun NexusParentRoot(
                     },
                     onToggleVoiceMenu = stateHolder::toggleVoiceMenu,
                     onSelectVoice = stateHolder::selectVoicePreset
-                )
-
-                // 4. Floating Active Cellular Call Alert Banner
-                ActiveCallBanner(
-                    alert = state.activeCallAlert,
-                    onTurnOnMic = stateHolder::acceptCallAlertAndListenMic,
-                    onDismiss = stateHolder::dismissCallAlert,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .statusBarsPadding()
-                        .padding(top = 64.dp)
                 )
 
                 // 5. Global Floating Feedback Toast
@@ -437,6 +503,41 @@ fun NexusParentRoot(
         },
         onShowToast = stateHolder::showToast,
         onReconnectForHardwareAccel = stateHolder::reconnectActiveDevice,
+        onCheckUpdatesNow = stateHolder::checkForUpdatesNow,
+        onRestartToUpdate = stateHolder::restartToUpdate,
+        onCopySystemInfo = { summary ->
+            val clipboard = context.getSystemService(ClipboardManager::class.java)
+            clipboard?.setPrimaryClip(ClipData.newPlainText("Nexus Parent System Info", summary))
+            stateHolder.showToast("Parent system info copied to clipboard")
+        },
+        onCopyAboutValue = { label, value ->
+            val clipboard = context.getSystemService(ClipboardManager::class.java)
+            clipboard?.setPrimaryClip(ClipData.newPlainText(label, value))
+            stateHolder.showToast("$label copied")
+        },
+        onOpenDownloadsFolder = {
+            val treeUri = state.settings.downloadsTreeUri?.toUri()
+            if (treeUri != null) {
+                runCatching {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(treeUri, DocumentsContract.Document.MIME_TYPE_DIR)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(intent)
+                }.onFailure {
+                    stateHolder.showToast("Downloads folder saved at: ${state.settings.downloadsDirectoryLabel}")
+                }
+            } else {
+                stateHolder.showToast("Using default directory: ${state.settings.downloadsDirectoryLabel}")
+            }
+        },
+        onOpenExternalUrl = { url ->
+            runCatching {
+                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+            }.onFailure {
+                stateHolder.showToast("No application available to open link")
+            }
+        },
         onSelectPairedDevice = stateHolder::selectPairedDevice,
         onClearSelectedPairedDevice = stateHolder::clearSelectedPairedDevice,
         onConnectPairedDevice = { targetId ->

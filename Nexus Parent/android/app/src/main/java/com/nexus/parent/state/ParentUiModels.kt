@@ -135,6 +135,33 @@ enum class StealthStatus {
     ACTIVE
 }
 
+enum class AppUpdateStatusKind {
+    IDLE,
+    CHECKING,
+    UP_TO_DATE,
+    DOWNLOADING,
+    READY,
+    ERROR
+}
+
+data class AppUpdateUiState(
+    val status: AppUpdateStatusKind = AppUpdateStatusKind.IDLE,
+    val currentVersion: String = "0.1.0-alpha",
+    val availableVersion: String? = null,
+    val downloadProgressPercent: Int = 0,
+    val releaseUrl: String? = null,
+    val sha256Verified: Boolean = false,
+    val errorMessage: String? = null,
+    val updatesDirPath: String = ""
+)
+
+data class LocalStorageMetrics(
+    val totalBytes: Long = 0L,
+    val entryCount: Int = 0,
+    val formattedSize: String = "0 B",
+    val prefsPathLabel: String = "shared_prefs/nexus_parent_prefs_v1.xml"
+)
+
 data class DeviceTelemetry(
     val androidVersion: String = "14",
     val sdkInt: Int = 34,
@@ -558,6 +585,8 @@ data class SettingsValues(
     val askBeforeDownload: Boolean = false,
     val autoConnectLastDevice: Boolean = false,
     val keepScreenAwake: Boolean = true,
+    val autoCheckUpdates: Boolean = true,
+    val alertIntruderSelfie: Boolean = true,
     val alertLowBattery: Boolean = true,
     val alertChildDisconnected: Boolean = true,
     val alertChildActiveCall: Boolean = true
@@ -602,6 +631,9 @@ data class ParentUiState(
     val sessionHardwareAcceleration: Boolean? = null,
     val availableAudioInputs: List<AudioDeviceOption> = emptyList(),
     val availableAudioOutputs: List<AudioDeviceOption> = emptyList(),
+    val appUpdate: AppUpdateUiState = AppUpdateUiState(),
+    val localStorageMetrics: LocalStorageMetrics = LocalStorageMetrics(),
+    val isFirebaseSignedIn: Boolean = false,
 
     val activeCallAlert: ActiveCallAlert? = null,
     val toastMessage: String? = null

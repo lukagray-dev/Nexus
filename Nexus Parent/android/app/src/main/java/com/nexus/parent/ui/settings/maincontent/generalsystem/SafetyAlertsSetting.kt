@@ -15,6 +15,12 @@ fun SafetyAlertsSetting(
 ) {
     SettingsSectionGroup(title = "Notifications & Safety Alerts") {
         SettingsToggleRow(
+            title = "Intruder Selfie Triggered",
+            subtitle = "Alert immediately when child phone detects unauthorized App Lock PIN attempts.",
+            checked = settings.alertIntruderSelfie,
+            onCheckedChange = { v -> onUpdateSettings { it.copy(alertIntruderSelfie = v) } }
+        )
+        SettingsToggleRow(
             title = "Active Cellular Call Alert",
             subtitle = "Show floating banner with 1-click Mic Listen & urgent alert when child enters a call.",
             checked = settings.alertChildActiveCall,
