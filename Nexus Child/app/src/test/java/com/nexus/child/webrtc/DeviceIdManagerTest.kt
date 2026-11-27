@@ -127,6 +127,15 @@ class DeviceIdManagerTest {
         assertNull("NexusBackgroundService.deviceId must be null before bootstrap", initialId)
     }
 
+    @Test
+    fun testInitialDeviceMetadataIncludesOwnerUidAndStatus() {
+        val metadata = DeviceIdManager.buildInitialDeviceMetadata("child-uid-abc", timestampValue = 123456L)
+        assertEquals("child-uid-abc", metadata["ownerUid"])
+        assertEquals("online-waiting", metadata["status"])
+        assertEquals(123456L, metadata["createdAt"])
+        assertEquals(123456L, metadata["lastSeen"])
+    }
+
     /**
      * Minimal in-memory SharedPreferences implementation for deterministic unit tests.
      */

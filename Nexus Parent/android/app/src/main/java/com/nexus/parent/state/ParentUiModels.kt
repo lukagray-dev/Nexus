@@ -195,7 +195,9 @@ data class DeviceTelemetry(
     val survivalPermissionsText: String = "Unknown",
     val updateAvailable: Boolean = false,
     val latestAvailableVersion: String? = null,
-    val updateReleaseUrl: String? = null
+    val updateReleaseUrl: String? = null,
+    val deviceAbi: String? = null,
+    val recommendedUpdateAssetUrl: String? = null
 )
 
 data class DeviceRecord(

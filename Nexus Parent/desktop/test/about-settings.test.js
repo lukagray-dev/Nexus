@@ -172,6 +172,7 @@ describe('About Nexus Parent Settings Page Tests', () => {
           webviewVersion: '132.0.2957.127',
           os: 'windows',
           arch: 'x86_64',
+          installKind: 'nsis',
           cpuCores: 16,
           exePath: 'C:\\Program Files\\Nexus Parent\\nexus-parent.exe',
           configDir: 'C:\\Users\\Parent\\AppData\\Roaming\\com.nexus.parent',
@@ -297,6 +298,7 @@ describe('About Nexus Parent Settings Page Tests', () => {
     assert.strictEqual(clipboardCopied.length, 1);
     assert.ok(clipboardCopied[0].includes('Nexus Parent (com.nexus.parent)'));
     assert.ok(clipboardCopied[0].includes('v0.2.0'));
+    assert.ok(clipboardCopied[0].includes('Package Mode: nsis'));
     assert.ok(clipboardCopied[0].includes('132.0.2957.127'));
   });
 

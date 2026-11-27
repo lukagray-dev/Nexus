@@ -128,13 +128,15 @@ class TelemetryParserTest {
         )
 
         val availPacket = TelemetryParser.parseChildUpdatePacket(
-            """{"type":"CHILD_UPDATE_STATUS","updateAvailable":true,"currentVersion":"0.1.0-alpha","latestVersion":"0.1.0","releaseUrl":"https://github.com/lukagray-dev/Nexus/releases/tag/v0.1.0"}"""
+            """{"type":"CHILD_UPDATE_STATUS","updateAvailable":true,"currentVersion":"0.1.0-alpha","latestVersion":"0.1.0","releaseUrl":"https://github.com/lukagray-dev/Nexus/releases/tag/v0.1.0","deviceAbi":"arm64-v8a","recommendedAssetUrl":"https://example.com/nexus-child-v0.1.0-arm64-v8a.apk"}"""
         )
         assertNotNull(availPacket)
         val flagged = TelemetryParser.applyChildUpdateStatus(base, availPacket!!)
         assertTrue(flagged.telemetry.updateAvailable)
         assertEquals("0.1.0", flagged.telemetry.latestAvailableVersion)
         assertEquals("0.1.0-alpha", flagged.telemetry.appVersion)
+        assertEquals("arm64-v8a", flagged.telemetry.deviceAbi)
+        assertEquals("https://example.com/nexus-child-v0.1.0-arm64-v8a.apk", flagged.telemetry.recommendedUpdateAssetUrl)
 
         val clearedPacket = TelemetryParser.parseChildUpdatePacket(
             """{"type":"CHILD_UPDATE_STATUS","updateAvailable":false,"currentVersion":"0.1.0"}"""
@@ -143,6 +145,7 @@ class TelemetryParserTest {
         val cleared = TelemetryParser.applyChildUpdateStatus(flagged, clearedPacket!!)
         assertFalse(cleared.telemetry.updateAvailable)
         assertNull(cleared.telemetry.latestAvailableVersion)
+        assertNull(cleared.telemetry.recommendedUpdateAssetUrl)
         assertEquals("0.1.0", cleared.telemetry.appVersion)
     }
 }

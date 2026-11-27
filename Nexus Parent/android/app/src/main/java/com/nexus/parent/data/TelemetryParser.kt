@@ -43,7 +43,9 @@ data class ChildUpdateStatusPacket(
     val updateAvailable: Boolean,
     val currentVersion: String? = null,
     val latestVersion: String? = null,
-    val releaseUrl: String? = null
+    val releaseUrl: String? = null,
+    val deviceAbi: String? = null,
+    val recommendedAssetUrl: String? = null
 )
 
 /**
@@ -200,7 +202,9 @@ object TelemetryParser {
                 updateAvailable = available,
                 currentVersion = json.optNullableString("currentVersion")?.takeIf { it.isNotBlank() },
                 latestVersion = json.optNullableString("latestVersion")?.takeIf { it.isNotBlank() },
-                releaseUrl = json.optNullableString("releaseUrl")?.takeIf { it.isNotBlank() }
+                releaseUrl = json.optNullableString("releaseUrl")?.takeIf { it.isNotBlank() },
+                deviceAbi = json.optNullableString("deviceAbi")?.takeIf { it.isNotBlank() },
+                recommendedAssetUrl = json.optNullableString("recommendedAssetUrl")?.takeIf { it.isNotBlank() }
             )
         }.getOrNull()
     }
@@ -212,7 +216,9 @@ object TelemetryParser {
                 appVersion = nextAppVer,
                 updateAvailable = packet.updateAvailable,
                 latestAvailableVersion = if (packet.updateAvailable) packet.latestVersion else null,
-                updateReleaseUrl = if (packet.updateAvailable) packet.releaseUrl else null
+                updateReleaseUrl = if (packet.updateAvailable) packet.releaseUrl else null,
+                deviceAbi = packet.deviceAbi ?: current.telemetry.deviceAbi,
+                recommendedUpdateAssetUrl = if (packet.updateAvailable) packet.recommendedAssetUrl else null
             )
         )
     }

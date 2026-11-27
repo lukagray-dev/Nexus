@@ -21,7 +21,33 @@ import {
   update,
   type DataSnapshot
 } from 'firebase/database';
-import { getFirebaseDatabase } from './firebase-config.js';
+import { getFirebaseAuth, getFirebaseDatabase } from './firebase-config.js';
+import { authManager } from './auth-manager.js';
+
+export interface OfferSignalingPayload {
+  type: RTCSdpType | undefined;
+  sdp: string | undefined;
+  uid: string;
+}
+
+/**
+ * Builds an RTDB `/signaling/{childId}/offer` payload tagged with the caller's Firebase UID
+ * so security rules isolate offer/answer reads to the active Parent and Child.
+ */
+export function buildOfferPayload(
+  desc: RTCSessionDescriptionInit,
+  uid: string | null | undefined
+): OfferSignalingPayload {
+  const cleanUid = typeof uid === 'string' ? uid.trim() : '';
+  if (!cleanUid) {
+    throw new Error('Firebase authentication required before publishing SDP payload.');
+  }
+  return {
+    type: desc.type,
+    sdp: desc.sdp,
+    uid: cleanUid,
+  };
+}
 
 export interface ChildDeviceMetadata {
   status: string;
@@ -86,12 +112,10 @@ export class DesktopSignalingClient {
     const rawId = this.normalizeChildId(childId);
     const db = getFirebaseDatabase();
     const offerRef = ref(db, `signaling/${rawId}/offer`);
+    const uid = authManager.getUser()?.uid ?? getFirebaseAuth().currentUser?.uid;
 
     console.log(`[SignalingClient] Publishing Non-Trickle SDP Offer to /signaling/${rawId}/offer...`);
-    await set(offerRef, {
-      type: offer.type,
-      sdp: offer.sdp
-    });
+    await set(offerRef, buildOfferPayload(offer, uid));
     console.log('[SignalingClient] SDP Offer successfully published to Firebase.');
   }
 
@@ -160,12 +184,10 @@ export class DesktopSignalingClient {
     const rawId = this.normalizeChildId(childId);
     const db = getFirebaseDatabase();
     const offerRef = ref(db, `signaling/${rawId}/offer`);
+    const uid = authManager.getUser()?.uid ?? getFirebaseAuth().currentUser?.uid;
 
     console.log(`[SignalingClient] Publishing renegotiation SDP Answer to /signaling/${rawId}/offer...`);
-    await set(offerRef, {
-      type: answer.type,
-      sdp: answer.sdp
-    });
+    await set(offerRef, buildOfferPayload(answer, uid));
     console.log('[SignalingClient] Renegotiation SDP Answer successfully published to Firebase.');
   }
 
@@ -182,8 +204,7 @@ export class DesktopSignalingClient {
       this.cleanupAnswerListener();
       await update(signalingRef, {
         offer: null,
-        answer: null,
-        'ice-candidates': null
+        answer: null
       });
     } catch (e) {
       console.warn('[SignalingClient] Warning during session cleanup:', e);

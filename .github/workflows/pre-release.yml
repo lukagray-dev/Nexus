@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Pre-release version tag (e.g., v0.1.0-alpha, v0.1.0-alpha.1). Leave empty to auto-increment from latest alpha tag.'
+        description: 'Pre-release version tag (e.g., v0.1.0-alpha). Leave empty for base-10 rollover auto-increment.'
         required: false
         type: string
         default: ''
@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine next alpha version tag
+      - name: Determine next alpha version tag (base-10 rollover)
         id: bump
         uses: actions/github-script@v7
         with:
@@ -45,28 +45,42 @@ jobs:
                 per_page: 100
               });
 
-              // Match patterns like v0.1.0-alpha or v0.1.0-alpha.1
-              const alphaRegex = /^v\d+\.\d+\.\d+-alpha(\.\d+)?$/;
+              const alphaRegex = /^v(\d+)\.(\d+)\.(\d+)-alpha$/;
+              const parseAlpha = (name) => {
+                const m = name.match(alphaRegex);
+                if (!m) return null;
+                return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
+              };
+
               const alphaTags = tags
-                .map(t => t.name)
-                .filter(name => alphaRegex.test(name));
+                .map(t => ({ name: t.name, ver: parseAlpha(t.name) }))
+                .filter(item => item.ver !== null)
+                .sort((a, b) => {
+                  if (a.ver[0] !== b.ver[0]) return b.ver[0] - a.ver[0];
+                  if (a.ver[1] !== b.ver[1]) return b.ver[1] - a.ver[1];
+                  return b.ver[2] - a.ver[2];
+                });
 
               if (alphaTags.length === 0) {
                 targetTag = 'v0.1.0-alpha';
               } else {
-                const latestTag = alphaTags[0];
-                const match = latestTag.match(/^v(\d+)\.(\d+)\.(\d+)-alpha(?:\.(\d+))?$/);
-                if (match) {
-                  const major = match[1];
-                  const minor = match[2];
-                  const patch = match[3];
-                  const subIndex = match[4] ? parseInt(match[4], 10) + 1 : 1;
-                  targetTag = `v${major}.${minor}.${patch}-alpha.${subIndex}`;
+                const [maj, min, pat] = alphaTags[0].ver;
+                let nMaj = maj;
+                let nMin = min;
+                let nPat = pat;
+                if (pat < 9) {
+                  nPat = pat + 1;
+                } else if (min < 9) {
+                  nMin = min + 1;
+                  nPat = 0;
                 } else {
-                  targetTag = 'v0.1.0-alpha.1';
+                  nMaj = maj + 1;
+                  nMin = 0;
+                  nPat = 0;
                 }
+                targetTag = `v${nMaj}.${nMin}.${nPat}-alpha`;
               }
-              console.log(`Latest alpha tag found: ${alphaTags[0] || 'none'}`);
+              console.log(`Latest alpha tag found: ${alphaTags[0]?.name || 'none'}`);
             }
 
             const title = manualTitle || `Nexus ${targetTag}`;
@@ -77,9 +91,19 @@ jobs:
             core.setOutput('RELEASE_TITLE', title);
 
   build-desktop:
-    name: Build Nexus Parent Desktop (Windows)
+    name: Build Nexus Parent Desktop (${{ matrix.arch_label }})
     needs: version
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rust_target: x86_64-pc-windows-msvc
+            arch_label: windows-x86_64
+            bundles: nsis,msi
+          - rust_target: aarch64-pc-windows-msvc
+            arch_label: windows-arm64
+            bundles: nsis
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,55 +115,141 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Rust stable
+      - name: Install Rust stable (${{ matrix.rust_target }})
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.rust_target }}
 
       - name: Cache cargo registry + target dir
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: "Nexus Parent/desktop/src-tauri -> target"
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ matrix.rust_target }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build Desktop Static Frontend
+      - name: Prepare & Validate Firebase .env
         shell: powershell
+        env:
+          NEXUS_FB_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXUS_FB_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXUS_FB_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          NEXUS_FB_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXUS_FB_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXUS_FB_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+        run: |
+          $pairs = [ordered]@{
+            apiKey = $env:NEXUS_FB_API_KEY
+            authDomain = $env:NEXUS_FB_AUTH_DOMAIN
+            databaseURL = $env:NEXUS_FB_DATABASE_URL
+            projectId = $env:NEXUS_FB_PROJECT_ID
+            storageBucket = $env:NEXUS_FB_STORAGE_BUCKET
+            appId = $env:NEXUS_FB_APP_ID
+          }
+          $missing = @()
+          foreach ($entry in $pairs.GetEnumerator()) {
+            if ([string]::IsNullOrWhiteSpace($entry.Value)) {
+              $missing += $entry.Key
+            }
+          }
+          if ($missing.Count -gt 0) {
+            Write-Error "Missing required GitHub Firebase secrets: $($missing -join ', '). Add all 6 FIREBASE_* secrets in Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          }
+          if (-not $pairs.databaseURL.StartsWith("https://")) {
+            Write-Error "FIREBASE_DATABASE_URL must start with https://"
+            exit 1
+          }
+          $lines = foreach ($entry in $pairs.GetEnumerator()) {
+            $safeVal = $entry.Value.Replace('"', '\"')
+            "$($entry.Key)=`"$safeVal`""
+          }
+          Set-Content -Path ".env" -Value ($lines -join "`n") -Encoding UTF8
+          Write-Host "Generated validated root .env for Desktop release build."
+
+      - name: Inject Release Version Into Desktop Manifests
+        shell: powershell
+        run: |
+          $tag = "${{ needs.version.outputs.new_tag }}"
+          $cleanVersion = $tag.TrimStart('v')
+          Write-Host "Injecting version $cleanVersion into Desktop manifests..."
+
+          node -e "const fs=require('fs'); for (const p of ['Nexus Parent/desktop/package.json','Nexus Parent/desktop/src-tauri/tauri.conf.json']) { const j=JSON.parse(fs.readFileSync(p,'utf8')); j.version=process.argv[1]; fs.writeFileSync(p, JSON.stringify(j, null, 2)+'\n'); }" "$cleanVersion"
+
+          $cargoPath = "Nexus Parent/desktop/src-tauri/Cargo.toml"
+          $cargoContent = Get-Content -Path $cargoPath -Raw
+          $cargoUpdated = [regex]::Replace($cargoContent, '(?m)^version\s*=\s*"[^"]+"', "version = `"$cleanVersion`"", 1)
+          Set-Content -Path $cargoPath -Value $cargoUpdated -NoNewline -Encoding UTF8
+
+      - name: Install Frontend Dependencies & Build Desktop Bundles
+        shell: powershell
+        env:
+          NEXUS_REQUIRE_FIREBASE_ENV: '1'
         run: |
           cd "Nexus Parent/desktop"
           npm install
-          npm run build
-
-      - name: Build Desktop Release Binary
-        shell: powershell
-        run: |
-          cd "Nexus Parent/desktop/src-tauri"
-          cargo build --release
+          npx --yes @tauri-apps/cli@2 build --target ${{ matrix.rust_target }} --bundles ${{ matrix.bundles }}
 
       - name: Package Desktop Artifacts
         shell: powershell
         run: |
           $tag = "${{ needs.version.outputs.new_tag }}"
-          mkdir -p artifacts
-          
-          $bin = "Nexus Parent/desktop/src-tauri/target/release/nexus-parent.exe"
-          if (Test-Path $bin) {
-              $dest = "artifacts/nexus-parent-$tag-windows-x86_64.exe"
-              Copy-Item $bin $dest
-              Write-Host "Packaged Desktop binary to $dest"
-          } else {
-              Write-Error "Desktop binary not found at $bin!"
+          $rustTarget = "${{ matrix.rust_target }}"
+          $archLabel = "${{ matrix.arch_label }}"
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+
+          function Export-WithSha256($srcPath, $destName) {
+            $dest = Join-Path "artifacts" $destName
+            Copy-Item -LiteralPath $srcPath -Destination $dest -Force
+            $sha256 = (Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant()
+            Set-Content -Path "$dest.sha256" -Value "$sha256  $destName" -NoNewline -Encoding ASCII
+            Write-Host "Packaged $destName (SHA-256: $sha256)"
+          }
+
+          $bin = "Nexus Parent/desktop/src-tauri/target/$rustTarget/release/nexus-parent.exe"
+          if (-not (Test-Path -LiteralPath $bin)) {
+            Write-Error "Desktop binary not found at $bin!"
+            exit 1
+          }
+          Export-WithSha256 $bin "nexus-parent-$tag-$archLabel-portable.exe"
+
+          $nsisDir = "Nexus Parent/desktop/src-tauri/target/$rustTarget/release/bundle/nsis"
+          if (Test-Path -LiteralPath $nsisDir) {
+            $nsisFile = Get-ChildItem -LiteralPath $nsisDir -Filter "*.exe" | Select-Object -First 1
+            if ($nsisFile) {
+              Export-WithSha256 $nsisFile.FullName "nexus-parent-$tag-$archLabel-setup.exe"
+            } else {
+              Write-Error "Expected NSIS installer in $nsisDir"
               exit 1
+            }
+          } else {
+            Write-Error "NSIS bundle directory not found at $nsisDir"
+            exit 1
+          }
+
+          if ("${{ matrix.bundles }}" -match "msi") {
+            $msiDir = "Nexus Parent/desktop/src-tauri/target/$rustTarget/release/bundle/msi"
+            if (Test-Path -LiteralPath $msiDir) {
+              $msiFile = Get-ChildItem -LiteralPath $msiDir -Filter "*.msi" | Select-Object -First 1
+              if ($msiFile) {
+                Export-WithSha256 $msiFile.FullName "nexus-parent-$tag-$archLabel.msi"
+              } else {
+                Write-Error "Expected MSI installer in $msiDir"
+                exit 1
+              }
+            } else {
+              Write-Error "MSI bundle directory not found at $msiDir"
+              exit 1
+            }
           }
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-desktop-binaries
+          name: nexus-desktop-prerelease-${{ matrix.arch_label }}
           path: artifacts/*
           if-no-files-found: error
 
   build-android:
-    name: Build Nexus Child Mobile Client (Android)
+    name: Build Nexus Mobile Clients (Android Child & Parent ABI Splits)
     needs: version
     runs-on: ubuntu-latest
     steps:
@@ -155,29 +265,122 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Prepare Root Environment Stub
+      - name: Prepare & Validate Firebase .env
+        env:
+          NEXUS_FB_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXUS_FB_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXUS_FB_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          NEXUS_FB_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXUS_FB_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXUS_FB_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
         run: |
-          touch .env
-          echo 'apiKey="pre-release-build"' >> .env
-          echo 'projectId="nexus-pre-release"' >> .env
-          echo 'databaseURL="https://nexus-pre-release.firebaseio.com"' >> .env
+          missing=()
+          [ -z "$NEXUS_FB_API_KEY" ] && missing+=("FIREBASE_API_KEY")
+          [ -z "$NEXUS_FB_AUTH_DOMAIN" ] && missing+=("FIREBASE_AUTH_DOMAIN")
+          [ -z "$NEXUS_FB_DATABASE_URL" ] && missing+=("FIREBASE_DATABASE_URL")
+          [ -z "$NEXUS_FB_PROJECT_ID" ] && missing+=("FIREBASE_PROJECT_ID")
+          [ -z "$NEXUS_FB_STORAGE_BUCKET" ] && missing+=("FIREBASE_STORAGE_BUCKET")
+          [ -z "$NEXUS_FB_APP_ID" ] && missing+=("FIREBASE_APP_ID")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required GitHub Firebase secrets: ${missing[*]}"
+            exit 1
+          fi
+          case "$NEXUS_FB_DATABASE_URL" in
+            https://*) ;;
+            *)
+              echo "::error::FIREBASE_DATABASE_URL must start with https://"
+              exit 1
+              ;;
+          esac
+          {
+            printf 'apiKey="%s"\n' "$NEXUS_FB_API_KEY"
+            printf 'authDomain="%s"\n' "$NEXUS_FB_AUTH_DOMAIN"
+            printf 'databaseURL="%s"\n' "$NEXUS_FB_DATABASE_URL"
+            printf 'projectId="%s"\n' "$NEXUS_FB_PROJECT_ID"
+            printf 'storageBucket="%s"\n' "$NEXUS_FB_STORAGE_BUCKET"
+            printf 'appId="%s"\n' "$NEXUS_FB_APP_ID"
+          } > .env
+          echo "Generated validated root .env for Android release build."
 
-      - name: Build Android Debug APK
+      - name: Configure Android Signing Mode
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            KEYSTORE_FILE="$RUNNER_TEMP/nexus-release.jks"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n' | base64 --decode > "$KEYSTORE_FILE"
+            echo "NEXUS_KEYSTORE_PATH=$KEYSTORE_FILE" >> "$GITHUB_ENV"
+            echo "NEXUS_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "NEXUS_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "NEXUS_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "GRADLE_TASK=assembleRelease" >> "$GITHUB_ENV"
+            echo "APK_VARIANT=release" >> "$GITHUB_ENV"
+            echo "Configured release keystore signing."
+          else
+            echo "::warning::Android release signing secrets are incomplete or unset; falling back to assembleDebug."
+            echo "GRADLE_TASK=assembleDebug" >> "$GITHUB_ENV"
+            echo "APK_VARIANT=debug" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build Nexus Child APKs
         working-directory: "Nexus Child"
         run: |
+          TAG="${{ needs.version.outputs.new_tag }}"
+          VER_CLEAN="${TAG#v}"
+          CORE_VER="${VER_CLEAN%%-*}"
+          IFS='.' read -r MAJ MIN PAT <<< "$CORE_VER"
+          VER_CODE=$(( (${MAJ:-0} * 10000) + (${MIN:-0} * 100) + ${PAT:-0} + 1 ))
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew "$GRADLE_TASK" --no-daemon -PnexusVersionName="$VER_CLEAN" -PnexusVersionCode="$VER_CODE"
 
-      - name: Package Android Artifact
+      - name: Build Nexus Parent APKs
+        working-directory: "Nexus Parent/android"
+        run: |
+          TAG="${{ needs.version.outputs.new_tag }}"
+          VER_CLEAN="${TAG#v}"
+          CORE_VER="${VER_CLEAN%%-*}"
+          IFS='.' read -r MAJ MIN PAT <<< "$CORE_VER"
+          VER_CODE=$(( (${MAJ:-0} * 10000) + (${MIN:-0} * 100) + ${PAT:-0} + 1 ))
+          chmod +x gradlew
+          ./gradlew "$GRADLE_TASK" --no-daemon -PnexusVersionName="$VER_CLEAN" -PnexusVersionCode="$VER_CODE"
+
+      - name: Package Android Artifacts
         run: |
           TAG="${{ needs.version.outputs.new_tag }}"
           mkdir -p android_artifacts
-          cp "Nexus Child/app/build/outputs/apk/debug/app-debug.apk" "android_artifacts/nexus-child-${TAG}.apk"
+
+          package_app_apks() {
+            local app_dir="$1"
+            local prefix="$2"
+            local apk_dir="$app_dir/app/build/outputs/apk/${APK_VARIANT}"
+            for abi in arm64-v8a armeabi-v7a x86_64 x86 universal; do
+              local src_apk
+              src_apk=$(find "$apk_dir" -maxdepth 1 -type f -name "*-${abi}-*.apk" | head -n 1)
+              if [ -z "$src_apk" ]; then
+                echo "Error: Missing ${abi} APK in ${apk_dir}" >&2
+                exit 1
+              fi
+              if [[ "$src_apk" == *"-unsigned.apk" ]]; then
+                echo "Error: Release APK ${src_apk} is unsigned! Verify Android signing secrets." >&2
+                exit 1
+              fi
+              local out_name="${prefix}-${TAG}-${abi}.apk"
+              cp "$src_apk" "android_artifacts/${out_name}"
+              (cd android_artifacts && sha256sum "${out_name}" > "${out_name}.sha256")
+              echo "Packaged ${out_name}"
+            done
+          }
+
+          package_app_apks "Nexus Child" "nexus-child"
+          package_app_apks "Nexus Parent/android" "nexus-parent"
 
       - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-android-binaries
+          name: nexus-android-prerelease-binaries
           path: android_artifacts/*
           if-no-files-found: error
 
@@ -194,13 +397,14 @@ jobs:
       - name: Download Desktop Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nexus-desktop-binaries
+          pattern: nexus-desktop-prerelease-*
+          merge-multiple: true
           path: dist
 
       - name: Download Android Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nexus-android-binaries
+          name: nexus-android-prerelease-binaries
           path: dist
 
       - name: Delete existing release/tag if re-running

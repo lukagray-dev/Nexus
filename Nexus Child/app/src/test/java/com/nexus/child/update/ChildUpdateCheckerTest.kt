@@ -82,4 +82,45 @@ class ChildUpdateCheckerTest {
         val upToDate = ChildUpdateProtocol.evaluateReleases(releases, currentVersion = "0.1.0", nowMs = 3000L)
         assertFalse(upToDate.updateAvailable)
     }
+
+    @Test
+    fun `matches child ABI priority, falls back to universal, and embeds recommended asset metadata`() {
+        val multiAbiRelease = ChildGitHubReleaseDto(
+            tagName = "v0.1.1",
+            htmlUrl = "https://github.com/lukagray-dev/Nexus/releases/tag/v0.1.1",
+            isDraft = false,
+            isPrerelease = false,
+            assets = listOf(
+                ChildGitHubAssetDto("nexus-parent-v0.1.1-arm64-v8a.apk", "https://example.com/parent.apk"),
+                ChildGitHubAssetDto("nexus-child-v0.1.1-arm64-v8a.apk", "https://example.com/child-arm64.apk"),
+                ChildGitHubAssetDto("nexus-child-v0.1.1-armeabi-v7a.apk", "https://example.com/child-v7a.apk"),
+                ChildGitHubAssetDto("nexus-child-v0.1.1-universal.apk", "https://example.com/child-uni.apk")
+            )
+        )
+
+        val arm64Status = ChildUpdateProtocol.evaluateReleases(
+            releases = listOf(multiAbiRelease),
+            currentVersion = "0.1.0",
+            nowMs = 4000L,
+            supportedAbis = listOf("arm64-v8a", "armeabi-v7a")
+        )
+        assertTrue(arm64Status.updateAvailable)
+        assertEquals("arm64-v8a", arm64Status.deviceAbi)
+        assertEquals("nexus-child-v0.1.1-arm64-v8a.apk", arm64Status.recommendedAssetName)
+        assertEquals("https://example.com/child-arm64.apk", arm64Status.recommendedAssetUrl)
+
+        val json = JSONObject(arm64Status.toDataChannelJson())
+        assertEquals("arm64-v8a", json.getString("deviceAbi"))
+        assertEquals("nexus-child-v0.1.1-arm64-v8a.apk", json.getString("recommendedAssetName"))
+        assertEquals("https://example.com/child-arm64.apk", json.getString("recommendedAssetUrl"))
+
+        val fallbackUni = ChildUpdateProtocol.evaluateReleases(
+            releases = listOf(multiAbiRelease),
+            currentVersion = "0.1.0",
+            nowMs = 5000L,
+            supportedAbis = listOf("x86")
+        )
+        assertTrue(fallbackUni.updateAvailable)
+        assertEquals("nexus-child-v0.1.1-universal.apk", fallbackUni.recommendedAssetName)
+    }
 }

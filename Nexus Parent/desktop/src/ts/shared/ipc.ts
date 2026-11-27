@@ -84,6 +84,8 @@ export interface UpdateStatusPayload {
   releaseUrl: string | null;
   sha256Verified: boolean;
   errorMessage: string | null;
+  arch?: string;
+  installKind?: 'portable' | 'nsis' | 'msi' | string;
 }
 
 /**
@@ -97,6 +99,7 @@ export interface ParentSystemInfo {
   webviewVersion: string | null;
   os: string;
   arch: string;
+  installKind?: string;
   cpuCores: number;
   exePath: string | null;
   configDir: string | null;

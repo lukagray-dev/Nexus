@@ -41,6 +41,7 @@ export function buildParentDiagnosticsSummary(
 ): string {
   const version = info?.appVersion || status?.currentVersion || '0.1.0-alpha';
   const osLine = info ? `${info.os} (${info.arch})` : 'WebView / Browser';
+  const installLine = info?.installKind || status?.installKind || 'portable';
   const tauriLine = info ? `Tauri v${info.tauriVersion}` : 'Non-Tauri Preview';
   const webviewLine = info?.webviewVersion || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown');
   const coresLine = info ? String(info.cpuCores) : String(typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 1 : 1);
@@ -56,6 +57,7 @@ export function buildParentDiagnosticsSummary(
     `Version: v${version}`,
     `Update State: ${formatUpdateStatusBadge(status)}`,
     `OS / Arch: ${osLine}`,
+    `Package Mode: ${installLine}`,
     `Runtime: ${tauriLine}`,
     `WebView: ${webviewLine}`,
     `CPU Cores: ${coresLine}`,

@@ -124,12 +124,11 @@ object DeviceIdManager {
                 if (!snapshot.exists()) {
                     Log.d(TAG, "Candidate $candidate is unique. Registering metadata...")
 
-                    // Only publish essential presence metadata to Firebase
-                    val metadata = mapOf(
-                        "createdAt" to ServerValue.TIMESTAMP,
-                        "lastSeen" to ServerValue.TIMESTAMP,
-                        "status" to "online-waiting"
-                    )
+                    // Only publish essential presence metadata + ownerUid so RTDB rules lock writes to this device
+                    val ownerUid = AuthManager.getCurrentUid()
+                        ?.takeIf { it.isNotBlank() }
+                        ?: throw IllegalStateException("Firebase authentication required before registering Device ID.")
+                    val metadata = buildInitialDeviceMetadata(ownerUid)
 
                     // Atomically save to local SharedPreferences before publishing
                     prefs.edit {
@@ -170,6 +169,22 @@ object DeviceIdManager {
         val base = min(60_000L, 1000L * (1 shl min(10, attempt)))
         val jitter = secureRandom.nextLong(0, 3000L)
         return base + jitter
+    }
+
+    /**
+     * Builds the initial RTDB registration payload including `ownerUid` for security rules.
+     */
+    internal fun buildInitialDeviceMetadata(
+        ownerUid: String,
+        timestampValue: Any = ServerValue.TIMESTAMP
+    ): Map<String, Any> {
+        require(ownerUid.isNotBlank()) { "ownerUid must not be blank" }
+        return mapOf(
+            "createdAt" to timestampValue,
+            "lastSeen" to timestampValue,
+            "status" to "online-waiting",
+            "ownerUid" to ownerUid
+        )
     }
 
     /**

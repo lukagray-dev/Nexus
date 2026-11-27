@@ -103,6 +103,44 @@ class AppUpdateProtocolTest {
     }
 
     @Test
+    fun `matches exact supported ABI APK in priority order, falls back to universal, and requires strict sha256`() {
+        val multiAbiRelease = GitHubReleaseDto(
+            tagName = "v0.2.0",
+            htmlUrl = "https://example.com/v020",
+            isDraft = false,
+            isPrerelease = false,
+            assets = listOf(
+                GitHubReleaseAssetDto("nexus-child-v0.2.0-arm64-v8a.apk", "https://example.com/c-arm64.apk"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-arm64-v8a.apk", "https://example.com/p-arm64.apk"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-arm64-v8a.apk.sha256", "https://example.com/p-arm64.apk.sha256"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-armeabi-v7a.apk", "https://example.com/p-v7a.apk"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-x86_64.apk", "https://example.com/p-x64.apk"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-x86_64.apk.sha256", "https://example.com/p-x64.apk.sha256"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-universal.apk", "https://example.com/p-uni.apk"),
+                GitHubReleaseAssetDto("nexus-parent-v0.2.0-universal.apk.sha256", "https://example.com/p-uni.apk.sha256")
+            )
+        )
+
+        val arm64 = AppUpdateProtocol.selectParentAndroidAssets(multiAbiRelease, listOf("arm64-v8a", "armeabi-v7a"))
+        assertEquals("nexus-parent-v0.2.0-arm64-v8a.apk", arm64?.first?.name)
+        assertEquals("nexus-parent-v0.2.0-arm64-v8a.apk.sha256", arm64?.second?.name)
+
+        // armeabi-v7a has no .sha256 in fixture -> must NOT mismatch arm64's .sha256
+        val v7a = AppUpdateProtocol.selectParentAndroidAssets(multiAbiRelease, listOf("armeabi-v7a"))
+        assertEquals("nexus-parent-v0.2.0-armeabi-v7a.apk", v7a?.first?.name)
+        assertNull(v7a?.second)
+
+        val x64 = AppUpdateProtocol.selectParentAndroidAssets(multiAbiRelease, listOf("x86_64"))
+        assertEquals("nexus-parent-v0.2.0-x86_64.apk", x64?.first?.name)
+        assertEquals("nexus-parent-v0.2.0-x86_64.apk.sha256", x64?.second?.name)
+
+        // Unknown ABI falls back to universal APK
+        val fallbackUni = AppUpdateProtocol.selectParentAndroidAssets(multiAbiRelease, listOf("mips64"))
+        assertEquals("nexus-parent-v0.2.0-universal.apk", fallbackUni?.first?.name)
+        assertEquals("nexus-parent-v0.2.0-universal.apk.sha256", fallbackUni?.second?.name)
+    }
+
+    @Test
     fun `validates apk zip magic bytes, sha256 parsing, and badge formatting`() {
         assertTrue(AppUpdateProtocol.verifyApkMagicHeader(byteArrayOf(0x50, 0x4B, 0x03, 0x04, 0x00)))
         assertFalse(AppUpdateProtocol.verifyApkMagicHeader(byteArrayOf(0x4D, 0x5A, 0x90.toByte(), 0x00)))

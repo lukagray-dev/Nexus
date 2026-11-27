@@ -1,5 +1,6 @@
 package com.nexus.child.update
 
+import android.os.Build
 import android.util.Log
 import com.nexus.child.BuildConfig
 import kotlinx.coroutines.CoroutineDispatcher
@@ -52,6 +53,9 @@ data class ChildUpdateStatus(
     val updateAvailable: Boolean = false,
     val latestVersion: String? = null,
     val releaseUrl: String? = null,
+    val deviceAbi: String? = null,
+    val recommendedAssetName: String? = null,
+    val recommendedAssetUrl: String? = null,
     val checkedAtMs: Long = 0L
 ) {
     fun toDataChannelJson(): String {
@@ -61,6 +65,9 @@ data class ChildUpdateStatus(
             put("currentVersion", currentVersion)
             if (latestVersion != null) put("latestVersion", latestVersion)
             if (releaseUrl != null) put("releaseUrl", releaseUrl)
+            if (deviceAbi != null) put("deviceAbi", deviceAbi)
+            if (recommendedAssetName != null) put("recommendedAssetName", recommendedAssetName)
+            if (recommendedAssetUrl != null) put("recommendedAssetUrl", recommendedAssetUrl)
         }.toString()
     }
 }
@@ -69,7 +76,7 @@ data class ChildUpdateStatus(
  * ChildUpdateProtocol - Pure JVM-testable GitHub stable release parser and SemVer comparator.
  *
  * Hey friend! Unlike Parent Android, Nexus Child strictly checks metadata JSON to detect
- * newer `nexus-child-*.apk` releases and notifies the Parent dashboard over DataChannel —
+ * newer compatible `nexus-child-*.apk` releases and notifies the Parent dashboard over DataChannel —
  * it NEVER downloads or runs an interactive installer silently on the child phone so active
  * background surveillance is never interrupted.
  */
@@ -84,6 +91,8 @@ object ChildUpdateProtocol {
     const val STARTUP_CHECK_DELAY_MS = 5_000L
     const val PERIODIC_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L
     const val CONNECT_STALE_MS = 60L * 60L * 1000L
+
+    private val KNOWN_ABI_TOKENS = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
 
     fun parseAppSemVer(raw: String): ParsedChildSemVer? {
         val trimmed = raw.trim().removePrefix("v").removePrefix("V")
@@ -160,28 +169,68 @@ object ChildUpdateProtocol {
             ?.second
     }
 
-    fun hasChildApkAsset(release: ChildGitHubReleaseDto): Boolean {
-        return release.assets.any { asset ->
+    /**
+     * Picks the best matching `nexus-child-*.apk` asset for `supportedAbis`,
+     * falling back to `-universal.apk` or a legacy un-suffixed APK.
+     */
+    fun selectChildAndroidAsset(
+        release: ChildGitHubReleaseDto,
+        supportedAbis: List<String> = emptyList()
+    ): ChildGitHubAssetDto? {
+        val candidates = release.assets.filter { asset ->
             val lower = asset.name.lowercase(Locale.US)
-            lower.endsWith(".apk") && lower.contains("nexus-child")
+            lower.endsWith(".apk") && lower.contains("nexus-child") && !lower.contains("nexus-parent")
         }
+        if (candidates.isEmpty()) return null
+
+        for (rawAbi in supportedAbis) {
+            val abi = rawAbi.trim().lowercase(Locale.US)
+            if (abi.isEmpty()) continue
+            val match = candidates.firstOrNull { asset ->
+                asset.name.lowercase(Locale.US).endsWith("-$abi.apk")
+            }
+            if (match != null) return match
+        }
+
+        val universal = candidates.firstOrNull { asset ->
+            asset.name.lowercase(Locale.US).endsWith("-universal.apk")
+        }
+        if (universal != null) return universal
+
+        val legacy = candidates.firstOrNull { asset ->
+            val lower = asset.name.lowercase(Locale.US)
+            KNOWN_ABI_TOKENS.none { abi -> lower.endsWith("-$abi.apk") }
+        }
+        if (legacy != null) return legacy
+
+        return if (supportedAbis.isEmpty()) candidates.firstOrNull() else null
     }
+
+    fun hasChildApkAsset(
+        release: ChildGitHubReleaseDto,
+        supportedAbis: List<String> = emptyList()
+    ): Boolean = selectChildAndroidAsset(release, supportedAbis) != null
 
     fun evaluateReleases(
         releases: List<ChildGitHubReleaseDto>,
         currentVersion: String,
-        nowMs: Long
+        nowMs: Long,
+        supportedAbis: List<String> = emptyList()
     ): ChildUpdateStatus {
         val latest = selectLatestStableRelease(releases)
+        val matchedAsset = latest?.let { selectChildAndroidAsset(it, supportedAbis) }
         if (latest == null ||
             !isNewerStableVersion(currentVersion, latest.tagName) ||
-            !hasChildApkAsset(latest)
+            matchedAsset == null
         ) {
             return ChildUpdateStatus(
                 currentVersion = currentVersion,
                 updateAvailable = false,
                 latestVersion = null,
                 releaseUrl = null,
+                deviceAbi = supportedAbis.firstOrNull(),
+                recommendedAssetName = null,
+                recommendedAssetUrl = null,
                 checkedAtMs = nowMs
             )
         }
@@ -191,6 +240,9 @@ object ChildUpdateProtocol {
             updateAvailable = true,
             latestVersion = cleanVersion,
             releaseUrl = latest.htmlUrl,
+            deviceAbi = supportedAbis.firstOrNull(),
+            recommendedAssetName = matchedAsset.name,
+            recommendedAssetUrl = matchedAsset.downloadUrl,
             checkedAtMs = nowMs
         )
     }
@@ -266,7 +318,8 @@ class ChildUpdateChecker(
                 ChildUpdateProtocol.evaluateReleases(
                     releases = releases,
                     currentVersion = currentVersion,
-                    nowMs = System.currentTimeMillis()
+                    nowMs = System.currentTimeMillis(),
+                    supportedAbis = Build.SUPPORTED_ABIS.toList()
                 )
             } catch (err: Exception) {
                 Log.w(TAG, "Child update check failed: ${err.message}")

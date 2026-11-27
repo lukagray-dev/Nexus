@@ -1,6 +1,7 @@
 package com.nexus.parent.webrtc
 
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -46,6 +47,15 @@ class SignalingClient {
 
         fun isReachableStatus(status: String): Boolean {
             return status in VALID_STATUSES
+        }
+
+        /**
+         * Builds an RTDB `/signaling/{childId}/offer` payload tagged with the Parent's Firebase UID
+         * so security rules isolate signaling reads to the active Parent and Child.
+         */
+        fun buildOfferPayload(desc: SessionDescription, uid: String): Map<String, String> {
+            require(uid.isNotBlank()) { "Firebase UID must not be blank when publishing SDP." }
+            return desc.serialize() + ("uid" to uid)
         }
     }
 
@@ -97,9 +107,11 @@ class SignalingClient {
      */
     suspend fun sendOffer(childId: String, offer: SessionDescription) {
         val rawId = normalizeChildId(childId)
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: throw IllegalStateException("Firebase authentication required before publishing SDP offer.")
         val offerRef = database().reference.child("signaling").child(rawId).child("offer")
         Log.d(TAG, "Publishing Non-Trickle SDP Offer to /signaling/$rawId/offer...")
-        offerRef.setValue(offer.serialize()).await()
+        offerRef.setValue(buildOfferPayload(offer, uid)).await()
     }
 
     /**
@@ -149,9 +161,11 @@ class SignalingClient {
      */
     suspend fun sendRenegotiationAnswer(childId: String, answer: SessionDescription) {
         val rawId = normalizeChildId(childId)
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: throw IllegalStateException("Firebase authentication required before publishing SDP answer.")
         val offerRef = database().reference.child("signaling").child(rawId).child("offer")
         Log.d(TAG, "Publishing renegotiation SDP Answer to /signaling/$rawId/offer...")
-        offerRef.setValue(answer.serialize()).await()
+        offerRef.setValue(buildOfferPayload(answer, uid)).await()
     }
 
     /**
@@ -165,8 +179,7 @@ class SignalingClient {
         runCatching {
             val updates = mapOf<String, Any?>(
                 "offer" to null,
-                "answer" to null,
-                "ice-candidates" to null
+                "answer" to null
             )
             signalingRef.updateChildren(updates).await()
         }.onFailure { err ->

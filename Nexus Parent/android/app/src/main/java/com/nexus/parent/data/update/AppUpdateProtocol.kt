@@ -164,26 +164,59 @@ object AppUpdateProtocol {
             ?.second
     }
 
+    private val KNOWN_ABI_TOKENS = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+
     /**
-     * Picks the Nexus Parent Android APK (`nexus-parent-*.apk`, never `nexus-child-*.apk`)
-     * plus its optional matching `.sha256` checksum asset.
+     * Picks the best compatible Nexus Parent Android APK (`nexus-parent-*.apk`, never `nexus-child-*.apk`)
+     * for the device's `supportedAbis` priority order (falling back to `-universal.apk` or legacy unsplit APK),
+     * plus its strict matching `<apk-name>.sha256` checksum asset.
      */
     fun selectParentAndroidAssets(
-        release: GitHubReleaseDto
+        release: GitHubReleaseDto,
+        supportedAbis: List<String> = emptyList()
     ): Pair<GitHubReleaseAssetDto, GitHubReleaseAssetDto?>? {
-        val apkAsset = release.assets.firstOrNull { asset ->
+        val candidates = release.assets.filter { asset ->
             val lower = asset.name.lowercase(Locale.US)
             lower.endsWith(".apk") && lower.contains("nexus-parent") && !lower.contains("nexus-child")
-        } ?: return null
+        }
+        if (candidates.isEmpty()) return null
+
+        val apkAsset = selectAbiMatchingApk(candidates, supportedAbis) ?: return null
 
         val exactShaName = "${apkAsset.name}.sha256".lowercase(Locale.US)
         val shaAsset = release.assets.firstOrNull { asset ->
-            val lower = asset.name.lowercase(Locale.US)
-            lower == exactShaName ||
-                (lower.endsWith(".apk.sha256") && lower.contains("nexus-parent"))
+            asset.name.lowercase(Locale.US) == exactShaName
         }
 
         return apkAsset to shaAsset
+    }
+
+    private fun selectAbiMatchingApk(
+        candidates: List<GitHubReleaseAssetDto>,
+        supportedAbis: List<String>
+    ): GitHubReleaseAssetDto? {
+        for (rawAbi in supportedAbis) {
+            val abi = rawAbi.trim().lowercase(Locale.US)
+            if (abi.isEmpty()) continue
+            val match = candidates.firstOrNull { asset ->
+                asset.name.lowercase(Locale.US).endsWith("-$abi.apk")
+            }
+            if (match != null) return match
+        }
+
+        val universal = candidates.firstOrNull { asset ->
+            asset.name.lowercase(Locale.US).endsWith("-universal.apk")
+        }
+        if (universal != null) return universal
+
+        // Legacy un-suffixed APK (no known ABI suffix such as -arm64-v8a.apk)
+        val legacy = candidates.firstOrNull { asset ->
+            val lower = asset.name.lowercase(Locale.US)
+            KNOWN_ABI_TOKENS.none { abi -> lower.endsWith("-$abi.apk") }
+        }
+        if (legacy != null) return legacy
+
+        return if (supportedAbis.isEmpty()) candidates.firstOrNull() else null
     }
 
     fun parseSha256Text(raw: String): String? {

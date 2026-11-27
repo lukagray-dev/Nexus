@@ -44,4 +44,13 @@ class WebRtcExtensionsTest {
         )
         assertEquals(listOf("video/VP8", "video/VP9", "video/H264", "video/rtx"), swSorted)
     }
+
+    @Test
+    fun `SignalingClient buildOfferPayload attaches parent UID cleanly`() {
+        val offer = SessionDescription(SessionDescription.Type.OFFER, "v=0\r\n")
+        val payload = SignalingClient.buildOfferPayload(offer, "parent-uid-abc")
+        assertEquals("offer", payload["type"])
+        assertEquals("v=0\r\n", payload["sdp"])
+        assertEquals("parent-uid-abc", payload["uid"])
+    }
 }

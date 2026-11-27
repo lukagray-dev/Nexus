@@ -45,6 +45,8 @@ export interface DeviceTelemetryUpdate {
   updateAvailable?: boolean;
   latestAvailableVersion?: string | null;
   updateReleaseUrl?: string | null;
+  deviceAbi?: string | null;
+  recommendedUpdateAssetUrl?: string | null;
 }
 
 /**
@@ -80,6 +82,8 @@ export interface LastDeviceTelemetrySnapshot {
   updateAvailable?: boolean;
   latestAvailableVersion?: string | null;
   updateReleaseUrl?: string | null;
+  deviceAbi?: string | null;
+  recommendedUpdateAssetUrl?: string | null;
 }
 
 /**
@@ -170,6 +174,8 @@ export interface DeviceInfo {
   updateAvailable?: boolean;
   latestAvailableVersion?: string | null;
   updateReleaseUrl?: string | null;
+  deviceAbi?: string | null;
+  recommendedUpdateAssetUrl?: string | null;
 }
 
 export type DeviceChangeListener = () => void;
@@ -288,6 +294,10 @@ class DeviceStateManager {
             updateAvailable: available,
             latestAvailableVersion: available ? (packet.latestVersion ?? null) : null,
             updateReleaseUrl: available ? (packet.releaseUrl ?? null) : null,
+            deviceAbi: typeof packet.deviceAbi === 'string' && packet.deviceAbi
+              ? packet.deviceAbi
+              : undefined,
+            recommendedUpdateAssetUrl: available ? (packet.recommendedAssetUrl ?? null) : null,
           });
         }
       } catch {
@@ -363,6 +373,8 @@ class DeviceStateManager {
       updateAvailable: info.updateAvailable,
       latestAvailableVersion: info.latestAvailableVersion,
       updateReleaseUrl: info.updateReleaseUrl,
+      deviceAbi: info.deviceAbi,
+      recommendedUpdateAssetUrl: info.recommendedUpdateAssetUrl,
     };
   }
 

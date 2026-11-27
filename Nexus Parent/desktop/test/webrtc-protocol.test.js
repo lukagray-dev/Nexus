@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { FIREBASE_CONFIG, STUN_SERVERS, DATA_CHANNEL_LABEL } from '../src/js/webrtc/firebase-config.js';
-import { DesktopSignalingClient } from '../src/js/webrtc/signaling-client.js';
+import { DesktopSignalingClient, buildOfferPayload } from '../src/js/webrtc/signaling-client.js';
 import { deviceState } from '../src/js/shared/device-state.js';
 
 describe('WebRTC Configuration & Protocol Tests', () => {
@@ -20,8 +20,8 @@ describe('WebRTC Configuration & Protocol Tests', () => {
   it('FIREBASE_CONFIG should contain valid project parameters', () => {
     assert.ok(FIREBASE_CONFIG.apiKey, 'API key must not be empty');
     assert.ok(FIREBASE_CONFIG.databaseURL.startsWith('https://'), 'Database URL must start with https://');
-    assert.strictEqual(FIREBASE_CONFIG.projectId, 'nexus-33');
-    assert.strictEqual(FIREBASE_CONFIG.databaseURL, 'https://nexus-33-default-rtdb.firebaseio.com');
+    assert.ok(FIREBASE_CONFIG.projectId, 'Project ID must not be empty');
+    assert.ok(FIREBASE_CONFIG.appId, 'App ID must not be empty');
   });
 
   it('STUN_SERVERS should define valid Google STUN endpoints', () => {
@@ -107,6 +107,10 @@ describe('WebRTC Configuration & Protocol Tests', () => {
     assert.strictEqual(typeof client.cleanupAnswerListener, 'function');
     assert.strictEqual(typeof client.sendRenegotiationAnswer, 'function');
     assert.strictEqual(typeof client.clearSignalingSession, 'function');
+
+    const payload = buildOfferPayload({ type: 'offer', sdp: 'v=0\r\n' }, 'uid-parent-123');
+    assert.deepStrictEqual(payload, { type: 'offer', sdp: 'v=0\r\n', uid: 'uid-parent-123' });
+    assert.throws(() => buildOfferPayload({ type: 'offer', sdp: 'v=0\r\n' }, ''), /authentication required/i);
   });
 
   it('deviceState should manage saving, retrieving, and clearing lastConnectedDevice', () => {

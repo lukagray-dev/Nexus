@@ -21,6 +21,7 @@ pub struct ParentSystemInfo {
     pub webview_version: Option<String>,
     pub os: String,
     pub arch: String,
+    pub install_kind: String,
     pub cpu_cores: usize,
     pub exe_path: Option<String>,
     pub config_dir: Option<String>,
@@ -70,6 +71,11 @@ pub fn get_parent_system_info<R: Runtime>(app: AppHandle<R>) -> ParentSystemInfo
         .map(|count| count.get())
         .unwrap_or(1);
 
+    let install_kind = app
+        .try_state::<crate::updater::UpdaterState>()
+        .map(|s| s.install_kind().as_str().to_string())
+        .unwrap_or_else(|| "portable".to_string());
+
     ParentSystemInfo {
         app_name: package.name.clone(),
         app_version: package.version.to_string(),
@@ -78,6 +84,7 @@ pub fn get_parent_system_info<R: Runtime>(app: AppHandle<R>) -> ParentSystemInfo
         webview_version: tauri::webview_version().ok(),
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
+        install_kind,
         cpu_cores,
         exe_path: std::env::current_exe()
             .ok()

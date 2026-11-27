@@ -34,6 +34,25 @@ class DeviceStatusManager(private val deviceId: String) {
         const val STATUS_CONNECTED = "connected"
         const val STATUS_DISCONNECTED = "disconnected"
         const val STATUS_OFFLINE = "offline"
+
+        /**
+         * Builds an atomic RTDB presence payload including `ownerUid` so newly created
+         * and pre-existing devices satisfy `/child-devices/$deviceId` security rules.
+         */
+        internal fun buildPresenceUpdatePayload(
+            status: String,
+            ownerUid: String?,
+            timestampValue: Any = ServerValue.TIMESTAMP
+        ): Map<String, Any> {
+            val payload = mutableMapOf<String, Any>(
+                "status" to status,
+                "lastSeen" to timestampValue
+            )
+            ownerUid?.takeIf { it.isNotBlank() }?.let { uid ->
+                payload["ownerUid"] = uid
+            }
+            return payload
+        }
     }
 
     private val dbInstance = FirebaseDatabase.getInstance(AppConfig.Firebase.DATABASE_URL)
@@ -81,10 +100,12 @@ class DeviceStatusManager(private val deviceId: String) {
 
         Log.d(TAG, "Starting presence reporting and heartbeat for device: $deviceId")
 
-        // 1. Mark device as online-waiting
+        // 1. Ensure ownerUid, status, and lastSeen are atomically present
         currentDesiredStatus = STATUS_ONLINE_WAITING
-        setStatus(STATUS_ONLINE_WAITING)
-        updateLastSeen()
+        val initialPayload = buildPresenceUpdatePayload(STATUS_ONLINE_WAITING, AuthManager.getCurrentUid())
+        deviceRef.updateChildren(initialPayload).addOnFailureListener { error ->
+            Log.e(TAG, "Failed to publish initial presence payload: ${error.message}")
+        }
 
         // 2. Attach persistent .info/connected listener to re-arm onDisconnect and restore presence on every reconnect
         connectedListener = object : ValueEventListener {
@@ -93,14 +114,15 @@ class DeviceStatusManager(private val deviceId: String) {
                 Log.d(TAG, "Firebase .info/connected state changed: $isConnected (desiredStatus=$currentDesiredStatus)")
 
                 if (isConnected && isRunning.get()) {
-                    // Re-arm onDisconnect handlers on the Firebase server for the freshly opened socket
-                    deviceRef.child("status").onDisconnect().setValue(STATUS_OFFLINE)
-                    deviceRef.child("lastSeen").onDisconnect().setValue(ServerValue.TIMESTAMP)
-
-                    // Re-assert our current operational status immediately
+                    // Re-assert ownerUid + current operational status first, then arm onDisconnect hooks
                     Log.d(TAG, "Socket connected. Re-asserting status: $currentDesiredStatus")
-                    deviceRef.child("status").setValue(currentDesiredStatus)
-                    updateLastSeen()
+                    val reconnectPayload = buildPresenceUpdatePayload(currentDesiredStatus, AuthManager.getCurrentUid())
+                    deviceRef.updateChildren(reconnectPayload).addOnSuccessListener {
+                        deviceRef.child("status").onDisconnect().setValue(STATUS_OFFLINE)
+                        deviceRef.child("lastSeen").onDisconnect().setValue(ServerValue.TIMESTAMP)
+                    }.addOnFailureListener { error ->
+                        Log.e(TAG, "Failed to re-assert presence on reconnect: ${error.message}")
+                    }
                 }
             }
 

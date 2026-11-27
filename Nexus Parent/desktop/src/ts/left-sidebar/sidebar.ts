@@ -261,8 +261,9 @@ function setupPairDeviceButton(): void {
    */
   const buildChildUpdateBannerHtml = (device: NonNullable<ReturnType<typeof deviceState.getConnectedDevice>>): string => {
     if (!device.updateAvailable) return '';
+    const abiSuffix = device.deviceAbi ? ` • ${device.deviceAbi}` : '';
     const desc = device.latestAvailableVersion
-      ? `v${device.latestAvailableVersion} available (running v${device.appVersion || '?'})`
+      ? `v${device.latestAvailableVersion} available (running v${device.appVersion || '?'}${abiSuffix})`
       : 'Newer stable release available';
     return `<div class="dropdown-update-banner" id="dropdown-child-update-banner">
            <span class="dropdown-update-title">Child Needs Update</span>

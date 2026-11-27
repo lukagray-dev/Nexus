@@ -184,5 +184,14 @@ class WebRtcProtocolTest {
         assertEquals("connected", DeviceStatusManager.STATUS_CONNECTED)
         assertEquals("disconnected", DeviceStatusManager.STATUS_DISCONNECTED)
         assertEquals("offline", DeviceStatusManager.STATUS_OFFLINE)
+
+        val payload = DeviceStatusManager.buildPresenceUpdatePayload(
+            status = DeviceStatusManager.STATUS_ONLINE_WAITING,
+            ownerUid = "child-uid-999",
+            timestampValue = 98765L
+        )
+        assertEquals("online-waiting", payload["status"])
+        assertEquals("child-uid-999", payload["ownerUid"])
+        assertEquals(98765L, payload["lastSeen"])
     }
 }

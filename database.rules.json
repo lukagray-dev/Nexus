@@ -1,0 +1,51 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "child-devices": {
+      "$deviceId": {
+        ".read": "auth != null && $deviceId.matches(/^[0-9]{12}$/)",
+        ".write": "auth != null && $deviceId.matches(/^[0-9]{12}$/) && ( (!data.exists() && newData.child('ownerUid').val() === auth.uid) || (data.exists() && data.child('ownerUid').val() === auth.uid) || (data.exists() && !data.child('ownerUid').exists() && newData.child('ownerUid').val() === auth.uid) )",
+        ".validate": "newData.hasChildren(['status', 'lastSeen', 'ownerUid']) && newData.child('ownerUid').isString() && newData.child('status').isString() && (newData.child('status').val() === 'online-waiting' || newData.child('status').val() === 'online' || newData.child('status').val() === 'connecting' || newData.child('status').val() === 'connected' || newData.child('status').val() === 'disconnected' || newData.child('status').val() === 'offline')",
+        "ownerUid": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 128"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'online-waiting' || newData.val() === 'online' || newData.val() === 'connecting' || newData.val() === 'connected' || newData.val() === 'disconnected' || newData.val() === 'offline')"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "signaling": {
+      "$deviceId": {
+        "offer": {
+          ".read": "auth != null && $deviceId.matches(/^[0-9]{12}$/) && (root.child('child-devices').child($deviceId).child('ownerUid').val() === auth.uid || data.child('uid').val() === auth.uid)",
+          ".write": "auth != null && $deviceId.matches(/^[0-9]{12}$/) && root.child('child-devices').child($deviceId).exists() && (!newData.exists() || newData.child('uid').val() === auth.uid)",
+          ".validate": "!newData.exists() || (newData.hasChildren(['type', 'sdp', 'uid']) && (newData.child('type').val() === 'offer' || newData.child('type').val() === 'answer') && newData.child('sdp').isString() && newData.child('sdp').val().length > 0 && newData.child('sdp').val().length <= 32768 && newData.child('uid').isString() && newData.child('uid').val() === auth.uid)",
+          "$other": {
+            ".validate": "newData.parent().hasChildren(['type', 'sdp', 'uid']) && ($other === 'type' || $other === 'sdp' || $other === 'uid')"
+          }
+        },
+        "answer": {
+          ".read": "auth != null && $deviceId.matches(/^[0-9]{12}$/) && (root.child('child-devices').child($deviceId).child('ownerUid').val() === auth.uid || root.child('signaling').child($deviceId).child('offer').child('uid').val() === auth.uid)",
+          ".write": "auth != null && $deviceId.matches(/^[0-9]{12}$/) && root.child('child-devices').child($deviceId).exists() && ( (!newData.exists()) || root.child('child-devices').child($deviceId).child('ownerUid').val() === auth.uid )",
+          ".validate": "!newData.exists() || (newData.hasChildren(['type', 'sdp']) && (newData.child('type').val() === 'offer' || newData.child('type').val() === 'answer') && newData.child('sdp').isString() && newData.child('sdp').val().length > 0 && newData.child('sdp').val().length <= 32768)",
+          "$other": {
+            ".validate": "$other === 'type' || $other === 'sdp'"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

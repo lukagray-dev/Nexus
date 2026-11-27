@@ -53,8 +53,7 @@ class SignalingClient(
         try {
             val updates = mapOf<String, Any?>(
                 "offer" to null,
-                "answer" to null,
-                "ice-candidates" to null
+                "answer" to null
             )
             signalingRef.updateChildren(updates).await()
             lastProcessedOfferSdp = null

@@ -156,9 +156,9 @@ class AppUpdateManager(
                     return@withContext alreadyReady
                 }
 
-                val assets = AppUpdateProtocol.selectParentAndroidAssets(latest)
+                val assets = AppUpdateProtocol.selectParentAndroidAssets(latest, Build.SUPPORTED_ABIS.toList())
                 if (assets == null) {
-                    val msg = "Release ${latest.tagName} does not include a Nexus Parent Android APK"
+                    val msg = "Release ${latest.tagName} does not include a compatible Nexus Parent Android APK"
                     val errState = _state.value.copy(
                         status = AppUpdateStatusKind.ERROR,
                         availableVersion = cleanVersion,

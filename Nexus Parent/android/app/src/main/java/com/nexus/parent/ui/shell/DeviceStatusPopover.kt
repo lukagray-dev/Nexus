@@ -177,8 +177,9 @@ fun DeviceStatusPopover(
                                 style = MaterialTheme.typography.labelMedium,
                                 color = NexusColors.WarningAmber
                             )
+                            val abiSuffix = device.telemetry.deviceAbi?.let { " • $it" } ?: ""
                             Text(
-                                text = "$targetVer available (running v${device.telemetry.appVersion})",
+                                text = "$targetVer available (running v${device.telemetry.appVersion}$abiSuffix)",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = NexusColors.TextSecondary
                             )

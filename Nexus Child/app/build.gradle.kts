@@ -53,9 +53,52 @@ android {
         buildConfigField("String", "FIREBASE_STORAGE_BUCKET", "\"${envMap["storageBucket"] ?: ""}\"")
     }
 
+    val keystorePath = (findProperty("nexusKeystorePath") as? String)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("NEXUS_KEYSTORE_PATH")?.trim()?.takeIf { it.isNotEmpty() }
+    val keystorePassword = (findProperty("nexusKeystorePassword") as? String)
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("NEXUS_KEYSTORE_PASSWORD")?.takeIf { it.isNotEmpty() }
+    val releaseKeyAlias = (findProperty("nexusKeyAlias") as? String)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("NEXUS_KEY_ALIAS")?.trim()?.takeIf { it.isNotEmpty() }
+    val releaseKeyPassword = (findProperty("nexusKeyPassword") as? String)
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("NEXUS_KEY_PASSWORD")?.takeIf { it.isNotEmpty() }
+    val hasReleaseSigning = keystorePath != null &&
+        keystorePassword != null &&
+        releaseKeyAlias != null &&
+        releaseKeyPassword != null &&
+        File(keystorePath).exists()
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = File(keystorePath!!)
+                storePassword = keystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+            isUniversalApk = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
