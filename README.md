@@ -47,16 +47,17 @@
 
 <br/>
 
+> [!WARNING]  
+> **Experimental & Educational Use Only**: Nexus is an experimental open-source project built strictly for educational and research purposes. Never use it to monitor adults without their explicit consent, and never install or use it on unauthorized devices that you do not own or have legal permission to manage.
+
 ## **What is Nexus?**
 
-**Nexus** is a parental oversight & device surveillance ecosystem engineered to safeguard children while guaranteeing absolute end-to-end privacy for families.
+**Nexus** is a private parental safety app that lets parents check in on their child's Android phone from a Windows PC or another Android phone.
 
-Unlike traditional commercial monitoring tools that upload camera feeds, audio recordings, screen captures, and keystrokes to third-party cloud databases, Nexus establishes a direct, hardware-accelerated **WebRTC Peer-to-Peer (P2P)** encrypted bridge between the parent's dashboard and the child's mobile phone. All data streams across encrypted SRTP and SCTP data channels directly between devices, eliminating intermediary cloud exposure.
+Most monitoring apps upload your family's camera, audio, location, and messages to company servers. Nexus skips the cloud and connects your two devices directly over an encrypted link, so your family's data stays strictly between your devices.
 
-Nexus is partitioned into two specialized subsystems:
-
-1. **Nexus Parent**: Comprising the **Desktop Dashboard** (`Nexus Parent/desktop`, powered by **Tauri v2**, Rust, and a zero-dependency static TypeScript/CSS frontend inside the native OS WebView) and the **Android Parent Client** (`Nexus Parent/android`, built with **Kotlin**, **Jetpack Compose**, zero-blocker `TextureView` + `EglRenderer` video surface, `io.github.webrtc-sdk:android` WebRTC engine with real-time 10-preset PCM Voice Changer DSP + 36-bar FFT Mic Monitor + Broadcast Intercom, native `MediaCodec`/`MediaMuxer` segmented Rolling DVR + Clip Export, `MediaCodec` + `AudioTrack` 48kHz Opus internal system audio playback, `osmdroid` Esri Satellite / CartoDB Dark Streets live GPS tracking + Nominatim geocoding, cached Remote Storage Explorer with 40-item pagination, preview caching & O(1)-RAM 64KB `.nexuspart` downloads, persistent `dataSync|microphone` background Foreground Service for screen-off resilience, GitHub stable release APK auto-updater + `FileProvider` install flow, 1:1 5-tab settings console with Desktop-parity About/Updater/Alerts, and live DataChannel monitoring/control panels for SMS, Call Log, Notifications, Keyboard Audit, Digital Wellbeing, App Lock, Vibrate & Flash, Call Alerts, and Wallpaper).
-2. **Nexus Child (Mobile Client)**: An autonomous Android client written in **Kotlin** integrating device-level telemetry, background accessibility hooks, hardware media capture, Digital Wellbeing usage tracking, active call alerting, and a 5-tier process survival engine.
+- **Nexus Parent (Windows PC & Android)**: Lets you check live camera, screen, microphone, and location, talk through two-way audio, review screen time, calls, SMS, and notifications, and get safety alerts.
+- **Nexus Child (Child's Android Phone)**: Runs quietly in the background on the child's phone and pairs using a 12-digit code, with no account or email signup needed.
 
 ## **Why Nexus?**
 
@@ -204,7 +205,7 @@ Nexus unifies live surveillance, forensic auditing, remote device actuation, and
 | | **Stealth & Widget** | Dynamic app drawer / launcher icon hiding via PackageManager, uninterrupted background daemon execution, 1x1 fail-safe home screen recovery widget, remote desktop sync. | Android PackageManager Component Enabling, StealthWidgetProvider | SCTP DataChannel (`STEALTH_*`) | Instant Toggle | **Zero (P2P Direct)** |
 | **Workstation & Infrastructure** | **Desktop Preferences & Lifecycle** | 5-tab Settings console (`General & System`, `Audio & Intercom`, `Surveillance & DVR`, `Paired Devices` multi-device history + 27-field telemetry, `About Nexus Parent`), system tray close-to-tray, OS autostart, `Always on Top`, `Keep Screen On`, GPU toggle, and GitHub stable release auto-updater. | Tauri v2 Plugins (`autostart`, `dialog`, `notification`, `single-instance`), `keepawake`, Rust `tray.rs` & `updater.rs` | Native Tauri IPC + GitHub Releases API | Instant / Background | **Zero (Local Config)** |
 | | **Process Survival** | 5-tier process revival (Boot/Update receiver, Screen Unlock receiver, Task Kill AlarmManager, 15-min Persistent JobService, System Accessibility keep-alive). | Android 14+ Foreground Service (`dataSync`, `location`), JobScheduler, AlarmManager, CPU WakeLock | Internal OS Lifecycle & IPC | Autonomous | **Zero (Local Engine)** |
-| | **Presence & Signaling** | Fast Non-Trickle ICE with embedded SDP candidates (200-400ms GATHER_ONCE), persistent Firebase presence with `/.info/connected`, 30s heartbeat, atomic onDisconnect hooks, 9-attempt backoff auto-reconnect. | Firebase Realtime Database (RTDB), Google STUN Infrastructure | HTTPS / WSS Non-Trickle SDP | 200–400 ms | Ephemeral SDP Only |
+| | **Presence & Signaling** | Fast Non-Trickle ICE with embedded SDP candidates (200-400ms GATHER_ONCE), persistent Firebase presence with `/.info/connected`, 30s heartbeat, atomic onDisconnect hooks, 9-attempt backoff auto-reconnect. | Firebase Realtime Database (RTDB), Google STUN Infrastructure | HTTPS / WSS Non-Trickle SDP | 200-400 ms | Ephemeral SDP Only |
 
 ## **Monorepo Layout**
 
@@ -318,7 +319,7 @@ D:\Nexus\
 #### Prerequisites
 
 Before building Nexus from source, verify you have the following installed:
-- **Node.js**: v20 or later ([nodejs.org](https://nodejs.org/))
+- **Node.js**: v24.12 or later ([nodejs.org](https://nodejs.org/))
 - **Rust & Cargo**: Latest stable toolchain ([rustup.rs](https://rustup.rs/))
 - **Tauri CLI v2**: `cargo install tauri-cli --version "^2.0"`
 - **Android Studio / SDK**: Android SDK API 34+ (required for building **Nexus Child** and **Nexus Parent Android**)
